@@ -58,9 +58,14 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
         
+        // Translation AJAX handlers (from translation manager)
+        add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
+        add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this->translation_manager, 'ajax_unlink_translation'));
+        add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
+        
         // Debug: List all registered AJAX actions
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Registered AJAX actions: nexus_ai_wp_test_api, nexus_ai_wp_get_models, nexus_ai_wp_save_settings');
+            error_log('Nexus AI WP Translator: Registered AJAX actions: nexus_ai_wp_test_api, nexus_ai_wp_get_models, nexus_ai_wp_save_settings, nexus_ai_wp_translate_post, nexus_ai_wp_unlink_translation, nexus_ai_wp_get_translation_status');
         }
         
         // Post meta box save

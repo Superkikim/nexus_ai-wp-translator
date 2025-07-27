@@ -428,10 +428,22 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
                     return;
                 }
                 
+                // Debug: Check if AJAX variables are available
+                if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+                    console.error('NexusAI Debug: AJAX variables not available!');
+                    alert('Error: AJAX variables not loaded');
+                    return;
+                }
+                
+                console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
+                console.log('NexusAI Debug: About to show progress popup');
+                
                 // Show progress popup
                 NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
                 
                 button.prop('disabled', true).text('Translating...');
+                
+                console.log('NexusAI Debug: Making AJAX request for translation');
                 
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_translate_post',
@@ -453,6 +465,7 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
                 })
                 .fail(function(xhr, status, error) {
                     console.log('NexusAI Debug: Translation failed:', error);
+                    console.log('NexusAI Debug: XHR response:', xhr.responseText);
                     NexusAIWPTranslatorAdmin.updateTranslationProgress({
                         success: false,
                         message: 'Network error occurred'
