@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1><?php _e('Claude Translator Dashboard', 'claude-translator'); ?></h1>
+    <h1><?php _e('Nexus AI WP Translator Dashboard', 'claude-translator'); ?></h1>
     
     <div class="claude-translator-dashboard">
         <!-- Statistics Cards -->

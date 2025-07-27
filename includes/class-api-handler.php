@@ -26,10 +26,20 @@ class Claude_Translator_API_Handler {
     }
     
     /**
+     * Refresh API key from database
+     */
+    public function refresh_api_key() {
+        $this->api_key = get_option('claude_translator_api_key', '');
+    }
+    
+    /**
      * Test API connection
      */
     public function test_api_connection() {
+        error_log('Nexus AI WP Translator: Testing API connection');
+        
         if (empty($this->api_key)) {
+            error_log('Nexus AI WP Translator: API key is empty');
             return array(
                 'success' => false,
                 'message' => __('API key is required', 'claude-translator')
@@ -37,15 +47,18 @@ class Claude_Translator_API_Handler {
         }
         
         $test_content = 'Hello, this is a test.';
+        error_log('Nexus AI WP Translator: Starting test translation');
         $result = $this->translate_content($test_content, 'en', 'es');
         
         if ($result['success']) {
+            error_log('Nexus AI WP Translator: API test successful');
             return array(
                 'success' => true,
                 'message' => __('API connection successful', 'claude-translator')
             );
         }
         
+        error_log('Nexus AI WP Translator: API test failed - ' . $result['message']);
         return $result;
     }
     
@@ -53,7 +66,10 @@ class Claude_Translator_API_Handler {
      * Translate content using Claude AI
      */
     public function translate_content($content, $source_lang, $target_lang) {
+        error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
+        
         if (empty($this->api_key)) {
+            error_log('Nexus AI WP Translator: API key not configured');
             return array(
                 'success' => false,
                 'message' => __('API key not configured', 'claude-translator')
@@ -62,6 +78,7 @@ class Claude_Translator_API_Handler {
         
         // Check throttle limits
         if (!$this->check_throttle_limits()) {
+            error_log('Nexus AI WP Translator: API call limit reached');
             return array(
                 'success' => false,
                 'message' => __('API call limit reached. Please try again later.', 'claude-translator')
@@ -72,6 +89,7 @@ class Claude_Translator_API_Handler {
         
         // Prepare the prompt
         $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang);
+        error_log('Nexus AI WP Translator: Prepared prompt for translation');
         
         // Prepare request
         $headers = array(
@@ -91,6 +109,8 @@ class Claude_Translator_API_Handler {
             )
         );
         
+        error_log('Nexus AI WP Translator: Making API request to ' . $this->api_endpoint);
+        
         // Make API request
         $response = wp_remote_post($this->api_endpoint, array(
             'headers' => $headers,
@@ -101,9 +121,11 @@ class Claude_Translator_API_Handler {
         $processing_time = microtime(true) - $start_time;
         
         if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            error_log('Nexus AI WP Translator: WP Error - ' . $error_message);
             return array(
                 'success' => false,
-                'message' => $response->get_error_message(),
+                'message' => $error_message,
                 'processing_time' => $processing_time
             );
         }
@@ -111,11 +133,16 @@ class Claude_Translator_API_Handler {
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
         
+        error_log("Nexus AI WP Translator: API response code: {$response_code}");
+        
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
             $error_message = isset($error_data['error']['message']) 
                 ? $error_data['error']['message'] 
                 : __('API request failed', 'claude-translator');
+            
+            error_log('Nexus AI WP Translator: API Error - ' . $error_message);
+            error_log('Nexus AI WP Translator: Response body - ' . $response_body);
                 
             return array(
                 'success' => false,
@@ -127,6 +154,8 @@ class Claude_Translator_API_Handler {
         $data = json_decode($response_body, true);
         
         if (!isset($data['content'][0]['text'])) {
+            error_log('Nexus AI WP Translator: Invalid API response format');
+            error_log('Nexus AI WP Translator: Response data - ' . print_r($data, true));
             return array(
                 'success' => false,
                 'message' => __('Invalid API response format', 'claude-translator'),
@@ -135,6 +164,7 @@ class Claude_Translator_API_Handler {
         }
         
         $translated_content = $data['content'][0]['text'];
+        error_log('Nexus AI WP Translator: Translation successful');
         
         // Cache the translation
         $this->cache_translation($content, $source_lang, $target_lang, $translated_content);

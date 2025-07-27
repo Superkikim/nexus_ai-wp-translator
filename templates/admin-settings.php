@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1><?php _e('Claude Translator Settings', 'claude-translator'); ?></h1>
+    <h1><?php _e('Nexus AI WP Translator Settings', 'claude-translator'); ?></h1>
     
     <form id="claude-translator-settings-form" method="post" action="options.php">
         <?php settings_fields('claude_translator_settings'); ?>
@@ -36,12 +36,13 @@ if (!defined('ABSPATH')) {
                                    id="claude_translator_api_key" 
                                    name="claude_translator_api_key" 
                                    value="<?php echo esc_attr($api_key); ?>" 
-                                   class="large-text" />
+                                   class="large-text" 
+                                   autocomplete="off" />
                             <button type="button" id="claude-test-api" class="button">
                                 <?php _e('Test Connection', 'claude-translator'); ?>
                             </button>
                             <button type="button" id="claude-toggle-api-key" class="button">
-                                <?php _e('Show/Hide', 'claude-translator'); ?>
+                                <?php _e('Show', 'claude-translator'); ?>
                             </button>
                             <p class="description">
                                 <?php _e('Enter your Claude AI API key. You can get one from the Anthropic Console.', 'claude-translator'); ?>
@@ -238,6 +239,8 @@ if (!defined('ABSPATH')) {
 
 <script>
 jQuery(document).ready(function($) {
+    var apiKeyChanged = false;
+    
     // Tab switching
     $('.nav-tab').on('click', function(e) {
         e.preventDefault();
@@ -251,22 +254,57 @@ jQuery(document).ready(function($) {
         $(target).addClass('active');
     });
     
+    // Track API key changes
+    $('#claude_translator_api_key').on('input', function() {
+        apiKeyChanged = true;
+        $('#api-test-result').empty();
+    });
+    
+    // Auto-save API key on blur
+    $('#claude_translator_api_key').on('blur', function() {
+        if (apiKeyChanged) {
+            saveApiKey();
+        }
+    });
+    
+    function saveApiKey() {
+        var apiKey = $('#claude_translator_api_key').val().trim();
+        if (!apiKey) return;
+        
+        $.post(ajaxurl, {
+            action: 'claude_save_settings',
+            claude_translator_api_key: apiKey,
+            nonce: claude_translator_ajax.nonce
+        }, function(response) {
+            if (response.success) {
+                apiKeyChanged = false;
+                console.log('API key saved automatically');
+            }
+        });
+    }
+    
     // API key toggle
     $('#claude-toggle-api-key').on('click', function() {
         var input = $('#claude_translator_api_key');
         var type = input.attr('type');
+        var button = $(this);
         
         if (type === 'password') {
             input.attr('type', 'text');
-            $(this).text('<?php _e('Hide', 'claude-translator'); ?>');
+            button.text('<?php _e('Hide', 'claude-translator'); ?>');
         } else {
             input.attr('type', 'password');
-            $(this).text('<?php _e('Show', 'claude-translator'); ?>');
+            button.text('<?php _e('Show', 'claude-translator'); ?>');
         }
     });
     
     // Test API connection
     $('#claude-test-api').on('click', function() {
+        // Save API key first if changed
+        if (apiKeyChanged) {
+            saveApiKey();
+        }
+        
         var button = $(this);
         var apiKey = $('#claude_translator_api_key').val();
         var resultDiv = $('#api-test-result');
@@ -277,6 +315,7 @@ jQuery(document).ready(function($) {
         }
         
         button.prop('disabled', true).text('<?php _e('Testing...', 'claude-translator'); ?>');
+        resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'claude-translator'); ?></p></div>');
         
         $.post(ajaxurl, {
             action: 'claude_test_api',
@@ -304,6 +343,7 @@ jQuery(document).ready(function($) {
         
         $.post(ajaxurl, formData, function(response) {
             if (response.success) {
+                apiKeyChanged = false;
                 $('<div class="notice notice-success is-dismissible"><p>' + response.data + '</p></div>')
                     .insertAfter('h1').delay(3000).fadeOut();
             } else {

@@ -58,8 +58,8 @@ class Claude_Translator_Admin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('Claude Translator', 'claude-translator'),
-            __('Claude Translator', 'claude-translator'),
+            __('Nexus AI WP Translator', 'claude-translator'),
+            __('Nexus AI WP Translator', 'claude-translator'),
             'manage_options',
             'claude-translator',
             array($this, 'admin_page_dashboard'),
@@ -305,15 +305,20 @@ class Claude_Translator_Admin {
         }
         
         $api_key = sanitize_text_field($_POST['api_key']);
+        error_log('Nexus AI WP Translator: AJAX API test requested');
         
         // Temporarily update the API key for testing
         $old_key = get_option('claude_translator_api_key');
         update_option('claude_translator_api_key', $api_key);
         
+        // Refresh API key in handler
+        $this->api_handler->refresh_api_key();
+        
         $result = $this->api_handler->test_api_connection();
         
         // Restore old key
         update_option('claude_translator_api_key', $old_key);
+        $this->api_handler->refresh_api_key();
         
         wp_send_json($result);
     }
@@ -328,16 +333,18 @@ class Claude_Translator_Admin {
             wp_die(__('Permission denied', 'claude-translator'));
         }
         
+        error_log('Nexus AI WP Translator: Saving settings via AJAX');
+        
         // Validate and sanitize input data
-        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
-        $source_language = isset($_POST['source_language']) ? sanitize_text_field($_POST['source_language']) : 'en';
-        $target_languages = isset($_POST['target_languages']) ? array_map('sanitize_text_field', (array) $_POST['target_languages']) : array();
-        $auto_translate = isset($_POST['auto_translate']) ? true : false;
-        $throttle_limit = isset($_POST['throttle_limit']) ? intval($_POST['throttle_limit']) : 10;
-        $throttle_period = isset($_POST['throttle_period']) ? intval($_POST['throttle_period']) : 3600;
-        $retry_attempts = isset($_POST['retry_attempts']) ? intval($_POST['retry_attempts']) : 3;
-        $cache_translations = isset($_POST['cache_translations']) ? true : false;
-        $seo_friendly_urls = isset($_POST['seo_friendly_urls']) ? true : false;
+        $api_key = isset($_POST['claude_translator_api_key']) ? sanitize_text_field($_POST['claude_translator_api_key']) : '';
+        $source_language = isset($_POST['claude_translator_source_language']) ? sanitize_text_field($_POST['claude_translator_source_language']) : 'en';
+        $target_languages = isset($_POST['claude_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['claude_translator_target_languages']) : array();
+        $auto_translate = isset($_POST['claude_translator_auto_translate']) ? true : false;
+        $throttle_limit = isset($_POST['claude_translator_throttle_limit']) ? intval($_POST['claude_translator_throttle_limit']) : 10;
+        $throttle_period = isset($_POST['claude_translator_throttle_period']) ? intval($_POST['claude_translator_throttle_period']) : 3600;
+        $retry_attempts = isset($_POST['claude_translator_retry_attempts']) ? intval($_POST['claude_translator_retry_attempts']) : 3;
+        $cache_translations = isset($_POST['claude_translator_cache_translations']) ? true : false;
+        $seo_friendly_urls = isset($_POST['claude_translator_seo_friendly_urls']) ? true : false;
         
         $settings = array(
             'api_key' => $api_key,
@@ -369,6 +376,7 @@ class Claude_Translator_Admin {
         
         foreach ($settings as $key => $value) {
             update_option('claude_translator_' . $key, $value);
+            error_log("Nexus AI WP Translator: Updated setting {$key}");
         }
         
         wp_send_json_success(__('Settings saved successfully', 'claude-translator'));

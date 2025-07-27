@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Claude AI Translator
+ * Plugin Name: Nexus AI WP Translator
  * Plugin URI: https://your-domain.com/claude-translator
  * Description: Automatically translate WordPress posts using Claude AI API with comprehensive management features
  * Version: 1.0.0
@@ -22,7 +22,7 @@ define('CLAUDE_TRANSLATOR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('CLAUDE_TRANSLATOR_PLUGIN_FILE', __FILE__);
 
 /**
- * Main Claude Translator Plugin Class
+ * Main Nexus AI WP Translator Plugin Class
  */
 class Claude_Translator_Plugin {
     
