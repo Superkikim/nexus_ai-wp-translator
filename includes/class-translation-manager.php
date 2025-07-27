@@ -33,19 +33,97 @@ class Nexus_AI_WP_Translator_Manager {
      * Initialize WordPress hooks
      */
     private function init_hooks() {
-        // Post publication hooks
+        // Post publication hooks  
         add_action('publish_post', array($this, 'handle_post_publish'), 10, 2);
         add_action('publish_page', array($this, 'handle_post_publish'), 10, 2);
         
-        // Post status change hooks
-        add_action('wp_trash_post', array($this, 'handle_post_trash'));
-        add_action('before_delete_post', array($this, 'handle_post_delete'));
-        add_action('untrash_post', array($this, 'handle_post_untrash'));
+        // Post status change hooks - removed automatic handling
+        // We'll handle these via AJAX after user confirmation
         
         // AJAX handlers
         add_action('wp_ajax_nexus_ai_wp_translate_post', array($this, 'ajax_translate_post'));
         add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this, 'ajax_unlink_translation'));
         add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this, 'ajax_get_translation_status'));
+        add_action('wp_ajax_nexus_ai_wp_get_linked_posts', array($this, 'ajax_get_linked_posts'));
+        add_action('wp_ajax_nexus_ai_wp_handle_post_action', array($this, 'ajax_handle_post_action'));
+        
+        // Add admin scripts for post list and edit screens
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'));
+    }
+    
+    /**
+     * Enqueue scripts for post management
+     */
+    public function enqueue_post_scripts($hook) {
+        if (in_array($hook, array('edit.php', 'post.php', 'post-new.php'))) {
+            wp_enqueue_script(
+                'nexus-ai-wp-translator-posts',
+                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/posts.js',
+                array('jquery'),
+                NEXUS_AI_WP_TRANSLATOR_VERSION,
+                true
+            );
+            
+            wp_localize_script('nexus-ai-wp-translator-posts', 'nexus_ai_wp_translator_posts', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
+                'strings' => array(
+                    'confirm_title' => __('Linked Posts Found', 'nexus-ai-wp-translator'),
+                    'confirm_message' => __('This post has linked translations. What would you like to do?', 'nexus-ai-wp-translator'),
+                    'delete_all' => __('Delete all linked posts', 'nexus-ai-wp-translator'),
+                    'unlink_only' => __('Unlink and delete only this post', 'nexus-ai-wp-translator'),
+                    'cancel' => __('Cancel', 'nexus-ai-wp-translator'),
+                    'loading' => __('Loading linked posts...', 'nexus-ai-wp-translator'),
+                    'processing' => __('Processing...', 'nexus-ai-wp-translator')
+                )
+            ));
+            
+            // Add CSS for the popup
+            wp_add_inline_style('wp-admin', '
+                .nexus-ai-wp-delete-popup {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.7);
+                    z-index: 999999;
+                    display: none;
+                }
+                .nexus-ai-wp-delete-popup-content {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 20px;
+                    border-radius: 4px;
+                    max-width: 500px;
+                    width: 90%;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                }
+                .nexus-ai-wp-linked-posts {
+                    margin: 15px 0;
+                    padding: 10px;
+                    background: #f9f9f9;
+                    border-left: 4px solid #0073aa;
+                }
+                .nexus-ai-wp-linked-post {
+                    padding: 5px 0;
+                    border-bottom: 1px solid #eee;
+                }
+                .nexus-ai-wp-linked-post:last-child {
+                    border-bottom: none;
+                }
+                .nexus-ai-wp-popup-buttons {
+                    text-align: right;
+                    margin-top: 20px;
+                }
+                .nexus-ai-wp-popup-buttons .button {
+                    margin-left: 10px;
+                }
+            ');
+        }
     }
     
     /**
@@ -439,6 +517,121 @@ class Nexus_AI_WP_Translator_Manager {
         }
         
         wp_send_json_success($status);
+    }
+    
+    /**
+     * AJAX: Get linked posts
+     */
+    public function ajax_get_linked_posts() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        $post_id = intval($_POST['post_id']);
+        $translations = $this->db->get_post_translations($post_id);
+        
+        $linked_posts = array();
+        foreach ($translations as $translation) {
+            $related_post_id = ($translation->source_post_id == $post_id) 
+                ? $translation->translated_post_id 
+                : $translation->source_post_id;
+            
+            $related_post = get_post($related_post_id);
+            if ($related_post) {
+                $language = ($translation->source_post_id == $post_id) 
+                    ? $translation->target_language 
+                    : $translation->source_language;
+                
+                $linked_posts[] = array(
+                    'id' => $related_post_id,
+                    'title' => $related_post->post_title,
+                    'status' => $related_post->post_status,
+                    'language' => $language,
+                    'edit_link' => get_edit_post_link($related_post_id)
+                );
+            }
+        }
+        
+        wp_send_json_success($linked_posts);
+    }
+    
+    /**
+     * AJAX: Handle post action with user choice
+     */
+    public function ajax_handle_post_action() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        $post_id = intval($_POST['post_id']);
+        $post_action = sanitize_text_field($_POST['post_action']); // 'delete' or 'trash'
+        $user_choice = sanitize_text_field($_POST['user_choice']); // 'delete_all' or 'unlink_only'
+        
+        error_log("Nexus AI WP Translator: Handling post action - Post: {$post_id}, Action: {$post_action}, Choice: {$user_choice}");
+        
+        if ($user_choice === 'unlink_only') {
+            // Unlink all translations first
+            $this->db->delete_translation_relationships($post_id);
+            
+            // Remove translation meta from related posts
+            $translations = $this->db->get_post_translations($post_id);
+            foreach ($translations as $translation) {
+                $related_post_id = ($translation->source_post_id == $post_id) 
+                    ? $translation->translated_post_id 
+                    : $translation->source_post_id;
+                
+                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
+                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
+            }
+            
+            // Now perform the action on the main post only
+            if ($post_action === 'delete') {
+                wp_delete_post($post_id, true);
+            } else {
+                wp_trash_post($post_id);
+            }
+            
+            $this->db->log_translation_activity($post_id, $post_action . '_unlink_only', 'completed', 'Post processed with unlink only option');
+            
+        } else { // delete_all
+            // Get all linked posts first
+            $translations = $this->db->get_post_translations($post_id);
+            $all_post_ids = array($post_id);
+            
+            foreach ($translations as $translation) {
+                $related_post_id = ($translation->source_post_id == $post_id) 
+                    ? $translation->translated_post_id 
+                    : $translation->source_post_id;
+                
+                if (!in_array($related_post_id, $all_post_ids)) {
+                    $all_post_ids[] = $related_post_id;
+                }
+            }
+            
+            // Delete relationships first
+            $this->db->delete_translation_relationships($post_id);
+            
+            // Perform action on all posts
+            foreach ($all_post_ids as $id) {
+                if ($post_action === 'delete') {
+                    wp_delete_post($id, true);
+                } else {
+                    wp_trash_post($id);
+                }
+            }
+            
+            $this->db->log_translation_activity($post_id, $post_action . '_all', 'completed', 'All linked posts processed: ' . implode(', ', $all_post_ids));
+        }
+        
+        wp_send_json_success(array(
+            'message' => __('Action completed successfully', 'nexus-ai-wp-translator'),
+            'action' => $post_action,
+            'choice' => $user_choice
+        ));
     }
     
     /**
