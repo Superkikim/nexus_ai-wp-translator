@@ -194,6 +194,8 @@
          */
         performApiTest: function(button, apiKey, resultDiv) {
             console.log('NexusAI Debug: Starting API test with key length:', apiKey.length);
+            console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
+            console.log('NexusAI Debug: Nonce:', nexus_ai_wp_translator_ajax.nonce);
             
             button.prop('disabled', true).text('Testing...');
             resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
@@ -219,6 +221,7 @@
             })
             .fail(function(xhr, status, error) {
                 console.log('NexusAI Debug: API test failed - network error:', error);
+                console.log('NexusAI Debug: XHR response:', xhr.responseText);
                 NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
             })
             .always(function() {
@@ -280,6 +283,7 @@
                     console.log('NexusAI Debug: Failed to get models or no models in response, using fallback');
                     console.log('NexusAI Debug: Response success:', response.success);
                     console.log('NexusAI Debug: Response models:', response.models);
+                    console.log('NexusAI Debug: Full response object:', response);
                     
                     // Fallback to default models if API call fails
                     NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
@@ -289,6 +293,7 @@
                 console.log('NexusAI Debug: Get models AJAX request failed:', error);
                 console.log('NexusAI Debug: XHR status:', status);
                 console.log('NexusAI Debug: XHR response:', xhr.responseText);
+                console.log('NexusAI Debug: Full XHR object:', xhr);
                 
                 // Fallback to default models if request fails
                 NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);

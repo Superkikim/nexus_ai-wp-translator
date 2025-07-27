@@ -53,6 +53,11 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
         
+        // Add debug to verify hooks are registered
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: AJAX hooks registered in admin constructor');
+        }
+        
         // Post meta box save
         add_action('save_post', array($this, 'save_translation_meta_box'));
     }
@@ -340,6 +345,10 @@ class Nexus_AI_WP_Translator_Admin {
      * AJAX: Test API connection
      */
     public function ajax_test_api() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: ajax_test_api function called');
+        }
+        
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
@@ -371,6 +380,10 @@ class Nexus_AI_WP_Translator_Admin {
      * AJAX: Get available models
      */
     public function ajax_get_models() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: ajax_get_models function called');
+        }
+        
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
