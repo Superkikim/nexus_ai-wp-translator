@@ -64,6 +64,19 @@ if (!defined('ABSPATH')) {
                             </p>
                         </td>
                     </tr>
+                    <tr id="model-selection-row" style="display: none;">
+                        <th scope="row">
+                            <label for="nexus_ai_wp_translator_model"><?php _e('AI Model', 'nexus-ai-wp-translator'); ?></label>
+                        </th>
+                        <td>
+                            <select id="nexus_ai_wp_translator_model" name="nexus_ai_wp_translator_model">
+                                <option value=""><?php _e('Loading models...', 'nexus-ai-wp-translator'); ?></option>
+                            </select>
+                            <p class="description">
+                                <?php _e('Select the Claude AI model to use for translations. Claude 3.5 Sonnet is recommended for best quality.', 'nexus-ai-wp-translator'); ?>
+                            </p>
+                        </td>
+                    </tr>
                 </table>
             </div>
             

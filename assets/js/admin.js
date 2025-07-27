@@ -74,6 +74,11 @@
                 .done(function(response) {
                     var noticeClass = response.success ? 'success' : 'error';
                     NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
+                    
+                    // If API test successful, load available models
+                    if (response.success) {
+                        NexusAIWPTranslatorAdmin.loadAvailableModels();
+                    }
                 })
                 .fail(function() {
                     NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
@@ -122,6 +127,42 @@
                 .always(function() {
                     button.prop('disabled', false).text('Save Settings (AJAX)');
                 });
+            });
+        },
+        
+        /**
+         * Load available models after successful API test
+         */
+        loadAvailableModels: function() {
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+            var modelSelect = $('#nexus_ai_wp_translator_model');
+            var modelRow = $('#model-selection-row');
+            
+            if (!apiKey) return;
+            
+            modelSelect.html('<option value="">' + nexus_ai_wp_translator_ajax.strings.loading_models + '</option>');
+            modelRow.show();
+            
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_models',
+                api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success && response.models) {
+                    modelSelect.empty();
+                    
+                    // Add models to dropdown
+                    $.each(response.models, function(modelId, displayName) {
+                        var selected = (modelId === 'claude-3-5-sonnet-20241022') ? 'selected' : '';
+                        modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
+                    });
+                } else {
+                    modelSelect.html('<option value="">Error loading models</option>');
+                }
+            })
+            .fail(function() {
+                modelSelect.html('<option value="">Failed to load models</option>');
             });
         },
         
