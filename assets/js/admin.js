@@ -800,6 +800,7 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
          * Close translation progress popup
          */
         closeTranslationProgress: function() {
+            console.log('NexusAI Debug: Closing translation progress popup');
             $('#nexus-ai-wp-progress-popup').removeClass('show').fadeOut(300, function() {
                 $(this).remove();
             });
@@ -808,5 +809,6 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
     
     // Make NexusAIWPTranslatorAdmin globally available
     window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
+    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
     
 })(jQuery);
