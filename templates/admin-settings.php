@@ -255,7 +255,18 @@ if (!defined('ABSPATH')) {
 </div>
 
 <script>
+console.log('NexusAI Debug: Inline script in admin-settings.php started');
+
+// Check if our variables are available in inline script
+if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+    console.error('NexusAI Debug: nexus_ai_wp_translator_ajax not available in inline script!');
+} else {
+    console.log('NexusAI Debug: AJAX variables in inline script:', nexus_ai_wp_translator_ajax);
+}
+
 jQuery(document).ready(function($) {
+    console.log('NexusAI Debug: Inline script jQuery ready');
+    
     var apiKeyChanged = false;
     
     // Tab switching

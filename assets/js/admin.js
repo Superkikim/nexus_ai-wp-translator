@@ -2,8 +2,27 @@
  * Nexus AI WP Translator Admin JavaScript
  */
 
+// Debug: Log when script file is loaded
+console.log('NexusAI Debug: admin.js file loaded');
+
+// Check if jQuery is available
+if (typeof jQuery === 'undefined') {
+    console.error('NexusAI Debug: jQuery is not loaded!');
+} else {
+    console.log('NexusAI Debug: jQuery is available');
+}
+
+// Check if our localized variables are available
+if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+    console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
+} else {
+    console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
+}
+
 (function($) {
     'use strict';
+    
+    console.log('NexusAI Debug: JavaScript function wrapper started');
     
     // Initialize when document is ready
     $(document).ready(function() {

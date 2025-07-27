@@ -165,8 +165,21 @@ class Nexus_AI_WP_Translator_Admin {
      * Enqueue admin scripts
      */
     public function enqueue_admin_scripts($hook) {
+        // Debug: Always log when this function is called
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: enqueue_admin_scripts called for hook: ' . $hook);
+        }
+        
+        // Only load on our admin pages
         if (strpos($hook, 'nexus-ai-wp-translator') === false && $hook !== 'post.php' && $hook !== 'post-new.php') {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Scripts not loaded - wrong hook: ' . $hook);
+            }
             return;
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Loading admin scripts for hook: ' . $hook);
         }
         
         wp_enqueue_script(
@@ -187,6 +200,7 @@ class Nexus_AI_WP_Translator_Admin {
         wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
+            'debug' => defined('WP_DEBUG') && WP_DEBUG,
             'strings' => array(
                 'testing' => __('Testing API connection...', 'nexus-ai-wp-translator'),
                 'success' => __('Success!', 'nexus-ai-wp-translator'),
@@ -196,6 +210,11 @@ class Nexus_AI_WP_Translator_Admin {
                 'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'nexus-ai-wp-translator')
             )
         ));
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Scripts and styles enqueued successfully');
+            error_log('Nexus AI WP Translator: AJAX URL: ' . admin_url('admin-ajax.php'));
+        }
     }
     
     /**
