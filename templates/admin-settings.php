@@ -255,26 +255,26 @@ jQuery(document).ready(function($) {
     });
     
     // Track API key changes
-    $('#claude_translator_api_key').on('input', function() {
+    $('#nexus_ai_wp_translator_api_key').on('input', function() {
         apiKeyChanged = true;
         $('#api-test-result').empty();
     });
     
     // Auto-save API key on blur
-    $('#claude_translator_api_key').on('blur', function() {
+    $('#nexus_ai_wp_translator_api_key').on('blur', function() {
         if (apiKeyChanged) {
             saveApiKey();
         }
     });
     
     function saveApiKey() {
-        var apiKey = $('#claude_translator_api_key').val().trim();
+        var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
         if (!apiKey) return;
         
         $.post(ajaxurl, {
-            action: 'claude_save_settings',
-            claude_translator_api_key: apiKey,
-            nonce: claude_translator_ajax.nonce
+            action: 'nexus_ai_wp_save_settings',
+            nexus_ai_wp_translator_api_key: apiKey,
+            nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
                 apiKeyChanged = false;
@@ -284,62 +284,64 @@ jQuery(document).ready(function($) {
     }
     
     // API key toggle
-    $('#claude-toggle-api-key').on('click', function() {
-        var input = $('#claude_translator_api_key');
+    $('#nexus-ai-wp-toggle-api-key').on('click', function() {
+        var input = $('#nexus_ai_wp_translator_api_key');
         var type = input.attr('type');
         var button = $(this);
         
         if (type === 'password') {
             input.attr('type', 'text');
-            button.text('<?php _e('Hide', 'claude-translator'); ?>');
+            button.text('<?php _e('Hide', 'nexus-ai-wp-translator'); ?>');
         } else {
             input.attr('type', 'password');
-            button.text('<?php _e('Show', 'claude-translator'); ?>');
+            button.text('<?php _e('Show', 'nexus-ai-wp-translator'); ?>');
         }
     });
     
     // Test API connection
-    $('#claude-test-api').on('click', function() {
+    $('#nexus-ai-wp-test-api').on('click', function() {
         // Save API key first if changed
         if (apiKeyChanged) {
             saveApiKey();
         }
         
         var button = $(this);
-        var apiKey = $('#claude_translator_api_key').val();
+        var apiKey = $('#nexus_ai_wp_translator_api_key').val();
         var resultDiv = $('#api-test-result');
         
         if (!apiKey) {
-            resultDiv.html('<div class="notice notice-error"><p><?php _e('Please enter an API key first.', 'claude-translator'); ?></p></div>');
+            resultDiv.html('<div class="notice notice-error"><p><?php _e('Please enter an API key first.', 'nexus-ai-wp-translator'); ?></p></div>');
             return;
         }
         
         button.prop('disabled', true).text('<?php _e('Testing...', 'claude-translator'); ?>');
-        resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'claude-translator'); ?></p></div>');
+        button.prop('disabled', true).text('<?php _e('Testing...', 'nexus-ai-wp-translator'); ?>');
+        resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
         
         $.post(ajaxurl, {
-            action: 'claude_test_api',
+            action: 'nexus_ai_wp_test_api',
             api_key: apiKey,
-            nonce: claude_translator_ajax.nonce
+            nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             var noticeClass = response.success ? 'notice-success' : 'notice-error';
             resultDiv.html('<div class="notice ' + noticeClass + '"><p>' + response.message + '</p></div>');
         }).fail(function() {
-            resultDiv.html('<div class="notice notice-error"><p><?php _e('Connection failed. Please check your API key.', 'claude-translator'); ?></p></div>');
+            resultDiv.html('<div class="notice notice-error"><p><?php _e('Connection failed. Please check your API key.', 'nexus-ai-wp-translator'); ?></p></div>');
         }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Test Connection', 'claude-translator'); ?>');
+            button.prop('disabled', false).text('<?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>');
         });
     });
     
     // AJAX save settings
-    $('#claude-save-settings').on('click', function() {
+    $('#nexus-ai-wp-save-settings').on('click', function() {
         var button = $(this);
-        var form = $('#claude-translator-settings-form');
+        var form = $('#nexus-ai-wp-translator-settings-form');
         
         button.prop('disabled', true).text('<?php _e('Saving...', 'claude-translator'); ?>');
+        button.prop('disabled', true).text('<?php _e('Saving...', 'nexus-ai-wp-translator'); ?>');
         
         var formData = form.serialize();
-        formData += '&action=claude_save_settings&nonce=' + claude_translator_ajax.nonce;
+        formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
         
         $.post(ajaxurl, formData, function(response) {
             if (response.success) {
@@ -351,7 +353,7 @@ jQuery(document).ready(function($) {
                     .insertAfter('h1');
             }
         }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Save Settings (AJAX)', 'claude-translator'); ?>');
+            button.prop('disabled', false).text('<?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>');
         });
     });
 });
