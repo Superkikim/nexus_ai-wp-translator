@@ -7,12 +7,14 @@
     
     // Initialize when document is ready
     $(document).ready(function() {
+        console.log('NexusAI Debug: Document ready, initializing admin interface');
         NexusAIWPTranslatorAdmin.init();
     });
     
     var NexusAIWPTranslatorAdmin = {
         
         init: function() {
+            console.log('NexusAI Debug: Starting admin initialization');
             this.initTabSwitching();
             this.initApiTesting();
             this.initSettingsSave();
@@ -21,18 +23,14 @@
             this.initBulkActions();
             
             // Load models on page load if API key exists
-            console.log('NexusAI Debug: Initializing admin interface');
-            console.log('NexusAI Debug: Initializing admin interface');
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-            if (apiKey) {
-                console.log('NexusAI Debug: API key found on page load, showing model selection');
-                console.log('NexusAI Debug: API key found on page load, showing model selection');
-                $('#model-selection-row').show();
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val();
+            console.log('NexusAI Debug: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+            
+            if (apiKey && apiKey.trim().length > 0) {
+                console.log('NexusAI Debug: API key found on page load, loading models automatically');
                 this.loadAvailableModels();
             } else {
-                console.log('NexusAI Debug: No API key found on page load');
-            } else {
-                console.log('NexusAI Debug: No API key found on page load');
+                console.log('NexusAI Debug: No API key found on page load, skipping model load');
             }
         },
         
@@ -40,10 +38,12 @@
          * Initialize tab switching functionality
          */
         initTabSwitching: function() {
+            console.log('NexusAI Debug: Initializing tab switching');
             $('.nav-tab').on('click', function(e) {
                 e.preventDefault();
                 
                 var target = $(this).attr('href');
+                console.log('NexusAI Debug: Tab clicked:', target);
                 
                 // Update nav tabs
                 $('.nav-tab').removeClass('nav-tab-active');
@@ -60,6 +60,7 @@
             // Restore active tab from localStorage
             var activeTab = localStorage.getItem('nexus_ai_wp_translator_active_tab');
             if (activeTab && $(activeTab).length) {
+                console.log('NexusAI Debug: Restoring active tab:', activeTab);
                 $('.nav-tab[href="' + activeTab + '"]').click();
             }
         },
@@ -68,41 +69,41 @@
          * Initialize API testing functionality
          */
         initApiTesting: function() {
-            // Auto-save API key when testing
+            console.log('NexusAI Debug: Initializing API testing');
+            
+            // Test API connection
             $('#nexus-ai-wp-test-api').on('click', function() {
+                console.log('NexusAI Debug: Test API button clicked');
+                
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
                 var resultDiv = $('#api-test-result');
                 
+                console.log('NexusAI Debug: API key for test:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'EMPTY');
+                
                 if (!apiKey) {
-                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', nexus_ai_wp_translator_ajax.strings.error + ' Please enter an API key first.');
+                    console.log('NexusAI Debug: No API key provided');
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Please enter an API key first.');
                     return;
                 }
                 
+                console.log('NexusAI Debug: Auto-saving API key before test');
                 // Auto-save API key before testing
                 NexusAIWPTranslatorAdmin.autoSaveApiKey(apiKey, function() {
+                    console.log('NexusAI Debug: API key auto-saved, proceeding with test');
                     // Proceed with test after saving
                     NexusAIWPTranslatorAdmin.performApiTest(button, apiKey, resultDiv);
                 });
             });
             
-            // Auto-save when model selection changes
-            $(document).on('change', '#nexus_ai_wp_translator_model', function() {
-                var selectedModel = $(this).val();
-                if (selectedModel) {
-                    NexusAIWPTranslatorAdmin.autoSaveModel(selectedModel);
-                }
-            });
-            
             // Refresh models button
             $('#nexus-ai-wp-refresh-models').on('click', function() {
                 console.log('NexusAI Debug: Refresh models button clicked');
-                console.log('NexusAI Debug: Refresh models button clicked');
+                
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
                 
                 if (!apiKey) {
-                    console.log('NexusAI Debug: No API key for refresh models');
                     console.log('NexusAI Debug: No API key for refresh models');
                     alert('Please enter and test your API key first.');
                     return;
@@ -110,16 +111,25 @@
                 
                 button.prop('disabled', true).text('Loading...');
                 console.log('NexusAI Debug: Starting manual model refresh');
-                console.log('NexusAI Debug: Starting manual model refresh');
+                
                 NexusAIWPTranslatorAdmin.loadAvailableModels(function() {
                     button.prop('disabled', false).text('Refresh Models');
-                    console.log('NexusAI Debug: Manual model refresh completed');
                     console.log('NexusAI Debug: Manual model refresh completed');
                 });
             });
             
+            // Auto-save when model selection changes
+            $(document).on('change', '#nexus_ai_wp_translator_model', function() {
+                console.log('NexusAI Debug: Model selection changed to:', $(this).val());
+                var selectedModel = $(this).val();
+                if (selectedModel) {
+                    NexusAIWPTranslatorAdmin.autoSaveModel(selectedModel);
+                }
+            });
+            
             // API key toggle visibility
             $('#nexus-ai-wp-toggle-api-key').on('click', function() {
+                console.log('NexusAI Debug: Toggle API key visibility');
                 var input = $('#nexus_ai_wp_translator_api_key');
                 var type = input.attr('type');
                 
@@ -137,17 +147,19 @@
          * Auto-save API key
          */
         autoSaveApiKey: function(apiKey, callback) {
+            console.log('NexusAI Debug: Auto-saving API key');
+            
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_save_settings',
                 nexus_ai_wp_translator_api_key: apiKey,
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('API key auto-saved:', response.success ? 'success' : 'failed');
+                console.log('NexusAI Debug: API key auto-save response:', response);
                 if (callback) callback();
             })
-            .fail(function() {
-                console.log('Failed to auto-save API key');
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: Failed to auto-save API key:', error);
                 if (callback) callback(); // Continue anyway
             });
         },
@@ -156,13 +168,15 @@
          * Auto-save selected model
          */
         autoSaveModel: function(model) {
+            console.log('NexusAI Debug: Auto-saving model:', model);
+            
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_save_settings',
                 nexus_ai_wp_translator_model: model,
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('Model auto-saved:', response.success ? 'success' : 'failed');
+                console.log('NexusAI Debug: Model auto-save response:', response);
                 // Show subtle feedback
                 var feedback = $('<span class="model-saved-feedback" style="color: #46b450; margin-left: 10px;">✓ Saved</span>');
                 $('#nexus_ai_wp_translator_model').after(feedback);
@@ -170,56 +184,153 @@
                     feedback.fadeOut(function() { $(this).remove(); });
                 }, 2000);
             })
-            .fail(function() {
-                console.log('Failed to auto-save model');
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: Failed to auto-save model:', error);
             });
         },
         
         /**
-         * Perform API test (extracted from initApiTesting)
+         * Perform API test
          */
         performApiTest: function(button, apiKey, resultDiv) {
-                console.log('NexusAI Debug: Starting API test with key:', apiKey.substring(0, 10) + '...');
-                console.log('NexusAI Debug: Starting API test with key:', apiKey.substring(0, 10) + '...');
-                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.testing);
-                resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
+            console.log('NexusAI Debug: Starting API test with key length:', apiKey.length);
+            
+            button.prop('disabled', true).text('Testing...');
+            resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
+            
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_test_api',
+                api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('NexusAI Debug: API test response:', response);
                 
-                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-                    action: 'nexus_ai_wp_test_api',
-                    api_key: apiKey,
-                    nonce: nexus_ai_wp_translator_ajax.nonce
-                })
-                .done(function(response) {
-                    console.log('NexusAI Debug: API test response:', response);
-                    console.log('NexusAI Debug: API test response:', response);
-                    var noticeClass = response.success ? 'success' : 'error';
-                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
+                var noticeClass = response.success ? 'success' : 'error';
+                NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
+                
+                // If API test successful, load available models
+                if (response.success) {
+                    console.log('NexusAI Debug: API test successful, loading models now');
+                    NexusAIWPTranslatorAdmin.loadAvailableModels();
+                } else {
+                    console.log('NexusAI Debug: API test failed:', response.message);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: API test failed - network error:', error);
+                NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
+            })
+            .always(function() {
+                button.prop('disabled', false).text('Test Connection');
+            });
+        },
+        
+        /**
+         * Load available models after successful API test
+         */
+        loadAvailableModels: function(callback) {
+            console.log('NexusAI Debug: Starting to load available models');
+            
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+            var modelSelect = $('#nexus_ai_wp_translator_model');
+            
+            console.log('NexusAI Debug: Model select element found:', modelSelect.length > 0);
+            console.log('NexusAI Debug: API key for models:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+            
+            if (!apiKey) {
+                console.log('NexusAI Debug: No API key found, cannot load models');
+                if (callback) callback();
+                return;
+            }
+            
+            // Store current selection
+            var currentSelection = modelSelect.val();
+            console.log('NexusAI Debug: Current model selection:', currentSelection);
+            
+            // Show loading state
+            modelSelect.html('<option value="">Loading models...</option>');
+            console.log('NexusAI Debug: Set loading state in dropdown');
+            
+            console.log('NexusAI Debug: Making AJAX request to get models');
+            
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_models',
+                api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('NexusAI Debug: Get models AJAX response:', response);
+                
+                if (response.success && response.models) {
+                    console.log('NexusAI Debug: Models received successfully:', response.models);
+                    modelSelect.empty();
                     
-                    // If API test successful, load available models
-                    if (response.success) {
-                        console.log('NexusAI Debug: API test successful, showing model selection and loading models');
-                        console.log('NexusAI Debug: API test successful, showing model selection and loading models');
-                        $('#model-selection-row').show();
-                        NexusAIWPTranslatorAdmin.loadAvailableModels();
-                    } else {
-                        console.log('NexusAI Debug: API test failed:', response.message);
-                    }
-                })
-                .fail(function() {
-                    console.log('NexusAI Debug: API test failed - network error');
-                    console.log('NexusAI Debug: API test failed - network error');
-                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
-                })
-                .always(function() {
-                    button.prop('disabled', false).text('Test Connection');
-                });
+                    // Add models to dropdown
+                    var modelCount = 0;
+                    $.each(response.models, function(modelId, displayName) {
+                        var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                        modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
+                        console.log('NexusAI Debug: Added model:', modelId, '→', displayName);
+                        modelCount++;
+                    });
+                    
+                    console.log('NexusAI Debug: Total models added:', modelCount);
+                } else {
+                    console.log('NexusAI Debug: Failed to get models or no models in response, using fallback');
+                    console.log('NexusAI Debug: Response success:', response.success);
+                    console.log('NexusAI Debug: Response models:', response.models);
+                    
+                    // Fallback to default models if API call fails
+                    NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: Get models AJAX request failed:', error);
+                console.log('NexusAI Debug: XHR status:', status);
+                console.log('NexusAI Debug: XHR response:', xhr.responseText);
+                
+                // Fallback to default models if request fails
+                NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
+            })
+            .always(function() {
+                console.log('NexusAI Debug: Load models request completed');
+                if (callback) callback();
+            });
+        },
+        
+        /**
+         * Set default models in dropdown
+         */
+        setDefaultModels: function(modelSelect, currentSelection) {
+            console.log('NexusAI Debug: Setting default models, current selection:', currentSelection);
+            
+            var defaultModels = [
+                {id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)'},
+                {id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet'},
+                {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'},
+                {id: 'claude-3-opus-20240229', name: 'Claude 3 Opus'}
+            ];
+            
+            modelSelect.empty();
+            $.each(defaultModels, function(index, model) {
+                var selected = (model.id === currentSelection || (model.id === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                modelSelect.append('<option value="' + model.id + '" ' + selected + '>' + model.name + '</option>');
+                console.log('NexusAI Debug: Added default model:', model.id, '→', model.name);
+            });
+            
+            console.log('NexusAI Debug: Default models set complete');
         },
         
         /**
          * Initialize settings save functionality
          */
         initSettingsSave: function() {
+            console.log('NexusAI Debug: Initializing settings save');
+            
             $('#nexus-ai-wp-save-settings').on('click', function() {
+                console.log('NexusAI Debug: Save settings button clicked');
+                
                 var button = $(this);
                 var form = $('#nexus-ai-wp-translator-settings-form');
                 
@@ -228,12 +339,16 @@
                 var formData = form.serialize();
                 formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
                 
+                console.log('NexusAI Debug: Saving settings with form data');
+                
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, formData)
                 .done(function(response) {
+                    console.log('NexusAI Debug: Save settings response:', response);
                     var noticeClass = response.success ? 'success' : 'error';
                     NexusAIWPTranslatorAdmin.showGlobalNotice(noticeClass, response.data);
                 })
-                .fail(function() {
+                .fail(function(xhr, status, error) {
+                    console.log('NexusAI Debug: Save settings failed:', error);
                     NexusAIWPTranslatorAdmin.showGlobalNotice('error', 'Failed to save settings. Please try again.');
                 })
                 .always(function() {
@@ -243,78 +358,15 @@
         },
         
         /**
-         * Load available models after successful API test
-         */
-        loadAvailableModels: function(callback) {
-            console.log('NexusAI Debug: Starting to load available models');
-            console.log('NexusAI Debug: Starting to load available models');
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-            var modelSelect = $('#nexus_ai_wp_translator_model');
-            
-            if (!apiKey) {
-                console.log('NexusAI Debug: No API key found, cannot load models');
-                console.log('NexusAI Debug: No API key found, cannot load models');
-                if (callback) callback();
-                return;
-            }
-            
-            // Store current selection
-            var currentSelection = modelSelect.val();
-            console.log('NexusAI Debug: Current model selection:', currentSelection);
-            console.log('NexusAI Debug: Current model selection:', currentSelection);
-            
-            // Show loading state
-            var loadingOption = '<option value="">Loading models...</option>';
-            modelSelect.html(loadingOption);
-            console.log('NexusAI Debug: Set loading state in dropdown');
-            console.log('NexusAI Debug: Set loading state in dropdown');
-            
-            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-                action: 'nexus_ai_wp_get_models',
-                api_key: apiKey,
-                nonce: nexus_ai_wp_translator_ajax.nonce
-            })
-            .done(function(response) {
-                console.log('NexusAI Debug: Get models response:', response);
-                console.log('NexusAI Debug: Get models response:', response);
-                if (response.success && response.models) {
-                    console.log('NexusAI Debug: Models received:', response.models);
-                    console.log('NexusAI Debug: Models received:', response.models);
-                    modelSelect.empty();
-                    
-                    // Add models to dropdown
-                    $.each(response.models, function(modelId, displayName) {
-                        var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
-                        modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
-                        console.log('NexusAI Debug: Added model:', modelId, displayName);
-                        console.log('NexusAI Debug: Added model:', modelId, displayName);
-                    });
-                } else {
-                    console.log('NexusAI Debug: Failed to get models, using fallback');
-                    console.log('NexusAI Debug: Failed to get models, using fallback');
-                    // Fallback to default models if API call fails
-                    NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
-                }
-            })
-            .fail(function() {
-                console.log('NexusAI Debug: Get models request failed, using fallback');
-                console.log('NexusAI Debug: Get models request failed, using fallback');
-                // Fallback to default models if request fails
-                NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
-            })
-            .always(function() {
-                console.log('NexusAI Debug: Load models completed');
-                console.log('NexusAI Debug: Load models completed');
-                if (callback) callback();
-            });
-        },
-        
-        /**
          * Initialize translation actions
          */
         initTranslationActions: function() {
+            console.log('NexusAI Debug: Initializing translation actions');
+            
             // Manual translation trigger
             $(document).on('click', '#nexus-ai-wp-translate-post', function() {
+                console.log('NexusAI Debug: Translate post button clicked');
+                
                 var button = $(this);
                 var postId = NexusAIWPTranslatorAdmin.getPostId();
                 var targetLanguages = [];
@@ -323,12 +375,14 @@
                     targetLanguages.push($(this).val());
                 });
                 
+                console.log('NexusAI Debug: Post ID:', postId, 'Target languages:', targetLanguages);
+                
                 if (targetLanguages.length === 0) {
                     alert('Please select at least one target language.');
                     return;
                 }
                 
-                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
+                button.prop('disabled', true).text('Translating...');
                 $('#nexus-ai-wp-translation-status').html('<div class="notice notice-info"><p>Translation in progress...</p></div>');
                 
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -338,6 +392,8 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: Translation response:', response);
+                    
                     var noticeClass = response.success ? 'notice-success' : 'notice-error';
                     var message = response.success ? 
                         'Translation completed successfully!' : 
@@ -351,7 +407,8 @@
                         }, 2000);
                     }
                 })
-                .fail(function() {
+                .fail(function(xhr, status, error) {
+                    console.log('NexusAI Debug: Translation failed:', error);
                     $('#nexus-ai-wp-translation-status').html('<div class="notice notice-error"><p>Network error occurred</p></div>');
                 })
                 .always(function() {
@@ -361,6 +418,8 @@
             
             // Translation status check
             $(document).on('click', '#nexus-ai-wp-get-translation-status', function() {
+                console.log('NexusAI Debug: Get translation status clicked');
+                
                 var button = $(this);
                 var postId = NexusAIWPTranslatorAdmin.getPostId();
                 
@@ -372,6 +431,8 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: Translation status response:', response);
+                    
                     if (response.success && response.data.length > 0) {
                         var html = '<ul>';
                         $.each(response.data, function(i, translation) {
@@ -390,7 +451,9 @@
             
             // Unlink translation
             $(document).on('click', '.nexus-ai-wp-unlink-translation, .unlink-translation', function() {
-                if (!confirm(nexus_ai_wp_translator_ajax.strings.confirm_unlink)) {
+                console.log('NexusAI Debug: Unlink translation clicked');
+                
+                if (!confirm('Are you sure you want to unlink this translation?')) {
                     return;
                 }
                 
@@ -408,6 +471,8 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: Unlink response:', response);
+                    
                     if (response.success) {
                         row.fadeOut(300, function() {
                             $(this).remove();
@@ -417,7 +482,8 @@
                         button.prop('disabled', false).text('Unlink');
                     }
                 })
-                .fail(function() {
+                .fail(function(xhr, status, error) {
+                    console.log('NexusAI Debug: Unlink failed:', error);
                     alert('Network error occurred');
                     button.prop('disabled', false).text('Unlink');
                 });
@@ -428,7 +494,11 @@
          * Initialize status refresh functionality
          */
         initStatusRefresh: function() {
+            console.log('NexusAI Debug: Initializing status refresh');
+            
             $('#nexus-ai-wp-refresh-stats').on('click', function() {
+                console.log('NexusAI Debug: Refresh stats clicked');
+                
                 var button = $(this);
                 button.prop('disabled', true).text('Refreshing...');
                 
@@ -438,6 +508,8 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: Refresh stats response:', response);
+                    
                     if (response.success) {
                         location.reload();
                     } else {
@@ -454,7 +526,11 @@
          * Initialize bulk actions
          */
         initBulkActions: function() {
+            console.log('NexusAI Debug: Initializing bulk actions');
+            
             $('#cleanup-orphaned').on('click', function() {
+                console.log('NexusAI Debug: Cleanup orphaned clicked');
+                
                 if (!confirm('Are you sure you want to clean up orphaned relationships? This will remove all relationships where posts have been deleted.')) {
                     return;
                 }
@@ -467,6 +543,8 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: Cleanup response:', response);
+                    
                     if (response.success) {
                         location.reload();
                     } else {
@@ -480,30 +558,10 @@
         },
         
         /**
-         * Set default models in dropdown
-         */
-        setDefaultModels: function(modelSelect, currentSelection) {
-            console.log('NexusAI Debug: Setting default models, current selection:', currentSelection);
-            var defaultModels = [
-                {id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)'},
-                {id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet'},
-                {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'},
-                {id: 'claude-3-opus-20240229', name: 'Claude 3 Opus'}
-            ];
-            
-            modelSelect.empty();
-            $.each(defaultModels, function(index, model) {
-                var selected = (model.id === currentSelection || (model.id === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
-                modelSelect.append('<option value="' + model.id + '" ' + selected + '>' + model.name + '</option>');
-                console.log('NexusAI Debug: Added default model:', model.id, model.name);
-            });
-            console.log('NexusAI Debug: Default models set complete');
-        },
-        
-        /**
          * Show notice in a specific container
          */
         showNotice: function(container, type, message) {
+            console.log('NexusAI Debug: Showing notice:', type, message);
             var noticeClass = 'notice-' + type;
             container.html('<div class="notice ' + noticeClass + '"><p>' + message + '</p></div>');
         },
@@ -512,6 +570,7 @@
          * Show global notice after H1
          */
         showGlobalNotice: function(type, message) {
+            console.log('NexusAI Debug: Showing global notice:', type, message);
             var noticeClass = 'notice-' + type;
             var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
             
@@ -538,25 +597,8 @@
                 var urlParams = new URLSearchParams(window.location.search);
                 postId = urlParams.get('post');
             }
+            console.log('NexusAI Debug: Current post ID:', postId);
             return postId;
-        },
-        
-        /**
-         * Debounce function
-         */
-        debounce: function(func, wait, immediate) {
-            var timeout;
-            return function() {
-                var context = this, args = arguments;
-                var later = function() {
-                    timeout = null;
-                    if (!immediate) func.apply(context, args);
-                };
-                var callNow = immediate && !timeout;
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-                if (callNow) func.apply(context, args);
-            };
         }
     };
     
