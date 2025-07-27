@@ -62,7 +62,7 @@ var NexusAIWPTranslatorAdmin = {
             }, 1000); // Wait 1 second for page to fully load
         }
     },
-
+    
     /**
      * Initialize tab switching functionality
      */
@@ -986,6 +986,10 @@ var NexusAIWPTranslatorAdmin = {
     }
 };
 
+// Make NexusAIWPTranslatorAdmin globally available immediately
+window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
+console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
+
 (function($) {
     'use strict';
     
@@ -994,11 +998,11 @@ var NexusAIWPTranslatorAdmin = {
     // Initialize when document is ready
     $(document).ready(function() {
         console.log('NexusAI Debug: Document ready, initializing admin interface');
-        NexusAIWPTranslatorAdmin.init();
+        if (window.NexusAIWPTranslatorAdmin) {
+            window.NexusAIWPTranslatorAdmin.init();
+        } else {
+            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+        }
     });
-    
-    // Make NexusAIWPTranslatorAdmin globally available
-    window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
-    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
     
 })(jQuery);
