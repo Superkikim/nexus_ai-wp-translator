@@ -175,6 +175,9 @@ class Nexus_AI_WP_Translator_Manager {
         
         $this->processing_posts[] = $post_id;
         
+        // For auto-translation, we could show a notification
+        // but for now we'll just process silently
+        
         // Start translation process
         $this->translate_post($post_id);
         

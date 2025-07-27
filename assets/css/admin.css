@@ -405,3 +405,238 @@
     border-color: #1e7e34;
     color: #fff;
 }
+/* Translation Progress Popup */
+.nexus-ai-wp-progress-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-progress-popup.show {
+    display: flex;
+}
+
+.nexus-ai-wp-progress-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    position: relative;
+}
+
+.nexus-ai-wp-progress-header {
+    margin-bottom: 25px;
+}
+
+.nexus-ai-wp-progress-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #23282d;
+}
+
+.nexus-ai-wp-progress-header p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.nexus-ai-wp-progress-languages {
+    margin: 20px 0;
+}
+
+.nexus-ai-wp-progress-language {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    margin: 8px 0;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.nexus-ai-wp-progress-language.processing {
+    border-left-color: #0073aa;
+    background: #e7f3ff;
+}
+
+.nexus-ai-wp-progress-language.completed {
+    border-left-color: #46b450;
+    background: #ecf7ed;
+}
+
+.nexus-ai-wp-progress-language.error {
+    border-left-color: #dc3232;
+    background: #ffeaea;
+}
+
+.nexus-ai-wp-progress-language-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nexus-ai-wp-progress-language-name {
+    font-weight: 600;
+    color: #23282d;
+}
+
+.nexus-ai-wp-progress-language-code {
+    background: #e0e0e0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #666;
+}
+
+.nexus-ai-wp-progress-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.nexus-ai-wp-progress-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-progress-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: nexus-ai-wp-spin 1s linear infinite;
+}
+
+.nexus-ai-wp-progress-check {
+    width: 16px;
+    height: 16px;
+    background: #46b450;
+    border-radius: 50%;
+    position: relative;
+    animation: nexus-ai-wp-check-bounce 0.5s ease;
+}
+
+.nexus-ai-wp-progress-check::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.nexus-ai-wp-progress-error {
+    width: 16px;
+    height: 16px;
+    background: #dc3232;
+    border-radius: 50%;
+    position: relative;
+    animation: nexus-ai-wp-error-shake 0.5s ease;
+}
+
+.nexus-ai-wp-progress-error::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.nexus-ai-wp-progress-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f0f1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.nexus-ai-wp-progress-summary.success {
+    background: #ecf7ed;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.nexus-ai-wp-progress-summary.error {
+    background: #ffeaea;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.nexus-ai-wp-progress-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.nexus-ai-wp-progress-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+.nexus-ai-wp-progress-close:hover {
+    color: #000;
+}
+
+/* Animations */
+@keyframes nexus-ai-wp-check-bounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes nexus-ai-wp-error-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .nexus-ai-wp-progress-content {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    .nexus-ai-wp-progress-language {
+        padding: 10px 15px;
+    }
+    
+    .nexus-ai-wp-progress-language-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}

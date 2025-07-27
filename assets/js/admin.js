@@ -428,8 +428,10 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
                     return;
                 }
                 
+                // Show progress popup
+                NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
+                
                 button.prop('disabled', true).text('Translating...');
-                $('#nexus-ai-wp-translation-status').html('<div class="notice notice-info"><p>Translation in progress...</p></div>');
                 
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_translate_post',
@@ -440,22 +442,21 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
                 .done(function(response) {
                     console.log('NexusAI Debug: Translation response:', response);
                     
-                    var noticeClass = response.success ? 'notice-success' : 'notice-error';
-                    var message = response.success ? 
-                        'Translation completed successfully!' : 
-                        ('Translation failed: ' + (response.message || 'Unknown error'));
-                    
-                    $('#nexus-ai-wp-translation-status').html('<div class="notice ' + noticeClass + '"><p>' + message + '</p></div>');
+                    // Update progress popup with results
+                    NexusAIWPTranslatorAdmin.updateTranslationProgress(response);
                     
                     if (response.success) {
                         setTimeout(function() {
                             location.reload();
-                        }, 2000);
+                        }, 3000);
                     }
                 })
                 .fail(function(xhr, status, error) {
                     console.log('NexusAI Debug: Translation failed:', error);
-                    $('#nexus-ai-wp-translation-status').html('<div class="notice notice-error"><p>Network error occurred</p></div>');
+                    NexusAIWPTranslatorAdmin.updateTranslationProgress({
+                        success: false,
+                        message: 'Network error occurred'
+                    });
                 })
                 .always(function() {
                     button.prop('disabled', false).text('Translate Now');
@@ -645,6 +646,150 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
             }
             console.log('NexusAI Debug: Current post ID:', postId);
             return postId;
+        },
+        
+        /**
+         * Show translation progress popup
+         */
+        showTranslationProgress: function(targetLanguages) {
+            console.log('NexusAI Debug: Showing translation progress for:', targetLanguages);
+            
+            // Language names mapping
+            var languageNames = {
+                'en': 'English',
+                'es': 'Spanish', 
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese',
+                'ru': 'Russian',
+                'ja': 'Japanese',
+                'ko': 'Korean',
+                'zh': 'Chinese',
+                'ar': 'Arabic',
+                'hi': 'Hindi',
+                'nl': 'Dutch',
+                'sv': 'Swedish',
+                'da': 'Danish',
+                'no': 'Norwegian',
+                'fi': 'Finnish',
+                'pl': 'Polish',
+                'cs': 'Czech',
+                'hu': 'Hungarian'
+            };
+            
+            var languagesHtml = '';
+            $.each(targetLanguages, function(i, langCode) {
+                var langName = languageNames[langCode] || langCode;
+                languagesHtml += 
+                    '<div class="nexus-ai-wp-progress-language" data-lang="' + langCode + '">' +
+                        '<div class="nexus-ai-wp-progress-language-info">' +
+                            '<span class="nexus-ai-wp-progress-language-name">' + langName + '</span>' +
+                            '<span class="nexus-ai-wp-progress-language-code">' + langCode + '</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-progress-status">' +
+                            '<div class="nexus-ai-wp-progress-icon">' +
+                                '<div class="nexus-ai-wp-progress-spinner"></div>' +
+                            '</div>' +
+                            '<span>Translating...</span>' +
+                        '</div>' +
+                    '</div>';
+            });
+            
+            var popupHtml = 
+                '<div class="nexus-ai-wp-progress-popup" id="nexus-ai-wp-progress-popup">' +
+                    '<div class="nexus-ai-wp-progress-content">' +
+                        '<button class="nexus-ai-wp-progress-close" onclick="NexusAIWPTranslatorAdmin.closeTranslationProgress()">&times;</button>' +
+                        '<div class="nexus-ai-wp-progress-header">' +
+                            '<h3>Translation in Progress</h3>' +
+                            '<p>Please wait while we translate your content...</p>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-progress-languages">' +
+                            languagesHtml +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-progress-summary" id="nexus-ai-wp-progress-summary" style="display: none;"></div>' +
+                        '<div class="nexus-ai-wp-progress-buttons" id="nexus-ai-wp-progress-buttons" style="display: none;">' +
+                            '<button class="button button-primary" onclick="location.reload()">Refresh Page</button>' +
+                            '<button class="button" onclick="NexusAIWPTranslatorAdmin.closeTranslationProgress()">Close</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            
+            // Remove existing popup
+            $('#nexus-ai-wp-progress-popup').remove();
+            
+            // Add new popup
+            $('body').append(popupHtml);
+            $('#nexus-ai-wp-progress-popup').addClass('show');
+            
+            // Mark all languages as processing
+            $('.nexus-ai-wp-progress-language').addClass('processing');
+        },
+        
+        /**
+         * Update translation progress with results
+         */
+        updateTranslationProgress: function(response) {
+            console.log('NexusAI Debug: Updating translation progress:', response);
+            
+            var popup = $('#nexus-ai-wp-progress-popup');
+            if (!popup.length) return;
+            
+            if (response.success) {
+                // Mark all languages as completed (simplified - in reality you'd track individual languages)
+                $('.nexus-ai-wp-progress-language').each(function() {
+                    var $lang = $(this);
+                    $lang.removeClass('processing').addClass('completed');
+                    $lang.find('.nexus-ai-wp-progress-icon').html('<div class="nexus-ai-wp-progress-check"></div>');
+                    $lang.find('.nexus-ai-wp-progress-status span').text('Completed');
+                });
+                
+                // Show success summary
+                var successCount = response.success_count || $('.nexus-ai-wp-progress-language').length;
+                var summary = '<strong>Translation Completed!</strong><br>' +
+                             'Successfully translated to ' + successCount + ' language(s).';
+                
+                if (response.errors && response.errors.length > 0) {
+                    summary += '<br><br><strong>Errors:</strong><br>' + response.errors.join('<br>');
+                }
+                
+                $('#nexus-ai-wp-progress-summary')
+                    .addClass('success')
+                    .html(summary)
+                    .show();
+                    
+            } else {
+                // Mark all languages as error
+                $('.nexus-ai-wp-progress-language').each(function() {
+                    var $lang = $(this);
+                    $lang.removeClass('processing').addClass('error');
+                    $lang.find('.nexus-ai-wp-progress-icon').html('<div class="nexus-ai-wp-progress-error"></div>');
+                    $lang.find('.nexus-ai-wp-progress-status span').text('Failed');
+                });
+                
+                // Show error summary
+                var errorMessage = response.message || 'Translation failed';
+                $('#nexus-ai-wp-progress-summary')
+                    .addClass('error')
+                    .html('<strong>Translation Failed</strong><br>' + errorMessage)
+                    .show();
+            }
+            
+            // Show action buttons
+            $('#nexus-ai-wp-progress-buttons').show();
+            
+            // Update header
+            $('.nexus-ai-wp-progress-header h3').text(response.success ? 'Translation Completed!' : 'Translation Failed');
+            $('.nexus-ai-wp-progress-header p').text(response.success ? 'Your content has been translated successfully.' : 'There was an error during translation.');
+        },
+        
+        /**
+         * Close translation progress popup
+         */
+        closeTranslationProgress: function() {
+            $('#nexus-ai-wp-progress-popup').removeClass('show').fadeOut(300, function() {
+                $(this).remove();
+            });
         }
     };
     
