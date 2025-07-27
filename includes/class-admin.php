@@ -485,6 +485,9 @@ class Nexus_AI_WP_Translator_Admin {
         $cache_translations = isset($_POST['nexus_ai_wp_translator_cache_translations']) ? true : false;
         $seo_friendly_urls = isset($_POST['nexus_ai_wp_translator_seo_friendly_urls']) ? true : false;
         
+        // Debug: Log what we're about to save
+        error_log('Nexus AI WP Translator: About to save model: ' . $model);
+        
         $settings = array(
             'api_key' => $api_key,
             'model' => $model,

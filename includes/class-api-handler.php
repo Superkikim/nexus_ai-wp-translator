@@ -262,6 +262,9 @@ class Nexus_AI_WP_Translator_API_Handler {
     public function translate_content($content, $source_lang, $target_lang, $model = null) {
         error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
         
+        // Debug: Log model parameter and settings
+        error_log("Nexus AI WP Translator: Model parameter passed: " . ($model ? $model : 'NULL'));
+        
         if (empty($this->api_key)) {
             error_log('Nexus AI WP Translator: API key not configured');
             return array(
@@ -284,7 +287,16 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Get model from parameter or settings
         if (!$model) {
             $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+            error_log("Nexus AI WP Translator: Model from settings: " . $model);
         }
+        
+        // Ensure model is not empty
+        if (empty($model)) {
+            error_log('Nexus AI WP Translator: Model is empty, using fallback');
+            $model = 'claude-3-5-sonnet-20241022';
+        }
+        
+        error_log("Nexus AI WP Translator: Final model to use: " . $model);
         
         // Prepare the prompt
         $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang);
