@@ -9,43 +9,43 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1><?php _e('Nexus AI WP Translator Settings', 'claude-translator'); ?></h1>
+    <h1><?php _e('Nexus AI WP Translator Settings', 'nexus-ai-wp-translator'); ?></h1>
     
-    <form id="claude-translator-settings-form" method="post" action="options.php">
-        <?php settings_fields('claude_translator_settings'); ?>
+    <form id="nexus-ai-wp-translator-settings-form" method="post" action="options.php">
+        <?php settings_fields('nexus_ai_wp_translator_settings'); ?>
         
-        <div class="claude-settings-tabs">
+        <div class="nexus-ai-wp-settings-tabs">
             <nav class="nav-tab-wrapper">
-                <a href="#api-settings" class="nav-tab nav-tab-active"><?php _e('API Settings', 'claude-translator'); ?></a>
-                <a href="#language-settings" class="nav-tab"><?php _e('Languages', 'claude-translator'); ?></a>
-                <a href="#behavior-settings" class="nav-tab"><?php _e('Behavior', 'claude-translator'); ?></a>
-                <a href="#performance-settings" class="nav-tab"><?php _e('Performance', 'claude-translator'); ?></a>
+                <a href="#api-settings" class="nav-tab nav-tab-active"><?php _e('API Settings', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#language-settings" class="nav-tab"><?php _e('Languages', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#behavior-settings" class="nav-tab"><?php _e('Behavior', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#performance-settings" class="nav-tab"><?php _e('Performance', 'nexus-ai-wp-translator'); ?></a>
             </nav>
             
             <!-- API Settings Tab -->
             <div id="api-settings" class="tab-content active">
-                <h2><?php _e('Claude AI API Configuration', 'claude-translator'); ?></h2>
+                <h2><?php _e('Nexus AI API Configuration', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="claude_translator_api_key"><?php _e('API Key', 'claude-translator'); ?></label>
+                            <label for="nexus_ai_wp_translator_api_key"><?php _e('API Key', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <input type="password" 
-                                   id="claude_translator_api_key" 
-                                   name="claude_translator_api_key" 
+                                   id="nexus_ai_wp_translator_api_key" 
+                                   name="nexus_ai_wp_translator_api_key" 
                                    value="<?php echo esc_attr($api_key); ?>" 
                                    class="large-text" 
                                    autocomplete="off" />
-                            <button type="button" id="claude-test-api" class="button">
-                                <?php _e('Test Connection', 'claude-translator'); ?>
+                            <button type="button" id="nexus-ai-wp-test-api" class="button">
+                                <?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>
                             </button>
-                            <button type="button" id="claude-toggle-api-key" class="button">
-                                <?php _e('Show', 'claude-translator'); ?>
+                            <button type="button" id="nexus-ai-wp-toggle-api-key" class="button">
+                                <?php _e('Show', 'nexus-ai-wp-translator'); ?>
                             </button>
                             <p class="description">
-                                <?php _e('Enter your Claude AI API key. You can get one from the Anthropic Console.', 'claude-translator'); ?>
+                                <?php _e('Enter your Claude AI API key. You can get one from the Anthropic Console.', 'nexus-ai-wp-translator'); ?>
                             </p>
                             <div id="api-test-result"></div>
                         </td>
@@ -55,15 +55,15 @@ if (!defined('ABSPATH')) {
             
             <!-- Language Settings Tab -->
             <div id="language-settings" class="tab-content">
-                <h2><?php _e('Language Configuration', 'claude-translator'); ?></h2>
+                <h2><?php _e('Language Configuration', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="claude_translator_source_language"><?php _e('Source Language', 'claude-translator'); ?></label>
+                            <label for="nexus_ai_wp_translator_source_language"><?php _e('Source Language', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
-                            <select id="claude_translator_source_language" name="claude_translator_source_language">
+                            <select id="nexus_ai_wp_translator_source_language" name="nexus_ai_wp_translator_source_language">
                                 <?php foreach ($languages as $code => $name): ?>
                                     <option value="<?php echo esc_attr($code); ?>" <?php selected($source_language, $code); ?>>
                                         <?php echo esc_html($name); ?>
@@ -71,14 +71,14 @@ if (!defined('ABSPATH')) {
                                 <?php endforeach; ?>
                             </select>
                             <p class="description">
-                                <?php _e('The primary language of your content.', 'claude-translator'); ?>
+                                <?php _e('The primary language of your content.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label><?php _e('Target Languages', 'claude-translator'); ?></label>
+                            <label><?php _e('Target Languages', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <fieldset>
@@ -86,7 +86,7 @@ if (!defined('ABSPATH')) {
                                     <?php if ($code !== $source_language): ?>
                                         <label>
                                             <input type="checkbox" 
-                                                   name="claude_translator_target_languages[]" 
+                                                   name="nexus_ai_wp_translator_target_languages[]" 
                                                    value="<?php echo esc_attr($code); ?>" 
                                                    <?php checked(in_array($code, $target_languages)); ?> />
                                             <?php echo esc_html($name); ?>
@@ -95,7 +95,7 @@ if (!defined('ABSPATH')) {
                                 <?php endforeach; ?>
                             </fieldset>
                             <p class="description">
-                                <?php _e('Select languages to automatically translate your content into.', 'claude-translator'); ?>
+                                <?php _e('Select languages to automatically translate your content into.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
@@ -104,42 +104,42 @@ if (!defined('ABSPATH')) {
             
             <!-- Behavior Settings Tab -->
             <div id="behavior-settings" class="tab-content">
-                <h2><?php _e('Translation Behavior', 'claude-translator'); ?></h2>
+                <h2><?php _e('Translation Behavior', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php _e('Auto Translation', 'claude-translator'); ?></th>
+                        <th scope="row"><?php _e('Auto Translation', 'nexus-ai-wp-translator'); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" 
-                                           id="claude_translator_auto_translate" 
-                                           name="claude_translator_auto_translate" 
+                                           id="nexus_ai_wp_translator_auto_translate" 
+                                           name="nexus_ai_wp_translator_auto_translate" 
                                            value="1" 
                                            <?php checked($auto_translate); ?> />
-                                    <?php _e('Automatically translate posts when published', 'claude-translator'); ?>
+                                    <?php _e('Automatically translate posts when published', 'nexus-ai-wp-translator'); ?>
                                 </label>
                                 <p class="description">
-                                    <?php _e('When enabled, posts will be automatically translated to all target languages upon publication.', 'claude-translator'); ?>
+                                    <?php _e('When enabled, posts will be automatically translated to all target languages upon publication.', 'nexus-ai-wp-translator'); ?>
                                 </p>
                             </fieldset>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('SEO Friendly URLs', 'claude-translator'); ?></th>
+                        <th scope="row"><?php _e('SEO Friendly URLs', 'nexus-ai-wp-translator'); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" 
-                                           id="claude_translator_seo_friendly_urls" 
-                                           name="claude_translator_seo_friendly_urls" 
+                                           id="nexus_ai_wp_translator_seo_friendly_urls" 
+                                           name="nexus_ai_wp_translator_seo_friendly_urls" 
                                            value="1" 
                                            <?php checked($seo_friendly_urls); ?> />
-                                    <?php _e('Enable SEO-friendly URLs for translations', 'claude-translator'); ?>
+                                    <?php _e('Enable SEO-friendly URLs for translations', 'nexus-ai-wp-translator'); ?>
                                 </label>
                                 <p class="description">
-                                    <?php _e('URLs will be structured as /language-code/post-slug/ (e.g., /es/my-post/).', 'claude-translator'); ?>
+                                    <?php _e('URLs will be structured as /language-code/post-slug/ (e.g., /es/my-post/).', 'nexus-ai-wp-translator'); ?>
                                 </p>
                             </fieldset>
                         </td>
@@ -149,77 +149,77 @@ if (!defined('ABSPATH')) {
             
             <!-- Performance Settings Tab -->
             <div id="performance-settings" class="tab-content">
-                <h2><?php _e('Performance & Rate Limiting', 'claude-translator'); ?></h2>
+                <h2><?php _e('Performance & Rate Limiting', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="claude_translator_throttle_limit"><?php _e('API Call Limit', 'claude-translator'); ?></label>
+                            <label for="nexus_ai_wp_translator_throttle_limit"><?php _e('API Call Limit', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <input type="number" 
-                                   id="claude_translator_throttle_limit" 
-                                   name="claude_translator_throttle_limit" 
+                                   id="nexus_ai_wp_translator_throttle_limit" 
+                                   name="nexus_ai_wp_translator_throttle_limit" 
                                    value="<?php echo esc_attr($throttle_limit); ?>" 
                                    min="1" 
                                    max="1000" 
                                    class="small-text" />
                             <p class="description">
-                                <?php _e('Maximum number of API calls allowed per time period.', 'claude-translator'); ?>
+                                <?php _e('Maximum number of API calls allowed per time period.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="claude_translator_throttle_period"><?php _e('Time Period (seconds)', 'claude-translator'); ?></label>
+                            <label for="nexus_ai_wp_translator_throttle_period"><?php _e('Time Period (seconds)', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <input type="number" 
-                                   id="claude_translator_throttle_period" 
-                                   name="claude_translator_throttle_period" 
+                                   id="nexus_ai_wp_translator_throttle_period" 
+                                   name="nexus_ai_wp_translator_throttle_period" 
                                    value="<?php echo esc_attr($throttle_period); ?>" 
                                    min="60" 
                                    max="86400" 
                                    class="small-text" />
                             <p class="description">
-                                <?php _e('Time period for the rate limit (minimum 60 seconds).', 'claude-translator'); ?>
+                                <?php _e('Time period for the rate limit (minimum 60 seconds).', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
                     
                     <tr>
                         <th scope="row">
-                            <label for="claude_translator_retry_attempts"><?php _e('Retry Attempts', 'claude-translator'); ?></label>
+                            <label for="nexus_ai_wp_translator_retry_attempts"><?php _e('Retry Attempts', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <input type="number" 
-                                   id="claude_translator_retry_attempts" 
-                                   name="claude_translator_retry_attempts" 
+                                   id="nexus_ai_wp_translator_retry_attempts" 
+                                   name="nexus_ai_wp_translator_retry_attempts" 
                                    value="<?php echo esc_attr($retry_attempts); ?>" 
                                    min="1" 
                                    max="10" 
                                    class="small-text" />
                             <p class="description">
-                                <?php _e('Number of times to retry failed API calls.', 'claude-translator'); ?>
+                                <?php _e('Number of times to retry failed API calls.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Cache Translations', 'claude-translator'); ?></th>
+                        <th scope="row"><?php _e('Cache Translations', 'nexus-ai-wp-translator'); ?></th>
                         <td>
                             <fieldset>
                                 <label>
                                     <input type="checkbox" 
-                                           id="claude_translator_cache_translations" 
-                                           name="claude_translator_cache_translations" 
+                                           id="nexus_ai_wp_translator_cache_translations" 
+                                           name="nexus_ai_wp_translator_cache_translations" 
                                            value="1" 
                                            <?php checked($cache_translations); ?> />
-                                    <?php _e('Cache translations to improve performance', 'claude-translator'); ?>
+                                    <?php _e('Cache translations to improve performance', 'nexus-ai-wp-translator'); ?>
                                 </label>
                                 <p class="description">
-                                    <?php _e('When enabled, translations are cached to reduce API calls for repeated content.', 'claude-translator'); ?>
+                                    <?php _e('When enabled, translations are cached to reduce API calls for repeated content.', 'nexus-ai-wp-translator'); ?>
                                 </p>
                             </fieldset>
                         </td>
@@ -229,9 +229,9 @@ if (!defined('ABSPATH')) {
         </div>
         
         <p class="submit">
-            <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'claude-translator'); ?>" />
-            <button type="button" id="claude-save-settings" class="button button-primary">
-                <?php _e('Save Settings (AJAX)', 'claude-translator'); ?>
+            <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
+            <button type="button" id="nexus-ai-wp-save-settings" class="button button-primary">
+                <?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>
             </button>
         </p>
     </form>

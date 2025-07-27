@@ -178,7 +178,7 @@ class Nexus_AI_WP_Translator_Manager {
     private function create_translated_post($source_post_id, $target_lang) {
         $source_post = get_post($source_post_id);
         if (!$source_post) {
-            return array('success' => false, 'message' => __('Source post not found', 'claude-translator'));
+            return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
             return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
         }
         

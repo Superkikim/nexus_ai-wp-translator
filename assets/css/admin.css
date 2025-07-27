@@ -1,18 +1,18 @@
-/* Claude Translator Admin Styles */
+/* Nexus AI WP Translator Admin Styles */
 
-.claude-translator-dashboard {
+.nexus-ai-wp-translator-dashboard {
     margin-top: 20px;
 }
 
 /* Statistics Cards */
-.claude-stats-cards {
+.nexus-ai-wp-stats-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     margin-bottom: 30px;
 }
 
-.claude-stat-card {
+.nexus-ai-wp-stat-card {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
@@ -21,21 +21,21 @@
     box-shadow: 0 1px 1px rgba(0,0,0,.04);
 }
 
-.claude-stat-card h3 {
+.nexus-ai-wp-stat-card h3 {
     margin: 0 0 10px 0;
     font-size: 14px;
     font-weight: 600;
     color: #23282d;
 }
 
-.claude-stat-card .stat-number {
+.nexus-ai-wp-stat-card .stat-number {
     font-size: 32px;
     font-weight: bold;
     color: #0073aa;
 }
 
 /* Quick Actions */
-.claude-quick-actions {
+.nexus-ai-wp-quick-actions {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
@@ -43,7 +43,7 @@
     margin-bottom: 30px;
 }
 
-.claude-quick-actions h2 {
+.nexus-ai-wp-quick-actions h2 {
     margin-top: 0;
 }
 
@@ -54,7 +54,7 @@
 }
 
 /* Recent Activity */
-.claude-recent-activity {
+.nexus-ai-wp-recent-activity {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
@@ -62,19 +62,19 @@
     margin-bottom: 30px;
 }
 
-.claude-recent-activity h2 {
+.nexus-ai-wp-recent-activity h2 {
     margin-top: 0;
 }
 
 /* System Status */
-.claude-system-status {
+.nexus-ai-wp-system-status {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
     padding: 20px;
 }
 
-.claude-system-status h2 {
+.nexus-ai-wp-system-status h2 {
     margin-top: 0;
 }
 
@@ -113,7 +113,7 @@
 }
 
 /* Settings Tabs */
-.claude-settings-tabs {
+.nexus-ai-wp-settings-tabs {
     margin-top: 20px;
 }
 
@@ -140,32 +140,32 @@
 }
 
 /* Translation Meta Box */
-.claude-translator-meta-box {
+.nexus-ai-wp-translator-meta-box {
     margin: 10px 0;
 }
 
-.claude-meta-field {
+.nexus-ai-wp-meta-field {
     margin-bottom: 15px;
     padding-bottom: 15px;
     border-bottom: 1px solid #eee;
 }
 
-.claude-meta-field:last-child {
+.nexus-ai-wp-meta-field:last-child {
     border-bottom: none;
 }
 
-.claude-meta-field label {
+.nexus-ai-wp-meta-field label {
     display: block;
     margin-bottom: 5px;
 }
 
-.claude-translations-list {
+.nexus-ai-wp-translations-list {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.claude-translation-item {
+.nexus-ai-wp-translation-item {
     padding: 8px 0;
     border-bottom: 1px solid #eee;
     display: flex;
@@ -173,7 +173,7 @@
     gap: 10px;
 }
 
-.claude-translation-item:last-child {
+.nexus-ai-wp-translation-item:last-child {
     border-bottom: none;
 }
 
@@ -186,7 +186,7 @@
     font-weight: 600;
 }
 
-.claude-translation-actions {
+.nexus-ai-wp-translation-actions {
     margin-top: 10px;
 }
 
@@ -203,12 +203,12 @@
     margin-right: 5px;
 }
 
-#claude-translation-status {
+#nexus-ai-wp-translation-status {
     margin-top: 15px;
 }
 
 /* Logs */
-.claude-logs-filters {
+.nexus-ai-wp-logs-filters {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
@@ -216,7 +216,7 @@
     margin: 20px 0;
 }
 
-.claude-logs-filters form {
+.nexus-ai-wp-logs-filters form {
     display: flex;
     gap: 10px;
     align-items: center;
@@ -246,7 +246,7 @@
 }
 
 /* Relationships */
-.claude-bulk-actions {
+.nexus-ai-wp-bulk-actions {
     background: #fff;
     border: 1px solid #ccd0d4;
     border-radius: 4px;
@@ -254,7 +254,7 @@
     margin-top: 20px;
 }
 
-.claude-bulk-actions h2 {
+.nexus-ai-wp-bulk-actions h2 {
     margin-top: 0;
 }
 
@@ -269,14 +269,14 @@
 }
 
 /* Posts List Columns */
-.column-claude_language,
-.column-claude_translations {
+.column-nexus_ai_wp_language,
+.column-nexus_ai_wp_translations {
     width: 100px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .claude-stats-cards {
+    .nexus-ai-wp-stats-cards {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 15px;
     }
@@ -286,12 +286,12 @@
         align-items: flex-start;
     }
     
-    .claude-logs-filters form {
+    .nexus-ai-wp-logs-filters form {
         flex-direction: column;
         align-items: flex-start;
     }
     
-    .claude-translation-item {
+    .nexus-ai-wp-translation-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
@@ -299,33 +299,33 @@
 }
 
 /* Loading States */
-.claude-loading {
+.nexus-ai-wp-loading {
     opacity: 0.6;
     pointer-events: none;
 }
 
-.claude-spinner {
+.nexus-ai-wp-spinner {
     display: inline-block;
     width: 16px;
     height: 16px;
     border: 2px solid #f3f3f3;
     border-top: 2px solid #0073aa;
     border-radius: 50%;
-    animation: claude-spin 1s linear infinite;
+    animation: nexus-ai-wp-spin 1s linear infinite;
     margin-right: 5px;
 }
 
-@keyframes claude-spin {
+@keyframes nexus-ai-wp-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
 /* Notices */
-.claude-notice {
+.nexus-ai-wp-notice {
     margin: 15px 0;
 }
 
-.claude-notice.inline {
+.nexus-ai-wp-notice.inline {
     display: inline-block;
     margin: 0 10px 0 0;
     padding: 4px 8px;
@@ -333,67 +333,67 @@
 }
 
 /* Tables */
-.claude-table {
+.nexus-ai-wp-table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
 }
 
-.claude-table th,
-.claude-table td {
+.nexus-ai-wp-table th,
+.nexus-ai-wp-table td {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
 
-.claude-table th {
+.nexus-ai-wp-table th {
     background-color: #f9f9f9;
     font-weight: 600;
 }
 
-.claude-table tr:hover {
+.nexus-ai-wp-table tr:hover {
     background-color: #f5f5f5;
 }
 
 /* Form Elements */
-.claude-form-group {
+.nexus-ai-wp-form-group {
     margin-bottom: 20px;
 }
 
-.claude-form-group label {
+.nexus-ai-wp-form-group label {
     display: block;
     margin-bottom: 5px;
     font-weight: 600;
 }
 
-.claude-form-group .description {
+.nexus-ai-wp-form-group .description {
     margin-top: 5px;
     color: #666;
     font-size: 13px;
 }
 
 /* Button Variations */
-.claude-button-danger {
+.nexus-ai-wp-button-danger {
     background-color: #dc3545;
     border-color: #dc3545;
     color: #fff;
 }
 
-.claude-button-danger:hover,
-.claude-button-danger:focus {
+.nexus-ai-wp-button-danger:hover,
+.nexus-ai-wp-button-danger:focus {
     background-color: #c82333;
     border-color: #bd2130;
     color: #fff;
 }
 
-.claude-button-success {
+.nexus-ai-wp-button-success {
     background-color: #28a745;
     border-color: #28a745;
     color: #fff;
 }
 
-.claude-button-success:hover,
-.claude-button-success:focus {
+.nexus-ai-wp-button-success:hover,
+.nexus-ai-wp-button-success:focus {
     background-color: #218838;
     border-color: #1e7e34;
     color: #fff;

@@ -34,14 +34,14 @@ class Nexus_AI_WP_Translator_Frontend {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
         
         // URL rewriting for SEO-friendly URLs
-        if (get_option('claude_translator_seo_friendly_urls', true)) {
+        if (get_option('nexus_ai_wp_translator_seo_friendly_urls', true)) {
             add_action('init', array($this, 'add_rewrite_rules'));
             add_filter('query_vars', array($this, 'add_query_vars'));
             add_action('template_redirect', array($this, 'handle_language_redirect'));
         }
         
         // Shortcodes
-        add_shortcode('claude_language_switcher', array($this, 'language_switcher_shortcode'));
+        add_shortcode('nexus_ai_wp_language_switcher', array($this, 'language_switcher_shortcode'));
         
         // AJAX handlers for frontend
         add_action('wp_ajax_nexus_ai_wp_set_language_preference', array($this, 'ajax_set_language_preference'));

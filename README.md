@@ -1,6 +1,6 @@
-# Claude AI Translator WordPress Plugin
+# Nexus AI WP Translator WordPress Plugin
 
-A comprehensive WordPress plugin that automatically translates posts using Claude AI API with advanced management features, user preferences, and SEO optimization.
+A comprehensive WordPress plugin that automatically translates posts using Nexus AI API with advanced management features, user preferences, and SEO optimization.
 
 ## Features
 

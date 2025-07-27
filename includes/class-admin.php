@@ -61,23 +61,23 @@ class Nexus_AI_WP_Translator_Admin {
             __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
             __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
             'manage_options',
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             array($this, 'admin_page_dashboard'),
             'dashicons-translation',
             30
         );
         
         add_submenu_page(
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             __('Dashboard', 'nexus-ai-wp-translator'),
             __('Dashboard', 'nexus-ai-wp-translator'),
             'manage_options',
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             array($this, 'admin_page_dashboard')
         );
         
         add_submenu_page(
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             __('Settings', 'nexus-ai-wp-translator'),
             __('Settings', 'nexus-ai-wp-translator'),
             'manage_options',
@@ -86,7 +86,7 @@ class Nexus_AI_WP_Translator_Admin {
         );
         
         add_submenu_page(
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             __('Translation Logs', 'nexus-ai-wp-translator'),
             __('Logs', 'nexus-ai-wp-translator'),
             'manage_options',
@@ -95,7 +95,7 @@ class Nexus_AI_WP_Translator_Admin {
         );
         
         add_submenu_page(
-            'nexus-ai-wp-translator',
+            'nexus-ai-wp-translator-dashboard',
             __('Post Relationships', 'nexus-ai-wp-translator'),
             __('Relationships', 'nexus-ai-wp-translator'),
             'manage_options',

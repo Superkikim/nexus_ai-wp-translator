@@ -1,5 +1,5 @@
 /**
- * Claude Translator Frontend JavaScript
+ * Nexus AI WP Translator Frontend JavaScript
  */
 
 (function($) {
@@ -7,10 +7,10 @@
     
     // Initialize when document is ready
     $(document).ready(function() {
-        ClaudeTranslatorFrontend.init();
+        NexusAIWPTranslatorFrontend.init();
     });
     
-    var ClaudeTranslatorFrontend = {
+    var NexusAIWPTranslatorFrontend = {
         
         init: function() {
             this.initLanguageSwitcher();
@@ -23,16 +23,16 @@
          */
         initLanguageSwitcher: function() {
             // Handle dropdown language switcher
-            $(document).on('change', '.claude-language-select', function() {
+            $(document).on('change', '.nexus-ai-wp-language-select', function() {
                 var selectedLanguage = $(this).val();
-                ClaudeTranslatorFrontend.switchLanguage(selectedLanguage);
+                NexusAIWPTranslatorFrontend.switchLanguage(selectedLanguage);
             });
             
             // Handle list-style language switcher
-            $(document).on('click', '.claude-language-list a', function(e) {
+            $(document).on('click', '.nexus-ai-wp-language-list a', function(e) {
                 e.preventDefault();
                 var selectedLanguage = $(this).data('lang');
-                ClaudeTranslatorFrontend.switchLanguage(selectedLanguage);
+                NexusAIWPTranslatorFrontend.switchLanguage(selectedLanguage);
             });
         },
         
@@ -53,7 +53,7 @@
             // Listen for browser language change (if supported)
             if ('onlanguagechange' in window) {
                 window.addEventListener('languagechange', function() {
-                    ClaudeTranslatorFrontend.detectAndRedirect();
+                    NexusAIWPTranslatorFrontend.detectAndRedirect();
                 });
             }
         },
@@ -73,7 +73,7 @@
             var newUrl = this.buildLanguageUrl(currentUrl, language);
             
             // Add fade effect
-            $('body').addClass('claude-content-fade switching');
+            $('body').addClass('nexus-ai-wp-content-fade switching');
             
             setTimeout(function() {
                 window.location.href = newUrl;
@@ -84,10 +84,10 @@
          * Store language preference via AJAX
          */
         storeLanguagePreference: function(language) {
-            $.post(claude_translator.ajax_url, {
-                action: 'claude_set_language_preference',
+            $.post(nexus_ai_wp_translator.ajax_url, {
+                action: 'nexus_ai_wp_set_language_preference',
                 language: language,
-                nonce: claude_translator.nonce
+                nonce: nexus_ai_wp_translator.nonce
             });
         },
         
@@ -107,10 +107,10 @@
          * Show loading state
          */
         showLoadingState: function() {
-            $('.claude-language-switcher').addClass('loading');
+            $('.nexus-ai-wp-language-switcher').addClass('loading');
             
             // Add spinner to dropdown
-            $('.claude-language-select').after('<span class="loading-spinner"></span>');
+            $('.nexus-ai-wp-language-select').after('<span class="loading-spinner"></span>');
         },
         
         /**
@@ -124,7 +124,7 @@
             }
             
             // Don't redirect if user has already visited (check session storage)
-            if (sessionStorage.getItem('claude_translator_visited')) {
+            if (sessionStorage.getItem('nexus_ai_wp_translator_visited')) {
                 return false;
             }
             
@@ -140,7 +140,7 @@
             
             if (browserLanguage && supportedLanguages.includes(browserLanguage)) {
                 // Mark as visited
-                sessionStorage.setItem('claude_translator_visited', 'true');
+                sessionStorage.setItem('nexus_ai_wp_translator_visited', 'true');
                 
                 // Redirect
                 var newUrl = this.buildLanguageUrl(window.location.href, browserLanguage);
@@ -177,7 +177,7 @@
             var languages = [];
             
             // Get from dropdown options
-            $('.claude-language-select option').each(function() {
+            $('.nexus-ai-wp-language-select option').each(function() {
                 var lang = $(this).val();
                 if (lang) {
                     languages.push(lang);
@@ -185,7 +185,7 @@
             });
             
             // Get from list links
-            $('.claude-language-list a').each(function() {
+            $('.nexus-ai-wp-language-list a').each(function() {
                 var lang = $(this).data('lang');
                 if (lang) {
                     languages.push(lang);
@@ -216,28 +216,28 @@
          */
         updateLanguageSwitcherState: function(currentLanguage) {
             // Update dropdown
-            $('.claude-language-select').val(currentLanguage);
+            $('.nexus-ai-wp-language-select').val(currentLanguage);
             
             // Update list
-            $('.claude-language-list li').removeClass('current');
-            $('.claude-language-list a[data-lang="' + currentLanguage + '"]').closest('li').addClass('current');
+            $('.nexus-ai-wp-language-list li').removeClass('current');
+            $('.nexus-ai-wp-language-list a[data-lang="' + currentLanguage + '"]').closest('li').addClass('current');
         },
         
         /**
          * Add translation notice
          */
         addTranslationNotice: function(sourceLanguage, targetLanguage) {
-            var notice = $('<div class="claude-translation-notice">' +
+            var notice = $('<div class="nexus-ai-wp-translation-notice">' +
                 '<p>This content has been automatically translated from ' + sourceLanguage + ' to ' + targetLanguage + '. ' +
-                '<a href="#" id="claude-view-original">View original</a></p>' +
+                '<a href="#" id="nexus-ai-wp-view-original">View original</a></p>' +
                 '</div>');
             
             $('main, .content, article').first().prepend(notice);
             
             // Handle view original click
-            $('#claude-view-original').on('click', function(e) {
+            $('#nexus-ai-wp-view-original').on('click', function(e) {
                 e.preventDefault();
-                ClaudeTranslatorFrontend.switchLanguage(sourceLanguage);
+                NexusAIWPTranslatorFrontend.switchLanguage(sourceLanguage);
             });
         },
         
@@ -246,11 +246,11 @@
          */
         initAccessibility: function() {
             // Add ARIA labels
-            $('.claude-language-select').attr('aria-label', 'Select language');
-            $('.claude-language-list').attr('role', 'navigation').attr('aria-label', 'Language selection');
+            $('.nexus-ai-wp-language-select').attr('aria-label', 'Select language');
+            $('.nexus-ai-wp-language-list').attr('role', 'navigation').attr('aria-label', 'Language selection');
             
             // Add keyboard navigation
-            $('.claude-language-list a').on('keydown', function(e) {
+            $('.nexus-ai-wp-language-list a').on('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     $(this).click();
@@ -264,10 +264,10 @@
         initMobile: function() {
             if (this.isMobile()) {
                 // Prevent zoom on select focus (iOS)
-                $('.claude-language-select').css('font-size', '16px');
+                $('.nexus-ai-wp-language-select').css('font-size', '16px');
                 
                 // Add touch-friendly styling
-                $('.claude-language-list a').css('min-height', '44px');
+                $('.nexus-ai-wp-language-list a').css('min-height', '44px');
             }
         },
         
@@ -283,11 +283,11 @@
          */
         initRTL: function() {
             var rtlLanguages = ['ar', 'he', 'fa', 'ur'];
-            var currentLanguage = claude_translator.current_language;
+            var currentLanguage = nexus_ai_wp_translator.current_language;
             
             if (rtlLanguages.includes(currentLanguage)) {
                 $('html').attr('dir', 'rtl');
-                $('body').addClass('claude-rtl');
+                $('body').addClass('nexus-ai-wp-rtl');
             }
         },
         
@@ -309,40 +309,40 @@
          * Check if cookies are accepted
          */
         areCookiesAccepted: function() {
-            return localStorage.getItem('claude_translator_cookies_accepted') === 'true';
+            return localStorage.getItem('nexus_ai_wp_translator_cookies_accepted') === 'true';
         },
         
         /**
          * Show cookie consent notice
          */
         showCookieConsent: function() {
-            var notice = $('<div class="claude-cookie-consent">' +
+            var notice = $('<div class="nexus-ai-wp-cookie-consent">' +
                 '<p>We use cookies to remember your language preference. ' +
-                '<button id="claude-accept-cookies">Accept</button> ' +
-                '<button id="claude-decline-cookies">Decline</button></p>' +
+                '<button id="nexus-ai-wp-accept-cookies">Accept</button> ' +
+                '<button id="nexus-ai-wp-decline-cookies">Decline</button></p>' +
                 '</div>');
             
             $('body').append(notice);
             
-            $('#claude-accept-cookies').on('click', function() {
-                localStorage.setItem('claude_translator_cookies_accepted', 'true');
-                $('.claude-cookie-consent').fadeOut();
+            $('#nexus-ai-wp-accept-cookies').on('click', function() {
+                localStorage.setItem('nexus_ai_wp_translator_cookies_accepted', 'true');
+                $('.nexus-ai-wp-cookie-consent').fadeOut();
             });
             
-            $('#claude-decline-cookies').on('click', function() {
-                $('.claude-cookie-consent').fadeOut();
+            $('#nexus-ai-wp-decline-cookies').on('click', function() {
+                $('.nexus-ai-wp-cookie-consent').fadeOut();
             });
         }
     };
     
-    // Make ClaudeTranslatorFrontend globally available
-    window.ClaudeTranslatorFrontend = ClaudeTranslatorFrontend;
+    // Make NexusAIWPTranslatorFrontend globally available
+    window.NexusAIWPTranslatorFrontend = NexusAIWPTranslatorFrontend;
     
     // Initialize additional features
     $(document).ready(function() {
-        ClaudeTranslatorFrontend.initAccessibility();
-        ClaudeTranslatorFrontend.initMobile();
-        ClaudeTranslatorFrontend.initRTL();
+        NexusAIWPTranslatorFrontend.initAccessibility();
+        NexusAIWPTranslatorFrontend.initMobile();
+        NexusAIWPTranslatorFrontend.initRTL();
     });
     
 })(jQuery);

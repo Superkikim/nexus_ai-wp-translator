@@ -1,16 +1,16 @@
-/* Claude Translator Frontend Styles */
+/* Nexus AI WP Translator Frontend Styles */
 
 /* Language Switcher */
-.claude-language-switcher {
+.nexus-ai-wp-language-switcher {
     display: inline-block;
     font-family: inherit;
 }
 
-.claude-language-switcher.claude-dropdown {
+.nexus-ai-wp-language-switcher.nexus-ai-wp-dropdown {
     position: relative;
 }
 
-.claude-language-select {
+.nexus-ai-wp-language-select {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -20,17 +20,17 @@
     min-width: 120px;
 }
 
-.claude-language-select:focus {
+.nexus-ai-wp-language-select:focus {
     outline: none;
     border-color: #0073aa;
     box-shadow: 0 0 0 1px #0073aa;
 }
 
-.claude-language-switcher.claude-list {
+.nexus-ai-wp-language-switcher.nexus-ai-wp-list {
     display: block;
 }
 
-.claude-language-list {
+.nexus-ai-wp-language-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -39,11 +39,11 @@
     gap: 10px;
 }
 
-.claude-language-list li {
+.nexus-ai-wp-language-list li {
     margin: 0;
 }
 
-.claude-language-list a {
+.nexus-ai-wp-language-list a {
     display: inline-block;
     padding: 6px 12px;
     background-color: #f8f9fa;
@@ -54,29 +54,29 @@
     transition: all 0.3s ease;
 }
 
-.claude-language-list a:hover {
+.nexus-ai-wp-language-list a:hover {
     background-color: #e9ecef;
     color: #495057;
     text-decoration: none;
 }
 
-.claude-language-list li.current a {
+.nexus-ai-wp-language-list li.current a {
     background-color: #0073aa;
     color: #fff;
     border-color: #0073aa;
 }
 
 /* Widget Styles */
-.widget_claude_language_switcher {
+.widget_nexus_ai_wp_language_switcher {
     margin-bottom: 20px;
 }
 
-.widget_claude_language_switcher .widget-title {
+.widget_nexus_ai_wp_language_switcher .widget-title {
     margin-bottom: 15px;
 }
 
 /* Language Flags (if enabled) */
-.claude-language-flag {
+.nexus-ai-wp-language-flag {
     display: inline-block;
     width: 16px;
     height: 12px;
@@ -88,17 +88,17 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .claude-language-list {
+    .nexus-ai-wp-language-list {
         flex-direction: column;
         gap: 5px;
     }
     
-    .claude-language-list a {
+    .nexus-ai-wp-language-list a {
         text-align: center;
         padding: 10px;
     }
     
-    .claude-language-select {
+    .nexus-ai-wp-language-select {
         width: 100%;
         padding: 12px;
         font-size: 16px; /* Prevents zoom on iOS */
@@ -106,75 +106,75 @@
 }
 
 /* RTL Support */
-[dir="rtl"] .claude-language-flag {
+[dir="rtl"] .nexus-ai-wp-language-flag {
     margin-right: 0;
     margin-left: 5px;
 }
 
-[dir="rtl"] .claude-language-list {
+[dir="rtl"] .nexus-ai-wp-language-list {
     direction: rtl;
 }
 
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
-    .claude-language-select {
+    .nexus-ai-wp-language-select {
         background-color: #2d3748;
         color: #e2e8f0;
         border-color: #4a5568;
     }
     
-    .claude-language-list a {
+    .nexus-ai-wp-language-list a {
         background-color: #2d3748;
         color: #e2e8f0;
         border-color: #4a5568;
     }
     
-    .claude-language-list a:hover {
+    .nexus-ai-wp-language-list a:hover {
         background-color: #4a5568;
         color: #e2e8f0;
     }
     
-    .claude-language-list li.current a {
+    .nexus-ai-wp-language-list li.current a {
         background-color: #0073aa;
         color: #fff;
     }
 }
 
 /* Loading States */
-.claude-language-switcher.loading {
+.nexus-ai-wp-language-switcher.loading {
     opacity: 0.6;
     pointer-events: none;
 }
 
-.claude-language-switcher .loading-spinner {
+.nexus-ai-wp-language-switcher .loading-spinner {
     display: inline-block;
     width: 12px;
     height: 12px;
     border: 2px solid #f3f3f3;
     border-top: 2px solid #0073aa;
     border-radius: 50%;
-    animation: claude-spin 1s linear infinite;
+    animation: nexus-ai-wp-spin 1s linear infinite;
     margin-left: 5px;
 }
 
-@keyframes claude-spin {
+@keyframes nexus-ai-wp-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
 /* Accessibility */
-.claude-language-switcher:focus-within {
+.nexus-ai-wp-language-switcher:focus-within {
     outline: 2px solid #0073aa;
     outline-offset: 2px;
 }
 
-.claude-language-list a:focus {
+.nexus-ai-wp-language-list a:focus {
     outline: 2px solid #0073aa;
     outline-offset: 2px;
 }
 
 /* Screen reader only text */
-.claude-sr-only {
+.nexus-ai-wp-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -187,7 +187,7 @@
 }
 
 /* Translation Notice */
-.claude-translation-notice {
+.nexus-ai-wp-translation-notice {
     background-color: #e7f3ff;
     border: 1px solid #b6d7ff;
     border-radius: 4px;
@@ -196,21 +196,21 @@
     color: #0066cc;
 }
 
-.claude-translation-notice p {
+.nexus-ai-wp-translation-notice p {
     margin: 0;
 }
 
-.claude-translation-notice a {
+.nexus-ai-wp-translation-notice a {
     color: #0066cc;
     text-decoration: underline;
 }
 
-.claude-translation-notice a:hover {
+.nexus-ai-wp-translation-notice a:hover {
     color: #0052a3;
 }
 
 /* Language Badge */
-.claude-language-badge {
+.nexus-ai-wp-language-badge {
     display: inline-block;
     background-color: #f1f3f4;
     color: #5f6368;
@@ -223,16 +223,16 @@
 }
 
 /* Hover Effects */
-.claude-language-switcher .claude-language-select:hover {
+.nexus-ai-wp-language-switcher .nexus-ai-wp-language-select:hover {
     border-color: #999;
 }
 
-.claude-language-list a {
+.nexus-ai-wp-language-list a {
     position: relative;
     overflow: hidden;
 }
 
-.claude-language-list a::before {
+.nexus-ai-wp-language-list a::before {
     content: '';
     position: absolute;
     top: 0;
@@ -243,22 +243,22 @@
     transition: left 0.5s;
 }
 
-.claude-language-list a:hover::before {
+.nexus-ai-wp-language-list a:hover::before {
     left: 100%;
 }
 
 /* Animation for language switching */
-.claude-content-fade {
+.nexus-ai-wp-content-fade {
     transition: opacity 0.3s ease-in-out;
 }
 
-.claude-content-fade.switching {
+.nexus-ai-wp-content-fade.switching {
     opacity: 0.5;
 }
 
 /* Print Styles */
 @media print {
-    .claude-language-switcher {
+    .nexus-ai-wp-language-switcher {
         display: none;
     }
 }

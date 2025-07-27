@@ -1,5 +1,5 @@
 /**
- * Claude Translator Admin JavaScript
+ * Nexus AI WP Translator Admin JavaScript
  */
 
 (function($) {
@@ -7,10 +7,10 @@
     
     // Initialize when document is ready
     $(document).ready(function() {
-        ClaudeTranslatorAdmin.init();
+        NexusAIWPTranslatorAdmin.init();
     });
     
-    var ClaudeTranslatorAdmin = {
+    var NexusAIWPTranslatorAdmin = {
         
         init: function() {
             this.initTabSwitching();
@@ -39,11 +39,11 @@
                 $(target).addClass('active');
                 
                 // Save active tab in localStorage
-                localStorage.setItem('claude_translator_active_tab', target);
+                localStorage.setItem('nexus_ai_wp_translator_active_tab', target);
             });
             
             // Restore active tab from localStorage
-            var activeTab = localStorage.getItem('claude_translator_active_tab');
+            var activeTab = localStorage.getItem('nexus_ai_wp_translator_active_tab');
             if (activeTab && $(activeTab).length) {
                 $('.nav-tab[href="' + activeTab + '"]').click();
             }
@@ -53,30 +53,30 @@
          * Initialize API testing functionality
          */
         initApiTesting: function() {
-            $('#claude-test-api').on('click', function() {
+            $('#nexus-ai-wp-test-api').on('click', function() {
                 var button = $(this);
-                var apiKey = $('#claude_translator_api_key').val().trim();
+                var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
                 var resultDiv = $('#api-test-result');
                 
                 if (!apiKey) {
-                    ClaudeTranslatorAdmin.showNotice(resultDiv, 'error', claude_translator_ajax.strings.error + ' Please enter an API key first.');
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', nexus_ai_wp_translator_ajax.strings.error + ' Please enter an API key first.');
                     return;
                 }
                 
-                button.prop('disabled', true).text(claude_translator_ajax.strings.testing);
-                resultDiv.html('<div class="claude-spinner"></div> Testing connection...');
+                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.testing);
+                resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
                 
-                $.post(claude_translator_ajax.ajax_url, {
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_test_api',
                     api_key: apiKey,
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     var noticeClass = response.success ? 'success' : 'error';
-                    ClaudeTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
                 })
                 .fail(function() {
-                    ClaudeTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
                 })
                 .always(function() {
                     button.prop('disabled', false).text('Test Connection');
@@ -84,8 +84,8 @@
             });
             
             // API key toggle visibility
-            $('#claude-toggle-api-key').on('click', function() {
-                var input = $('#claude_translator_api_key');
+            $('#nexus-ai-wp-toggle-api-key').on('click', function() {
+                var input = $('#nexus_ai_wp_translator_api_key');
                 var type = input.attr('type');
                 
                 if (type === 'password') {
@@ -102,9 +102,9 @@
          * Initialize settings save functionality
          */
         initSettingsSave: function() {
-            $('#claude-save-settings').on('click', function() {
+            $('#nexus-ai-wp-save-settings').on('click', function() {
                 var button = $(this);
-                var form = $('#claude-translator-settings-form');
+                var form = $('#nexus-ai-wp-translator-settings-form');
                 
                 button.prop('disabled', true).text('Saving...');
                 
@@ -114,10 +114,10 @@
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, formData)
                 .done(function(response) {
                     var noticeClass = response.success ? 'success' : 'error';
-                    ClaudeTranslatorAdmin.showGlobalNotice(noticeClass, response.data);
+                    NexusAIWPTranslatorAdmin.showGlobalNotice(noticeClass, response.data);
                 })
                 .fail(function() {
-                    ClaudeTranslatorAdmin.showGlobalNotice('error', 'Failed to save settings. Please try again.');
+                    NexusAIWPTranslatorAdmin.showGlobalNotice('error', 'Failed to save settings. Please try again.');
                 })
                 .always(function() {
                     button.prop('disabled', false).text('Save Settings (AJAX)');
@@ -130,12 +130,12 @@
          */
         initTranslationActions: function() {
             // Manual translation trigger
-            $(document).on('click', '#claude-translate-post', function() {
+            $(document).on('click', '#nexus-ai-wp-translate-post', function() {
                 var button = $(this);
-                var postId = ClaudeTranslatorAdmin.getPostId();
+                var postId = NexusAIWPTranslatorAdmin.getPostId();
                 var targetLanguages = [];
                 
-                $('.claude-target-language:checked').each(function() {
+                $('.nexus-ai-wp-target-language:checked').each(function() {
                     targetLanguages.push($(this).val());
                 });
                 
@@ -145,7 +145,7 @@
                 }
                 
                 button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
-                $('#claude-translation-status').html('<div class="notice notice-info"><p>Translation in progress...</p></div>');
+                $('#nexus-ai-wp-translation-status').html('<div class="notice notice-info"><p>Translation in progress...</p></div>');
                 
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_translate_post',
@@ -159,7 +159,7 @@
                         'Translation completed successfully!' : 
                         ('Translation failed: ' + (response.message || 'Unknown error'));
                     
-                    $('#claude-translation-status').html('<div class="notice ' + noticeClass + '"><p>' + message + '</p></div>');
+                    $('#nexus-ai-wp-translation-status').html('<div class="notice ' + noticeClass + '"><p>' + message + '</p></div>');
                     
                     if (response.success) {
                         setTimeout(function() {
@@ -168,7 +168,7 @@
                     }
                 })
                 .fail(function() {
-                    $('#claude-translation-status').html('<div class="notice notice-error"><p>Network error occurred</p></div>');
+                    $('#nexus-ai-wp-translation-status').html('<div class="notice notice-error"><p>Network error occurred</p></div>');
                 })
                 .always(function() {
                     button.prop('disabled', false).text('Translate Now');
@@ -176,9 +176,9 @@
             });
             
             // Translation status check
-            $(document).on('click', '#claude-get-translation-status', function() {
+            $(document).on('click', '#nexus-ai-wp-get-translation-status', function() {
                 var button = $(this);
-                var postId = ClaudeTranslatorAdmin.getPostId();
+                var postId = NexusAIWPTranslatorAdmin.getPostId();
                 
                 button.prop('disabled', true);
                 
@@ -194,9 +194,9 @@
                             html += '<li>' + translation.target_language + ': ' + translation.status + '</li>';
                         });
                         html += '</ul>';
-                        $('#claude-translation-status').html(html);
+                        $('#nexus-ai-wp-translation-status').html(html);
                     } else {
-                        $('#claude-translation-status').html('<p>No translations found.</p>');
+                        $('#nexus-ai-wp-translation-status').html('<p>No translations found.</p>');
                     }
                 })
                 .always(function() {
@@ -205,7 +205,7 @@
             });
             
             // Unlink translation
-            $(document).on('click', '.claude-unlink-translation, .unlink-translation', function() {
+            $(document).on('click', '.nexus-ai-wp-unlink-translation, .unlink-translation', function() {
                 if (!confirm(nexus_ai_wp_translator_ajax.strings.confirm_unlink)) {
                     return;
                 }
@@ -244,7 +244,7 @@
          * Initialize status refresh functionality
          */
         initStatusRefresh: function() {
-            $('#claude-refresh-stats').on('click', function() {
+            $('#nexus-ai-wp-refresh-stats').on('click', function() {
                 var button = $(this);
                 button.prop('disabled', true).text('Refreshing...');
                 
@@ -355,7 +355,7 @@
         }
     };
     
-    // Make ClaudeTranslatorAdmin globally available
-    window.ClaudeTranslatorAdmin = ClaudeTranslatorAdmin;
+    // Make NexusAIWPTranslatorAdmin globally available
+    window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
     
 })(jQuery);

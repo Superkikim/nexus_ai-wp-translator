@@ -42,7 +42,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             error_log('Nexus AI WP Translator: API key is empty');
             return array(
                 'success' => false,
-                'message' => __('API key is required', 'claude-translator')
+                'message' => __('API key is required', 'nexus-ai-wp-translator')
             );
         }
         
