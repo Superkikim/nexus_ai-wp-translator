@@ -81,11 +81,19 @@ class Nexus_AI_WP_Translator_Plugin {
      * Initialize plugin components
      */
     public function init_components() {
+        // Debug: Confirm components are being initialized
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Initializing plugin components');
+        }
+        
         // Initialize database
         Nexus_AI_WP_Translator_Database::get_instance();
         
         // Initialize admin interface
         if (is_admin()) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Initializing admin interface');
+            }
             Nexus_AI_WP_Translator_Admin::get_instance();
         }
         

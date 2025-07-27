@@ -196,9 +196,16 @@
             console.log('NexusAI Debug: Starting API test with key length:', apiKey.length);
             console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
             console.log('NexusAI Debug: Nonce:', nexus_ai_wp_translator_ajax.nonce);
+            console.log('NexusAI Debug: About to make AJAX POST request for API test');
             
             button.prop('disabled', true).text('Testing...');
             resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
+            
+            console.log('NexusAI Debug: Making AJAX request with data:', {
+                action: 'nexus_ai_wp_test_api',
+                api_key: apiKey.substring(0, 10) + '...',
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            });
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_test_api',
@@ -207,6 +214,8 @@
             })
             .done(function(response) {
                 console.log('NexusAI Debug: API test response:', response);
+                console.log('NexusAI Debug: Response type:', typeof response);
+                console.log('NexusAI Debug: Response success:', response.success);
                 
                 var noticeClass = response.success ? 'success' : 'error';
                 NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
@@ -240,6 +249,8 @@
             
             console.log('NexusAI Debug: Model select element found:', modelSelect.length > 0);
             console.log('NexusAI Debug: API key for models:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+            console.log('NexusAI Debug: Model select element ID:', modelSelect.attr('id'));
+            console.log('NexusAI Debug: Current model select HTML:', modelSelect.length > 0 ? modelSelect[0].outerHTML.substring(0, 200) + '...' : 'NOT FOUND');
             
             if (!apiKey) {
                 console.log('NexusAI Debug: No API key found, cannot load models');
@@ -256,6 +267,11 @@
             console.log('NexusAI Debug: Set loading state in dropdown');
             
             console.log('NexusAI Debug: Making AJAX request to get models');
+            console.log('NexusAI Debug: AJAX data for models:', {
+                action: 'nexus_ai_wp_get_models',
+                api_key: apiKey.substring(0, 10) + '...',
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            });
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_models',
@@ -264,6 +280,9 @@
             })
             .done(function(response) {
                 console.log('NexusAI Debug: Get models AJAX response:', response);
+                console.log('NexusAI Debug: Response type:', typeof response);
+                console.log('NexusAI Debug: Response success:', response.success);
+                console.log('NexusAI Debug: Response models:', response.models);
                 
                 if (response.success && response.models) {
                     console.log('NexusAI Debug: Models received successfully:', response.models);
@@ -292,13 +311,16 @@
             .fail(function(xhr, status, error) {
                 console.log('NexusAI Debug: Get models AJAX request failed:', error);
                 console.log('NexusAI Debug: XHR status:', status);
+                console.log('NexusAI Debug: XHR status code:', xhr.status);
                 console.log('NexusAI Debug: XHR response:', xhr.responseText);
+                console.log('NexusAI Debug: XHR status code:', xhr.status);
                 console.log('NexusAI Debug: Full XHR object:', xhr);
                 
                 // Fallback to default models if request fails
                 NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
             })
             .always(function() {
+                console.log('NexusAI Debug: API test request completed');
                 console.log('NexusAI Debug: Load models request completed');
                 if (callback) callback();
             });
