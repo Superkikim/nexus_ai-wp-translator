@@ -1,13 +1,13 @@
 <?php
 /**
- * Claude AI API Handler
+ * Nexus AI WP Translator API Handler
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_API_Handler {
+class Nexus_AI_WP_Translator_API_Handler {
     
     private static $instance = null;
     private $api_key;
@@ -22,14 +22,14 @@ class Claude_Translator_API_Handler {
     }
     
     private function __construct() {
-        $this->api_key = get_option('claude_translator_api_key', '');
+        $this->api_key = get_option('nexus_ai_wp_translator_api_key', '');
     }
     
     /**
      * Refresh API key from database
      */
     public function refresh_api_key() {
-        $this->api_key = get_option('claude_translator_api_key', '');
+        $this->api_key = get_option('nexus_ai_wp_translator_api_key', '');
     }
     
     /**
@@ -54,7 +54,7 @@ class Claude_Translator_API_Handler {
             error_log('Nexus AI WP Translator: API test successful');
             return array(
                 'success' => true,
-                'message' => __('API connection successful', 'claude-translator')
+                'message' => __('API connection successful', 'nexus-ai-wp-translator')
             );
         }
         
@@ -72,7 +72,7 @@ class Claude_Translator_API_Handler {
             error_log('Nexus AI WP Translator: API key not configured');
             return array(
                 'success' => false,
-                'message' => __('API key not configured', 'claude-translator')
+                'message' => __('API key not configured', 'nexus-ai-wp-translator')
             );
         }
         
@@ -81,7 +81,7 @@ class Claude_Translator_API_Handler {
             error_log('Nexus AI WP Translator: API call limit reached');
             return array(
                 'success' => false,
-                'message' => __('API call limit reached. Please try again later.', 'claude-translator')
+                'message' => __('API call limit reached. Please try again later.', 'nexus-ai-wp-translator')
             );
         }
         
@@ -158,7 +158,7 @@ class Claude_Translator_API_Handler {
             error_log('Nexus AI WP Translator: Response data - ' . print_r($data, true));
             return array(
                 'success' => false,
-                'message' => __('Invalid API response format', 'claude-translator'),
+                'message' => __('Invalid API response format', 'nexus-ai-wp-translator'),
                 'processing_time' => $processing_time
             );
         }
@@ -232,9 +232,9 @@ class Claude_Translator_API_Handler {
      * Check throttle limits
      */
     private function check_throttle_limits() {
-        $db = Claude_Translator_Database::get_instance();
-        $throttle_limit = get_option('claude_translator_throttle_limit', 10);
-        $throttle_period = get_option('claude_translator_throttle_period', 3600) / 60; // Convert to minutes
+        $db = Nexus_AI_WP_Translator_Database::get_instance();
+        $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
+        $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600) / 60; // Convert to minutes
         
         $current_calls = $db->get_throttle_status($throttle_period);
         
@@ -245,11 +245,11 @@ class Claude_Translator_API_Handler {
      * Cache translation
      */
     private function cache_translation($original, $source_lang, $target_lang, $translation) {
-        if (!get_option('claude_translator_cache_translations', true)) {
+        if (!get_option('nexus_ai_wp_translator_cache_translations', true)) {
             return;
         }
         
-        $cache_key = 'claude_translation_' . md5($original . $source_lang . $target_lang);
+        $cache_key = 'nexus_ai_wp_translation_' . md5($original . $source_lang . $target_lang);
         $cache_data = array(
             'translation' => $translation,
             'timestamp' => time()
@@ -262,11 +262,11 @@ class Claude_Translator_API_Handler {
      * Get cached translation
      */
     public function get_cached_translation($original, $source_lang, $target_lang) {
-        if (!get_option('claude_translator_cache_translations', true)) {
+        if (!get_option('nexus_ai_wp_translator_cache_translations', true)) {
             return false;
         }
         
-        $cache_key = 'claude_translation_' . md5($original . $source_lang . $target_lang);
+        $cache_key = 'nexus_ai_wp_translation_' . md5($original . $source_lang . $target_lang);
         $cached = get_transient($cache_key);
         
         if ($cached && isset($cached['translation'])) {
@@ -284,16 +284,16 @@ class Claude_Translator_API_Handler {
         if (!$post) {
             return array(
                 'success' => false,
-                'message' => __('Post not found', 'claude-translator')
+                'message' => __('Post not found', 'nexus-ai-wp-translator')
             );
         }
         
-        $source_lang = get_post_meta($post_id, '_claude_translator_language', true) ?: get_option('claude_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
         $content = $post->post_content;
         $title = $post->post_title;
         $excerpt = $post->post_excerpt;
         
-        $retry_attempts = get_option('claude_translator_retry_attempts', 3);
+        $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
         $results = array();
         
         // Check cache first
@@ -321,7 +321,7 @@ class Claude_Translator_API_Handler {
             if ($i === $retry_attempts - 1) {
                 return array(
                     'success' => false,
-                    'message' => __('Failed to translate title: ', 'claude-translator') . $title_result['message']
+                    'message' => __('Failed to translate title: ', 'nexus-ai-wp-translator') . $title_result['message']
                 );
             }
             
@@ -339,7 +339,7 @@ class Claude_Translator_API_Handler {
             if ($i === $retry_attempts - 1) {
                 return array(
                     'success' => false,
-                    'message' => __('Failed to translate content: ', 'claude-translator') . $content_result['message']
+                    'message' => __('Failed to translate content: ', 'nexus-ai-wp-translator') . $content_result['message']
                 );
             }
             

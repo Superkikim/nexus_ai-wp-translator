@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name: Nexus AI WP Translator
- * Plugin URI: https://your-domain.com/claude-translator
+ * Plugin URI: https://your-domain.com/nexus-ai-wp-translator
  * Description: Automatically translate WordPress posts using Claude AI API with comprehensive management features
  * Version: 1.0.0
  * Author: Your Name
  * License: GPL v2 or later
- * Text Domain: claude-translator
+ * Text Domain: nexus-ai-wp-translator
  * Domain Path: /languages
  */
 
@@ -16,15 +16,15 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('CLAUDE_TRANSLATOR_VERSION', '1.0.0');
-define('CLAUDE_TRANSLATOR_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('CLAUDE_TRANSLATOR_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('CLAUDE_TRANSLATOR_PLUGIN_FILE', __FILE__);
+define('NEXUS_AI_WP_TRANSLATOR_VERSION', '1.0.0');
+define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_FILE', __FILE__);
 
 /**
  * Main Nexus AI WP Translator Plugin Class
  */
-class Claude_Translator_Plugin {
+class Nexus_AI_WP_Translator_Plugin {
     
     private static $instance = null;
     
@@ -65,13 +65,13 @@ class Claude_Translator_Plugin {
      * Load plugin dependencies
      */
     private function load_dependencies() {
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-database.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-api-handler.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-admin.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-frontend.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-language-switcher.php';
-        require_once CLAUDE_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-database.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-api-handler.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-admin.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-frontend.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-language-switcher.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
     }
     
     /**
@@ -79,18 +79,18 @@ class Claude_Translator_Plugin {
      */
     public function init_components() {
         // Initialize database
-        Claude_Translator_Database::get_instance();
+        Nexus_AI_WP_Translator_Database::get_instance();
         
         // Initialize admin interface
         if (is_admin()) {
-            Claude_Translator_Admin::get_instance();
+            Nexus_AI_WP_Translator_Admin::get_instance();
         }
         
         // Initialize frontend
-        Claude_Translator_Frontend::get_instance();
+        Nexus_AI_WP_Translator_Frontend::get_instance();
         
         // Initialize translation manager
-        Claude_Translator_Manager::get_instance();
+        Nexus_AI_WP_Translator_Manager::get_instance();
         
         // Initialize language switcher widget
         add_action('widgets_init', array($this, 'register_widgets'));
@@ -100,14 +100,14 @@ class Claude_Translator_Plugin {
      * Register widgets
      */
     public function register_widgets() {
-        register_widget('Claude_Translator_Language_Switcher_Widget');
+        register_widget('Nexus_AI_WP_Translator_Language_Switcher_Widget');
     }
     
     /**
      * Load plugin textdomain
      */
     public function load_textdomain() {
-        load_plugin_textdomain('claude-translator', false, dirname(plugin_basename(__FILE__)) . '/languages');
+        load_plugin_textdomain('nexus-ai-wp-translator', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
     
     /**
@@ -115,7 +115,7 @@ class Claude_Translator_Plugin {
      */
     public function activate() {
         // Create database tables
-        Claude_Translator_Database::create_tables();
+        Nexus_AI_WP_Translator_Database::create_tables();
         
         // Set default options
         $default_options = array(
@@ -131,8 +131,8 @@ class Claude_Translator_Plugin {
         );
         
         foreach ($default_options as $key => $value) {
-            if (false === get_option('claude_translator_' . $key)) {
-                add_option('claude_translator_' . $key, $value);
+            if (false === get_option('nexus_ai_wp_translator_' . $key)) {
+                add_option('nexus_ai_wp_translator_' . $key, $value);
             }
         }
         
@@ -150,4 +150,4 @@ class Claude_Translator_Plugin {
 }
 
 // Initialize plugin
-Claude_Translator_Plugin::get_instance();
+Nexus_AI_WP_Translator_Plugin::get_instance();

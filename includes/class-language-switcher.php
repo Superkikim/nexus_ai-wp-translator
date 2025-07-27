@@ -1,20 +1,20 @@
 <?php
 /**
- * Language Switcher Widget
+ * Nexus AI WP Translator Language Switcher Widget
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Language_Switcher_Widget extends WP_Widget {
+class Nexus_AI_WP_Translator_Language_Switcher_Widget extends WP_Widget {
     
     public function __construct() {
         parent::__construct(
-            'claude_language_switcher',
-            __('Claude Language Switcher', 'claude-translator'),
+            'nexus_ai_wp_language_switcher',
+            __('Nexus AI WP Language Switcher', 'nexus-ai-wp-translator'),
             array(
-                'description' => __('Display a language switcher for Claude Translator', 'claude-translator')
+                'description' => __('Display a language switcher for Nexus AI WP Translator', 'nexus-ai-wp-translator')
             )
         );
     }
@@ -34,6 +34,7 @@ class Claude_Translator_Language_Switcher_Widget extends WP_Widget {
         }
         
         $frontend = Claude_Translator_Frontend::get_instance();
+        $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
         echo $frontend->render_language_switcher(array(
             'style' => $style,
             'show_flags' => $show_flags
@@ -46,26 +47,26 @@ class Claude_Translator_Language_Switcher_Widget extends WP_Widget {
      * Widget form
      */
     public function form($instance) {
-        $title = isset($instance['title']) ? $instance['title'] : __('Language', 'claude-translator');
+        $title = isset($instance['title']) ? $instance['title'] : __('Language', 'nexus-ai-wp-translator');
         $style = isset($instance['style']) ? $instance['style'] : 'dropdown';
         $show_flags = isset($instance['show_flags']) ? $instance['show_flags'] : false;
         ?>
         <p>
-            <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:', 'claude-translator'); ?></label>
+            <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title:', 'nexus-ai-wp-translator'); ?></label>
             <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo esc_attr($title); ?>">
         </p>
         
         <p>
-            <label for="<?php echo $this->get_field_id('style'); ?>"><?php _e('Display Style:', 'claude-translator'); ?></label>
+            <label for="<?php echo $this->get_field_id('style'); ?>"><?php _e('Display Style:', 'nexus-ai-wp-translator'); ?></label>
             <select class="widefat" id="<?php echo $this->get_field_id('style'); ?>" name="<?php echo $this->get_field_name('style'); ?>">
-                <option value="dropdown" <?php selected($style, 'dropdown'); ?>><?php _e('Dropdown', 'claude-translator'); ?></option>
-                <option value="list" <?php selected($style, 'list'); ?>><?php _e('List', 'claude-translator'); ?></option>
+                <option value="dropdown" <?php selected($style, 'dropdown'); ?>><?php _e('Dropdown', 'nexus-ai-wp-translator'); ?></option>
+                <option value="list" <?php selected($style, 'list'); ?>><?php _e('List', 'nexus-ai-wp-translator'); ?></option>
             </select>
         </p>
         
         <p>
             <input class="checkbox" type="checkbox" <?php checked($show_flags); ?> id="<?php echo $this->get_field_id('show_flags'); ?>" name="<?php echo $this->get_field_name('show_flags'); ?>">
-            <label for="<?php echo $this->get_field_id('show_flags'); ?>"><?php _e('Show flags', 'claude-translator'); ?></label>
+            <label for="<?php echo $this->get_field_id('show_flags'); ?>"><?php _e('Show flags', 'nexus-ai-wp-translator'); ?></label>
         </p>
         <?php
     }

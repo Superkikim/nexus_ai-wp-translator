@@ -1,13 +1,13 @@
 <?php
 /**
- * Translation Manager - Core translation logic
+ * Nexus AI WP Translator Manager - Core translation logic
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Manager {
+class Nexus_AI_WP_Translator_Manager {
     
     private static $instance = null;
     private $db;
@@ -22,8 +22,8 @@ class Claude_Translator_Manager {
     }
     
     private function __construct() {
-        $this->db = Claude_Translator_Database::get_instance();
-        $this->api_handler = Claude_Translator_API_Handler::get_instance();
+        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
+        $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
         
         $this->init_hooks();
     }
@@ -57,17 +57,17 @@ class Claude_Translator_Manager {
         }
         
         // Check if auto-translation is enabled
-        if (!get_option('claude_translator_auto_translate', true)) {
+        if (!get_option('nexus_ai_wp_translator_auto_translate', true)) {
             return;
         }
         
         // Skip if this is already a translation
-        if (get_post_meta($post_id, '_claude_translator_source_post', true)) {
+        if (get_post_meta($post_id, '_nexus_ai_wp_translator_source_post', true)) {
             return;
         }
         
         // Skip if API key is not configured
-        if (empty(get_option('claude_translator_api_key'))) {
+        if (empty(get_option('nexus_ai_wp_translator_api_key'))) {
             return;
         }
         
@@ -90,14 +90,14 @@ class Claude_Translator_Manager {
         $start_time = microtime(true);
         
         if (!$target_languages) {
-            $target_languages = get_option('claude_translator_target_languages', array('es', 'fr', 'de'));
+            $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
         }
         
         if (!is_array($target_languages)) {
             $target_languages = array($target_languages);
         }
         
-        $source_lang = get_post_meta($post_id, '_claude_translator_language', true) ?: get_option('claude_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
         $total_api_calls = 0;
         $success_count = 0;
         $errors = array();
@@ -151,7 +151,7 @@ class Claude_Translator_Manager {
         // Log overall completion
         $status = empty($errors) ? 'completed' : 'partial';
         $message = sprintf(
-            __('Translation completed. Success: %d, Errors: %d', 'claude-translator'),
+            __('Translation completed. Success: %d, Errors: %d', 'nexus-ai-wp-translator'),
             $success_count,
             count($errors)
         );
@@ -179,6 +179,7 @@ class Claude_Translator_Manager {
         $source_post = get_post($source_post_id);
         if (!$source_post) {
             return array('success' => false, 'message' => __('Source post not found', 'claude-translator'));
+            return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
         }
         
         // Get translation from API
@@ -199,9 +200,9 @@ class Claude_Translator_Manager {
             'post_category' => wp_get_post_categories($source_post_id),
             'tags_input' => wp_get_post_tags($source_post_id, array('fields' => 'names')),
             'meta_input' => array(
-                '_claude_translator_language' => $target_lang,
-                '_claude_translator_source_post' => $source_post_id,
-                '_claude_translator_translation_date' => current_time('mysql')
+                '_nexus_ai_wp_translator_language' => $target_lang,
+                '_nexus_ai_wp_translator_source_post' => $source_post_id,
+                '_nexus_ai_wp_translator_translation_date' => current_time('mysql')
             )
         );
         
@@ -218,7 +219,7 @@ class Claude_Translator_Manager {
         // Copy custom fields (except translator meta)
         $custom_fields = get_post_meta($source_post_id);
         foreach ($custom_fields as $key => $values) {
-            if (strpos($key, '_claude_translator_') !== 0) {
+            if (strpos($key, '_nexus_ai_wp_translator_') !== 0) {
                 foreach ($values as $value) {
                     add_post_meta($translated_post_id, $key, maybe_unserialize($value));
                 }
@@ -226,12 +227,12 @@ class Claude_Translator_Manager {
         }
         
         // Store translation relationship
-        $source_lang = get_post_meta($source_post_id, '_claude_translator_language', true) ?: get_option('claude_translator_source_language', 'en');
+        $source_lang = get_post_meta($source_post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
         $this->db->store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed');
         
         // Set language meta for source post if not set
-        if (!get_post_meta($source_post_id, '_claude_translator_language', true)) {
-            update_post_meta($source_post_id, '_claude_translator_language', $source_lang);
+        if (!get_post_meta($source_post_id, '_nexus_ai_wp_translator_language', true)) {
+            update_post_meta($source_post_id, '_nexus_ai_wp_translator_language', $source_lang);
         }
         
         $translation_result['translated_post_id'] = $translated_post_id;
@@ -301,10 +302,10 @@ class Claude_Translator_Manager {
      * AJAX: Manually translate post
      */
     public function ajax_translate_post() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         $post_id = intval($_POST['post_id']);
@@ -319,10 +320,10 @@ class Claude_Translator_Manager {
      * AJAX: Unlink translation
      */
     public function ajax_unlink_translation() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         $post_id = intval($_POST['post_id']);
@@ -333,14 +334,14 @@ class Claude_Translator_Manager {
         
         if ($result) {
             // Remove meta fields
-            delete_post_meta($related_post_id, '_claude_translator_source_post');
-            delete_post_meta($related_post_id, '_claude_translator_translation_date');
+            delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
+            delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
             
             $this->db->log_translation_activity($post_id, 'unlink', 'completed', "Unlinked from post {$related_post_id}");
             
-            wp_send_json_success(__('Translation unlinked successfully', 'claude-translator'));
+            wp_send_json_success(__('Translation unlinked successfully', 'nexus-ai-wp-translator'));
         } else {
-            wp_send_json_error(__('Failed to unlink translation', 'claude-translator'));
+            wp_send_json_error(__('Failed to unlink translation', 'nexus-ai-wp-translator'));
         }
     }
     
@@ -348,10 +349,10 @@ class Claude_Translator_Manager {
      * AJAX: Get translation status
      */
     public function ajax_get_translation_status() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         $post_id = intval($_POST['post_id']);
@@ -377,26 +378,26 @@ class Claude_Translator_Manager {
      */
     public function get_available_languages() {
         return array(
-            'en' => __('English', 'claude-translator'),
-            'es' => __('Spanish', 'claude-translator'),
-            'fr' => __('French', 'claude-translator'),
-            'de' => __('German', 'claude-translator'),
-            'it' => __('Italian', 'claude-translator'),
-            'pt' => __('Portuguese', 'claude-translator'),
-            'ru' => __('Russian', 'claude-translator'),
-            'ja' => __('Japanese', 'claude-translator'),
-            'ko' => __('Korean', 'claude-translator'),
-            'zh' => __('Chinese', 'claude-translator'),
-            'ar' => __('Arabic', 'claude-translator'),
-            'hi' => __('Hindi', 'claude-translator'),
-            'nl' => __('Dutch', 'claude-translator'),
-            'sv' => __('Swedish', 'claude-translator'),
-            'da' => __('Danish', 'claude-translator'),
-            'no' => __('Norwegian', 'claude-translator'),
-            'fi' => __('Finnish', 'claude-translator'),
-            'pl' => __('Polish', 'claude-translator'),
-            'cs' => __('Czech', 'claude-translator'),
-            'hu' => __('Hungarian', 'claude-translator')
+            'en' => __('English', 'nexus-ai-wp-translator'),
+            'es' => __('Spanish', 'nexus-ai-wp-translator'),
+            'fr' => __('French', 'nexus-ai-wp-translator'),
+            'de' => __('German', 'nexus-ai-wp-translator'),
+            'it' => __('Italian', 'nexus-ai-wp-translator'),
+            'pt' => __('Portuguese', 'nexus-ai-wp-translator'),
+            'ru' => __('Russian', 'nexus-ai-wp-translator'),
+            'ja' => __('Japanese', 'nexus-ai-wp-translator'),
+            'ko' => __('Korean', 'nexus-ai-wp-translator'),
+            'zh' => __('Chinese', 'nexus-ai-wp-translator'),
+            'ar' => __('Arabic', 'nexus-ai-wp-translator'),
+            'hi' => __('Hindi', 'nexus-ai-wp-translator'),
+            'nl' => __('Dutch', 'nexus-ai-wp-translator'),
+            'sv' => __('Swedish', 'nexus-ai-wp-translator'),
+            'da' => __('Danish', 'nexus-ai-wp-translator'),
+            'no' => __('Norwegian', 'nexus-ai-wp-translator'),
+            'fi' => __('Finnish', 'nexus-ai-wp-translator'),
+            'pl' => __('Polish', 'nexus-ai-wp-translator'),
+            'cs' => __('Czech', 'nexus-ai-wp-translator'),
+            'hu' => __('Hungarian', 'nexus-ai-wp-translator')
         );
     }
 }

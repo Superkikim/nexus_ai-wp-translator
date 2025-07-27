@@ -1,13 +1,13 @@
 <?php
 /**
- * Frontend functionality for Claude Translator
+ * Frontend functionality for Nexus AI WP Translator
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Frontend {
+class Nexus_AI_WP_Translator_Frontend {
     
     private static $instance = null;
     private $db;
@@ -21,7 +21,7 @@ class Claude_Translator_Frontend {
     }
     
     private function __construct() {
-        $this->db = Claude_Translator_Database::get_instance();
+        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->init_hooks();
     }
     
@@ -83,7 +83,8 @@ class Claude_Translator_Frontend {
         
         // 3. Check session (non-logged in users)
         if (!is_user_logged_in() && isset($_SESSION['claude_translator_language'])) {
-            $lang = $_SESSION['claude_translator_language'];
+        if (!is_user_logged_in() && isset($_SESSION['nexus_ai_wp_translator_language'])) {
+            $lang = $_SESSION['nexus_ai_wp_translator_language'];
             if ($this->is_valid_language($lang)) {
                 return $lang;
             }
@@ -96,7 +97,7 @@ class Claude_Translator_Frontend {
         }
         
         // 5. Default to source language
-        return get_option('claude_translator_source_language', 'en');
+        return get_option('nexus_ai_wp_translator_source_language', 'en');
     }
     
     /**
@@ -135,8 +136,8 @@ class Claude_Translator_Frontend {
      * Check if language is valid/supported
      */
     private function is_valid_language($lang) {
-        $source_lang = get_option('claude_translator_source_language', 'en');
-        $target_langs = get_option('claude_translator_target_languages', array());
+        $source_lang = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $target_langs = get_option('nexus_ai_wp_translator_target_languages', array());
         
         return in_array($lang, array_merge(array($source_lang), $target_langs));
     }
@@ -151,7 +152,7 @@ class Claude_Translator_Frontend {
             if (!isset($_SESSION)) {
                 session_start();
             }
-            $_SESSION['claude_translator_language'] = $language;
+            $_SESSION['nexus_ai_wp_translator_language'] = $language;
         }
     }
     
@@ -164,7 +165,7 @@ class Claude_Translator_Frontend {
         }
         
         global $post;
-        $source_language = get_option('claude_translator_source_language', 'en');
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         
         // If current language is not the source language, try to find translation
         if ($this->current_language !== $source_language) {
@@ -183,7 +184,7 @@ class Claude_Translator_Frontend {
      */
     private function get_translated_post($post_id, $target_language) {
         // Check if current post is already a translation
-        $source_post_id = get_post_meta($post_id, '_claude_translator_source_post', true);
+        $source_post_id = get_post_meta($post_id, '_nexus_ai_wp_translator_source_post', true);
         if ($source_post_id) {
             $post_id = $source_post_id; // Use source post ID to find other translations
         }
@@ -202,23 +203,23 @@ class Claude_Translator_Frontend {
      */
     public function enqueue_frontend_scripts() {
         wp_enqueue_script(
-            'claude-translator-frontend',
-            CLAUDE_TRANSLATOR_PLUGIN_URL . 'assets/js/frontend.js',
+            'nexus-ai-wp-translator-frontend',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/frontend.js',
             array('jquery'),
-            CLAUDE_TRANSLATOR_VERSION,
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
             true
         );
         
         wp_enqueue_style(
-            'claude-translator-frontend',
-            CLAUDE_TRANSLATOR_PLUGIN_URL . 'assets/css/frontend.css',
+            'nexus-ai-wp-translator-frontend',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/css/frontend.css',
             array(),
-            CLAUDE_TRANSLATOR_VERSION
+            NEXUS_AI_WP_TRANSLATOR_VERSION
         );
         
-        wp_localize_script('claude-translator-frontend', 'claude_translator', array(
+        wp_localize_script('nexus-ai-wp-translator-frontend', 'nexus_ai_wp_translator', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('claude_translator_nonce'),
+            'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
             'current_language' => $this->current_language
         ));
     }
@@ -227,12 +228,12 @@ class Claude_Translator_Frontend {
      * Add rewrite rules for SEO-friendly URLs
      */
     public function add_rewrite_rules() {
-        $target_languages = get_option('claude_translator_target_languages', array());
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
         
         foreach ($target_languages as $lang) {
             add_rewrite_rule(
                 '^' . $lang . '/(.+)/?$',
-                'index.php?claude_lang=' . $lang . '&name=$matches[1]',
+                'index.php?nexus_ai_wp_lang=' . $lang . '&name=$matches[1]',
                 'top'
             );
         }
@@ -242,7 +243,7 @@ class Claude_Translator_Frontend {
      * Add query vars
      */
     public function add_query_vars($vars) {
-        $vars[] = 'claude_lang';
+        $vars[] = 'nexus_ai_wp_lang';
         return $vars;
     }
     
@@ -250,7 +251,7 @@ class Claude_Translator_Frontend {
      * Handle language redirect
      */
     public function handle_language_redirect() {
-        $lang = get_query_var('claude_lang');
+        $lang = get_query_var('nexus_ai_wp_lang');
         if ($lang && $this->is_valid_language($lang)) {
             $this->current_language = $lang;
             $this->store_language_preference($lang);
@@ -282,38 +283,38 @@ class Claude_Translator_Frontend {
         
         $args = wp_parse_args($args, $defaults);
         
-        $source_language = get_option('claude_translator_source_language', 'en');
-        $target_languages = get_option('claude_translator_target_languages', array());
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
         $available_languages = array_merge(array($source_language), $target_languages);
         
         $language_names = array(
-            'en' => __('English', 'claude-translator'),
-            'es' => __('Spanish', 'claude-translator'),
-            'fr' => __('French', 'claude-translator'),
-            'de' => __('German', 'claude-translator'),
-            'it' => __('Italian', 'claude-translator'),
-            'pt' => __('Portuguese', 'claude-translator'),
-            'ru' => __('Russian', 'claude-translator'),
-            'ja' => __('Japanese', 'claude-translator'),
-            'ko' => __('Korean', 'claude-translator'),
-            'zh' => __('Chinese', 'claude-translator'),
-            'ar' => __('Arabic', 'claude-translator'),
-            'hi' => __('Hindi', 'claude-translator'),
-            'nl' => __('Dutch', 'claude-translator'),
-            'sv' => __('Swedish', 'claude-translator'),
-            'da' => __('Danish', 'claude-translator'),
-            'no' => __('Norwegian', 'claude-translator'),
-            'fi' => __('Finnish', 'claude-translator'),
-            'pl' => __('Polish', 'claude-translator'),
-            'cs' => __('Czech', 'claude-translator'),
-            'hu' => __('Hungarian', 'claude-translator')
+            'en' => __('English', 'nexus-ai-wp-translator'),
+            'es' => __('Spanish', 'nexus-ai-wp-translator'),
+            'fr' => __('French', 'nexus-ai-wp-translator'),
+            'de' => __('German', 'nexus-ai-wp-translator'),
+            'it' => __('Italian', 'nexus-ai-wp-translator'),
+            'pt' => __('Portuguese', 'nexus-ai-wp-translator'),
+            'ru' => __('Russian', 'nexus-ai-wp-translator'),
+            'ja' => __('Japanese', 'nexus-ai-wp-translator'),
+            'ko' => __('Korean', 'nexus-ai-wp-translator'),
+            'zh' => __('Chinese', 'nexus-ai-wp-translator'),
+            'ar' => __('Arabic', 'nexus-ai-wp-translator'),
+            'hi' => __('Hindi', 'nexus-ai-wp-translator'),
+            'nl' => __('Dutch', 'nexus-ai-wp-translator'),
+            'sv' => __('Swedish', 'nexus-ai-wp-translator'),
+            'da' => __('Danish', 'nexus-ai-wp-translator'),
+            'no' => __('Norwegian', 'nexus-ai-wp-translator'),
+            'fi' => __('Finnish', 'nexus-ai-wp-translator'),
+            'pl' => __('Polish', 'nexus-ai-wp-translator'),
+            'cs' => __('Czech', 'nexus-ai-wp-translator'),
+            'hu' => __('Hungarian', 'nexus-ai-wp-translator')
         );
         
         ob_start();
         
         if ($args['style'] === 'dropdown') {
-            echo '<div class="claude-language-switcher claude-dropdown">';
-            echo '<select id="claude-language-select" class="claude-language-select">';
+            echo '<div class="nexus-ai-wp-language-switcher nexus-ai-wp-dropdown">';
+            echo '<select id="nexus-ai-wp-language-select" class="nexus-ai-wp-language-select">';
             
             foreach ($available_languages as $lang) {
                 $selected = ($lang === $this->current_language) ? 'selected' : '';
@@ -324,8 +325,8 @@ class Claude_Translator_Frontend {
             echo '</select>';
             echo '</div>';
         } else {
-            echo '<div class="claude-language-switcher claude-list">';
-            echo '<ul class="claude-language-list">';
+            echo '<div class="nexus-ai-wp-language-switcher nexus-ai-wp-list">';
+            echo '<ul class="nexus-ai-wp-language-list">';
             
             foreach ($available_languages as $lang) {
                 $class = ($lang === $this->current_language) ? 'current' : '';
@@ -348,19 +349,19 @@ class Claude_Translator_Frontend {
      * AJAX: Set language preference
      */
     public function ajax_set_language_preference() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         $language = sanitize_text_field($_POST['language']);
         
         if (!$this->is_valid_language($language)) {
-            wp_send_json_error(__('Invalid language', 'claude-translator'));
+            wp_send_json_error(__('Invalid language', 'nexus-ai-wp-translator'));
         }
         
         $this->store_language_preference($language);
         $this->current_language = $language;
         
         wp_send_json_success(array(
-            'message' => __('Language preference saved', 'claude-translator'),
+            'message' => __('Language preference saved', 'nexus-ai-wp-translator'),
             'redirect_url' => add_query_arg('lang', $language, $_SERVER['HTTP_REFERER'])
         ));
     }
@@ -380,7 +381,7 @@ class Claude_Translator_Frontend {
         $languages = array();
         
         // Add source language
-        $source_lang = get_post_meta($post_id, '_claude_translator_language', true) ?: get_option('claude_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
         $languages[$source_lang] = $post_id;
         
         // Add translations

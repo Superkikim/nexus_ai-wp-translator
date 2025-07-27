@@ -1,13 +1,13 @@
 <?php
 /**
- * Settings management for Claude Translator
+ * Settings management for Nexus AI WP Translator
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Settings {
+class Nexus_AI_WP_Translator_Settings {
     
     private static $instance = null;
     private $default_settings = array();
@@ -46,14 +46,14 @@ class Claude_Translator_Settings {
             $default = $this->default_settings[$key];
         }
         
-        return get_option('claude_translator_' . $key, $default);
+        return get_option('nexus_ai_wp_translator_' . $key, $default);
     }
     
     /**
      * Update setting value
      */
     public function update($key, $value) {
-        return update_option('claude_translator_' . $key, $value);
+        return update_option('nexus_ai_wp_translator_' . $key, $value);
     }
     
     /**

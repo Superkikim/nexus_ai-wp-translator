@@ -1,13 +1,13 @@
 <?php
 /**
- * Admin interface for Claude Translator
+ * Admin interface for Nexus AI WP Translator
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Admin {
+class Nexus_AI_WP_Translator_Admin {
     
     private static $instance = null;
     private $db;
@@ -22,9 +22,9 @@ class Claude_Translator_Admin {
     }
     
     private function __construct() {
-        $this->db = Claude_Translator_Database::get_instance();
-        $this->api_handler = Claude_Translator_API_Handler::get_instance();
-        $this->translation_manager = Claude_Translator_Manager::get_instance();
+        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
+        $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
+        $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
         
         $this->init_hooks();
     }
@@ -58,48 +58,48 @@ class Claude_Translator_Admin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('Nexus AI WP Translator', 'claude-translator'),
-            __('Nexus AI WP Translator', 'claude-translator'),
+            __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
+            __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
             'manage_options',
-            'claude-translator',
+            'nexus-ai-wp-translator',
             array($this, 'admin_page_dashboard'),
             'dashicons-translation',
             30
         );
         
         add_submenu_page(
-            'claude-translator',
-            __('Dashboard', 'claude-translator'),
-            __('Dashboard', 'claude-translator'),
+            'nexus-ai-wp-translator',
+            __('Dashboard', 'nexus-ai-wp-translator'),
+            __('Dashboard', 'nexus-ai-wp-translator'),
             'manage_options',
-            'claude-translator',
+            'nexus-ai-wp-translator',
             array($this, 'admin_page_dashboard')
         );
         
         add_submenu_page(
-            'claude-translator',
-            __('Settings', 'claude-translator'),
-            __('Settings', 'claude-translator'),
+            'nexus-ai-wp-translator',
+            __('Settings', 'nexus-ai-wp-translator'),
+            __('Settings', 'nexus-ai-wp-translator'),
             'manage_options',
-            'claude-translator-settings',
+            'nexus-ai-wp-translator-settings',
             array($this, 'admin_page_settings')
         );
         
         add_submenu_page(
-            'claude-translator',
-            __('Translation Logs', 'claude-translator'),
-            __('Logs', 'claude-translator'),
+            'nexus-ai-wp-translator',
+            __('Translation Logs', 'nexus-ai-wp-translator'),
+            __('Logs', 'nexus-ai-wp-translator'),
             'manage_options',
-            'claude-translator-logs',
+            'nexus-ai-wp-translator-logs',
             array($this, 'admin_page_logs')
         );
         
         add_submenu_page(
-            'claude-translator',
-            __('Post Relationships', 'claude-translator'),
-            __('Relationships', 'claude-translator'),
+            'nexus-ai-wp-translator',
+            __('Post Relationships', 'nexus-ai-wp-translator'),
+            __('Relationships', 'nexus-ai-wp-translator'),
             'manage_options',
-            'claude-translator-relationships',
+            'nexus-ai-wp-translator-relationships',
             array($this, 'admin_page_relationships')
         );
     }
@@ -108,49 +108,49 @@ class Claude_Translator_Admin {
      * Initialize settings
      */
     public function init_settings() {
-        register_setting('claude_translator_settings', 'claude_translator_api_key');
-        register_setting('claude_translator_settings', 'claude_translator_source_language');
-        register_setting('claude_translator_settings', 'claude_translator_target_languages');
-        register_setting('claude_translator_settings', 'claude_translator_auto_translate');
-        register_setting('claude_translator_settings', 'claude_translator_throttle_limit');
-        register_setting('claude_translator_settings', 'claude_translator_throttle_period');
-        register_setting('claude_translator_settings', 'claude_translator_retry_attempts');
-        register_setting('claude_translator_settings', 'claude_translator_cache_translations');
-        register_setting('claude_translator_settings', 'claude_translator_seo_friendly_urls');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_api_key');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_source_language');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_target_languages');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_translate');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_limit');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_period');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_retry_attempts');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_cache_translations');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_seo_friendly_urls');
     }
     
     /**
      * Enqueue admin scripts
      */
     public function enqueue_admin_scripts($hook) {
-        if (strpos($hook, 'claude-translator') === false && $hook !== 'post.php' && $hook !== 'post-new.php') {
+        if (strpos($hook, 'nexus-ai-wp-translator') === false && $hook !== 'post.php' && $hook !== 'post-new.php') {
             return;
         }
         
         wp_enqueue_script(
-            'claude-translator-admin',
-            CLAUDE_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js',
+            'nexus-ai-wp-translator-admin',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js',
             array('jquery'),
-            CLAUDE_TRANSLATOR_VERSION,
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
             true
         );
         
         wp_enqueue_style(
-            'claude-translator-admin',
-            CLAUDE_TRANSLATOR_PLUGIN_URL . 'assets/css/admin.css',
+            'nexus-ai-wp-translator-admin',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/css/admin.css',
             array(),
-            CLAUDE_TRANSLATOR_VERSION
+            NEXUS_AI_WP_TRANSLATOR_VERSION
         );
         
-        wp_localize_script('claude-translator-admin', 'claude_translator_ajax', array(
+        wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('claude_translator_nonce'),
+            'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
             'strings' => array(
-                'testing' => __('Testing API connection...', 'claude-translator'),
-                'success' => __('Success!', 'claude-translator'),
-                'error' => __('Error:', 'claude-translator'),
-                'translating' => __('Translating...', 'claude-translator'),
-                'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'claude-translator')
+                'testing' => __('Testing API connection...', 'nexus-ai-wp-translator'),
+                'success' => __('Success!', 'nexus-ai-wp-translator'),
+                'error' => __('Error:', 'nexus-ai-wp-translator'),
+                'translating' => __('Translating...', 'nexus-ai-wp-translator'),
+                'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'nexus-ai-wp-translator')
             )
         ));
     }
@@ -162,7 +162,7 @@ class Claude_Translator_Admin {
         $stats = $this->db->get_translation_stats();
         $recent_logs = $this->db->get_translation_logs(10);
         
-        include CLAUDE_TRANSLATOR_PLUGIN_DIR . 'templates/admin-dashboard.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-dashboard.php';
     }
     
     /**
@@ -170,17 +170,17 @@ class Claude_Translator_Admin {
      */
     public function admin_page_settings() {
         $languages = $this->translation_manager->get_available_languages();
-        $api_key = get_option('claude_translator_api_key', '');
-        $source_language = get_option('claude_translator_source_language', 'en');
-        $target_languages = get_option('claude_translator_target_languages', array('es', 'fr', 'de'));
-        $auto_translate = get_option('claude_translator_auto_translate', true);
-        $throttle_limit = get_option('claude_translator_throttle_limit', 10);
-        $throttle_period = get_option('claude_translator_throttle_period', 3600);
-        $retry_attempts = get_option('claude_translator_retry_attempts', 3);
-        $cache_translations = get_option('claude_translator_cache_translations', true);
-        $seo_friendly_urls = get_option('claude_translator_seo_friendly_urls', true);
+        $api_key = get_option('nexus_ai_wp_translator_api_key', '');
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        $auto_translate = get_option('nexus_ai_wp_translator_auto_translate', true);
+        $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
+        $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
+        $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
+        $cache_translations = get_option('nexus_ai_wp_translator_cache_translations', true);
+        $seo_friendly_urls = get_option('nexus_ai_wp_translator_seo_friendly_urls', true);
         
-        include CLAUDE_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
     }
     
     /**
@@ -193,7 +193,7 @@ class Claude_Translator_Admin {
         
         $logs = $this->db->get_translation_logs($per_page, $offset);
         
-        include CLAUDE_TRANSLATOR_PLUGIN_DIR . 'templates/admin-logs.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-logs.php';
     }
     
     /**
@@ -222,7 +222,7 @@ class Claude_Translator_Admin {
             )
         );
         
-        include CLAUDE_TRANSLATOR_PLUGIN_DIR . 'templates/admin-relationships.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-relationships.php';
     }
     
     /**
@@ -230,8 +230,8 @@ class Claude_Translator_Admin {
      */
     public function add_translation_meta_box() {
         add_meta_box(
-            'claude-translator-meta-box',
-            __('Claude Translator', 'claude-translator'),
+            'nexus-ai-wp-translator-meta-box',
+            __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
             array($this, 'display_translation_meta_box'),
             array('post', 'page'),
             'side',
@@ -243,21 +243,21 @@ class Claude_Translator_Admin {
      * Display translation meta box
      */
     public function display_translation_meta_box($post) {
-        $post_language = get_post_meta($post->ID, '_claude_translator_language', true);
-        $source_post_id = get_post_meta($post->ID, '_claude_translator_source_post', true);
+        $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true);
+        $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
         $translations = $this->db->get_post_translations($post->ID);
         $languages = $this->translation_manager->get_available_languages();
-        $target_languages = get_option('claude_translator_target_languages', array());
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
         
-        include CLAUDE_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
     }
     
     /**
      * Add posts columns
      */
     public function add_posts_columns($columns) {
-        $columns['claude_language'] = __('Language', 'claude-translator');
-        $columns['claude_translations'] = __('Translations', 'claude-translator');
+        $columns['nexus_ai_wp_language'] = __('Language', 'nexus-ai-wp-translator');
+        $columns['nexus_ai_wp_translations'] = __('Translations', 'nexus-ai-wp-translator');
         return $columns;
     }
     
@@ -266,17 +266,17 @@ class Claude_Translator_Admin {
      */
     public function display_posts_columns($column, $post_id) {
         switch ($column) {
-            case 'claude_language':
-                $language = get_post_meta($post_id, '_claude_translator_language', true);
+            case 'nexus_ai_wp_language':
+                $language = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
                 if ($language) {
                     $languages = $this->translation_manager->get_available_languages();
                     echo isset($languages[$language]) ? $languages[$language] : $language;
                 } else {
-                    echo __('Not set', 'claude-translator');
+                    echo __('Not set', 'nexus-ai-wp-translator');
                 }
                 break;
                 
-            case 'claude_translations':
+            case 'nexus_ai_wp_translations':
                 $translations = $this->db->get_post_translations($post_id);
                 if ($translations) {
                     $count = count($translations);
@@ -286,9 +286,9 @@ class Claude_Translator_Admin {
                             $completed++;
                         }
                     }
-                    echo sprintf(__('%d/%d completed', 'claude-translator'), $completed, $count);
+                    echo sprintf(__('%d/%d completed', 'nexus-ai-wp-translator'), $completed, $count);
                 } else {
-                    echo __('None', 'claude-translator');
+                    echo __('None', 'nexus-ai-wp-translator');
                 }
                 break;
         }
@@ -298,18 +298,18 @@ class Claude_Translator_Admin {
      * AJAX: Test API connection
      */
     public function ajax_test_api() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         $api_key = sanitize_text_field($_POST['api_key']);
         error_log('Nexus AI WP Translator: AJAX API test requested');
         
         // Temporarily update the API key for testing
-        $old_key = get_option('claude_translator_api_key');
-        update_option('claude_translator_api_key', $api_key);
+        $old_key = get_option('nexus_ai_wp_translator_api_key');
+        update_option('nexus_ai_wp_translator_api_key', $api_key);
         
         // Refresh API key in handler
         $this->api_handler->refresh_api_key();
@@ -317,7 +317,7 @@ class Claude_Translator_Admin {
         $result = $this->api_handler->test_api_connection();
         
         // Restore old key
-        update_option('claude_translator_api_key', $old_key);
+        update_option('nexus_ai_wp_translator_api_key', $old_key);
         $this->api_handler->refresh_api_key();
         
         wp_send_json($result);
@@ -327,24 +327,24 @@ class Claude_Translator_Admin {
      * AJAX: Save settings
      */
     public function ajax_save_settings() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         error_log('Nexus AI WP Translator: Saving settings via AJAX');
         
         // Validate and sanitize input data
-        $api_key = isset($_POST['claude_translator_api_key']) ? sanitize_text_field($_POST['claude_translator_api_key']) : '';
-        $source_language = isset($_POST['claude_translator_source_language']) ? sanitize_text_field($_POST['claude_translator_source_language']) : 'en';
-        $target_languages = isset($_POST['claude_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['claude_translator_target_languages']) : array();
-        $auto_translate = isset($_POST['claude_translator_auto_translate']) ? true : false;
-        $throttle_limit = isset($_POST['claude_translator_throttle_limit']) ? intval($_POST['claude_translator_throttle_limit']) : 10;
-        $throttle_period = isset($_POST['claude_translator_throttle_period']) ? intval($_POST['claude_translator_throttle_period']) : 3600;
-        $retry_attempts = isset($_POST['claude_translator_retry_attempts']) ? intval($_POST['claude_translator_retry_attempts']) : 3;
-        $cache_translations = isset($_POST['claude_translator_cache_translations']) ? true : false;
-        $seo_friendly_urls = isset($_POST['claude_translator_seo_friendly_urls']) ? true : false;
+        $api_key = isset($_POST['nexus_ai_wp_translator_api_key']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_api_key']) : '';
+        $source_language = isset($_POST['nexus_ai_wp_translator_source_language']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_source_language']) : 'en';
+        $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
+        $auto_translate = isset($_POST['nexus_ai_wp_translator_auto_translate']) ? true : false;
+        $throttle_limit = isset($_POST['nexus_ai_wp_translator_throttle_limit']) ? intval($_POST['nexus_ai_wp_translator_throttle_limit']) : 10;
+        $throttle_period = isset($_POST['nexus_ai_wp_translator_throttle_period']) ? intval($_POST['nexus_ai_wp_translator_throttle_period']) : 3600;
+        $retry_attempts = isset($_POST['nexus_ai_wp_translator_retry_attempts']) ? intval($_POST['nexus_ai_wp_translator_retry_attempts']) : 3;
+        $cache_translations = isset($_POST['nexus_ai_wp_translator_cache_translations']) ? true : false;
+        $seo_friendly_urls = isset($_POST['nexus_ai_wp_translator_seo_friendly_urls']) ? true : false;
         
         $settings = array(
             'api_key' => $api_key,
@@ -360,36 +360,36 @@ class Claude_Translator_Admin {
         
         // Validate settings
         if ($throttle_limit < 1) {
-            wp_send_json_error(__('Throttle limit must be at least 1', 'claude-translator'));
+            wp_send_json_error(__('Throttle limit must be at least 1', 'nexus-ai-wp-translator'));
             return;
         }
         
         if ($throttle_period < 60) {
-            wp_send_json_error(__('Throttle period must be at least 60 seconds', 'claude-translator'));
+            wp_send_json_error(__('Throttle period must be at least 60 seconds', 'nexus-ai-wp-translator'));
             return;
         }
         
         if ($retry_attempts < 1 || $retry_attempts > 10) {
-            wp_send_json_error(__('Retry attempts must be between 1 and 10', 'claude-translator'));
+            wp_send_json_error(__('Retry attempts must be between 1 and 10', 'nexus-ai-wp-translator'));
             return;
         }
         
         foreach ($settings as $key => $value) {
-            update_option('claude_translator_' . $key, $value);
+            update_option('nexus_ai_wp_translator_' . $key, $value);
             error_log("Nexus AI WP Translator: Updated setting {$key}");
         }
         
-        wp_send_json_success(__('Settings saved successfully', 'claude-translator'));
+        wp_send_json_success(__('Settings saved successfully', 'nexus-ai-wp-translator'));
     }
     
     /**
      * AJAX: Get statistics
      */
     public function ajax_get_stats() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         $period = sanitize_text_field($_POST['period']) ?: '7 days';
@@ -402,10 +402,10 @@ class Claude_Translator_Admin {
      * AJAX: Clean up orphaned relationships
      */
     public function ajax_cleanup_orphaned() {
-        check_ajax_referer('claude_translator_nonce', 'nonce');
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
-            wp_die(__('Permission denied', 'claude-translator'));
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
         global $wpdb;
@@ -427,7 +427,7 @@ class Claude_Translator_Admin {
         $total_deleted = $deleted_source + $deleted_translated;
         
         wp_send_json_success(sprintf(
-            __('Cleaned up %d orphaned relationships', 'claude-translator'),
+            __('Cleaned up %d orphaned relationships', 'nexus-ai-wp-translator'),
             $total_deleted
         ));
     }

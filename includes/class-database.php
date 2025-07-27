@@ -1,13 +1,13 @@
 <?php
 /**
- * Database handler for Claude Translator
+ * Database handler for Nexus AI WP Translator
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Claude_Translator_Database {
+class Nexus_AI_WP_Translator_Database {
     
     private static $instance = null;
     private $wpdb;
@@ -29,9 +29,9 @@ class Claude_Translator_Database {
         $this->wpdb = $wpdb;
         
         // Set table names
-        $this->translations_table = $wpdb->prefix . 'claude_translations';
-        $this->logs_table = $wpdb->prefix . 'claude_translation_logs';
-        $this->preferences_table = $wpdb->prefix . 'claude_user_preferences';
+        $this->translations_table = $wpdb->prefix . 'nexus_ai_wp_translations';
+        $this->logs_table = $wpdb->prefix . 'nexus_ai_wp_translation_logs';
+        $this->preferences_table = $wpdb->prefix . 'nexus_ai_wp_user_preferences';
     }
     
     /**
