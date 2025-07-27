@@ -164,6 +164,11 @@ if (!defined('ABSPATH')) {
 
 <script>
 jQuery(document).ready(function($) {
+    // Check if posts.js functions are available
+    if (typeof window.NexusAIWPTranslatorPosts === 'undefined') {
+        console.log('NexusAI Debug: posts.js not loaded, using inline unlink function');
+    }
+    
     // Unlink translation
     $('.unlink-translation').on('click', function() {
         if (!confirm('<?php _e('Are you sure you want to unlink this translation? This action cannot be undone.', 'nexus-ai-wp-translator'); ?>')) {
@@ -181,7 +186,7 @@ jQuery(document).ready(function($) {
             action: 'nexus_ai_wp_unlink_translation',
             post_id: sourceId,
             related_post_id: translatedId,
-            nonce: nexus_ai_wp_translator_ajax.nonce
+            nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
         }, function(response) {
             if (response.success) {
                 row.fadeOut(300, function() {
@@ -208,7 +213,7 @@ jQuery(document).ready(function($) {
         
         $.post(ajaxurl, {
             action: 'nexus_ai_wp_cleanup_orphaned',
-            nonce: nexus_ai_wp_translator_ajax.nonce
+            nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
         }, function(response) {
             if (response.success) {
                 location.reload();

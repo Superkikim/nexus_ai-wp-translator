@@ -66,7 +66,7 @@ class Nexus_AI_WP_Translator_Manager {
             error_log('Nexus AI WP Translator: enqueue_post_scripts called for hook: ' . $hook);
         }
         
-        if (in_array($hook, array('edit.php', 'post.php', 'post-new.php'))) {
+        if (in_array($hook, array('edit.php', 'post.php', 'post-new.php')) || strpos($hook, 'nexus-ai-wp-translator') !== false) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Loading posts.js for hook: ' . $hook);
             }
