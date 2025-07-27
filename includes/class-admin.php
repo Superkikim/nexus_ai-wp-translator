@@ -182,6 +182,7 @@ class Nexus_AI_WP_Translator_Admin {
                 'success' => __('Success!', 'nexus-ai-wp-translator'),
                 'error' => __('Error:', 'nexus-ai-wp-translator'),
                 'translating' => __('Translating...', 'nexus-ai-wp-translator'),
+                'loading_models' => __('Loading models...', 'nexus-ai-wp-translator'),
                 'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'nexus-ai-wp-translator')
             )
         ));
