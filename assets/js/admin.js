@@ -62,6 +62,48 @@ var NexusAIWPTranslatorAdmin = {
             }, 1000); // Wait 1 second for page to fully load
         }
     },
+}
+    'use strict';
+    
+    console.log('NexusAI Debug: JavaScript function wrapper started');
+    
+    // Initialize when document is ready
+    $(document).ready(function() {
+        console.log('NexusAI Debug: Document ready, initializing admin interface');
+        NexusAIWPTranslatorAdmin.init();
+    });
+    
+    var NexusAIWPTranslatorAdmin = {
+        
+        init: function() {
+            console.log('NexusAI Debug: Starting admin initialization');
+            console.log('NexusAI Debug: Admin object initialized successfully');
+            this.initTabSwitching();
+            this.initApiTesting();
+            this.initSettingsSave();
+            this.initTranslationActions();
+            this.initStatusRefresh();
+            this.initBulkActions();
+            
+            // Load models on page load if API key exists
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val();
+            console.log('NexusAI Debug: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+            
+            if (apiKey && apiKey.trim().length > 0) {
+                console.log('NexusAI Debug: API key found on page load, loading models automatically');
+                this.loadAvailableModels();
+            } else {
+                console.log('NexusAI Debug: No API key found on page load, skipping model load');
+            }
+            
+            // Check for auto translation on post edit pages
+            if ($('#post_ID').length > 0) {
+                console.log('NexusAI Debug: Post edit page detected, checking for auto translation');
+                setTimeout(function() {
+                    NexusAIWPTranslatorAdmin.checkAutoTranslation();
+                }, 1000); // Wait 1 second for page to fully load
+            }
+        },
         
         /**
          * Initialize tab switching functionality
@@ -984,24 +1026,10 @@ var NexusAIWPTranslatorAdmin = {
                 $(this).remove();
             });
         }
-};
-
-// Make NexusAIWPTranslatorAdmin globally available immediately
-window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
-console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
-
-(function($) {
-    'use strict';
+    };
     
-    console.log('NexusAI Debug: JavaScript function wrapper started');
+    // Make NexusAIWPTranslatorAdmin globally available
+    window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
+    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
     
-    // Initialize when document is ready
-    $(document).ready(function() {
-        console.log('NexusAI Debug: Document ready, initializing admin interface');
-        if (window.NexusAIWPTranslatorAdmin) {
-            window.NexusAIWPTranslatorAdmin.init();
-        } else {
-            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
-        }
-    });
 })(jQuery);
