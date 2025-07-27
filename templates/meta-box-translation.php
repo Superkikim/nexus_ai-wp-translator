@@ -138,106 +138,11 @@ if (!defined('ABSPATH')) {
 </div>
 
 <script>
-console.log('NexusAI Debug: Meta box script loaded');
-console.log('NexusAI Debug: Meta box - jQuery available:', typeof jQuery !== 'undefined');
-
-// Check if admin script is available with better debugging
-function checkAdminScript() {
-    if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
-        console.log('NexusAI Debug: Meta box - Admin script available: true');
-        return true;
-    } else {
-        console.log('NexusAI Debug: Meta box - Admin script available: false');
-        console.log('NexusAI Debug: Available globals containing "nexus":', 
-            Object.keys(window).filter(k => k.toLowerCase().includes('nexus')));
-        return false;
-    }
-}
-
-checkAdminScript();
-
 jQuery(document).ready(function($) {
-    console.log('NexusAI Debug: Meta box jQuery ready');
-    
-    // Check if admin script is available with retry mechanism
-    var adminScriptAvailable = checkAdminScript();
-    
-    if (!adminScriptAvailable) {
-        console.log('NexusAI Debug: Admin script not available on document ready, trying again in 500ms...');
-        setTimeout(function() {
-            adminScriptAvailable = checkAdminScript();
-            if (!adminScriptAvailable) {
-                console.error('NexusAI Debug: Admin script still not available after retry!');
-            }
-        }, 500);
-        // Continue with basic functionality
-    } else {
-        console.log('NexusAI Debug: Admin script available');
-    }
-    
     var postId = <?php echo intval($post->ID); ?>;
     
-    // Translate post
-    $('#nexus-ai-wp-translate-post').on('click', function() {
-        console.log('NexusAI Debug: Translate button clicked in meta box');
-        var button = $(this);
-        var targetLanguages = [];
-        
-        $('.nexus-ai-wp-target-language:checked').each(function() {
-            targetLanguages.push($(this).val());
-        });
-        
-        console.log('NexusAI Debug: Target languages:', targetLanguages);
-        
-        if (targetLanguages.length === 0) {
-            alert('<?php _e('Please select at least one target language.', 'nexus-ai-wp-translator'); ?>');
-            return;
-        }
-        
-        // Show progress popup if available
-        if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
-            console.log('NexusAI Debug: About to show progress popup from meta box');
-            window.NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
-        }
-        
-        button.prop('disabled', true).text('<?php _e('Translating...', 'nexus-ai-wp-translator'); ?>');
-        
-        console.log('NexusAI Debug: Making AJAX request from meta box');
-        
-        // Check if AJAX variables are available
-        var ajaxUrl = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.ajax_url : ajaxurl;
-        var nonce = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.nonce : '';
-        
-        $.post(ajaxUrl, {
-            action: 'nexus_ai_wp_translate_post',
-            post_id: postId,
-            target_languages: targetLanguages,
-            nonce: nonce
-        }, function(response) {
-            console.log('NexusAI Debug: Translation response in meta box:', response);
-            
-            // Update progress popup with results
-            if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
-                window.NexusAIWPTranslatorAdmin.updateTranslationProgress(response);
-            }
-            
-            if (response.success) {
-                setTimeout(function() {
-                    location.reload();
-                }, 3000);
-            }
-        }).fail(function() {
-            console.log('NexusAI Debug: Translation failed in meta box');
-            if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
-                window.NexusAIWPTranslatorAdmin.updateTranslationProgress({
-                    success: false,
-                    message: 'Network error occurred'
-                });
-            }
-        }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Translate Now', 'nexus-ai-wp-translator'); ?>');
-        });
-    });
+    // Note: The "Translate Now" button is handled by admin.js
+    // This ensures proper initialization order and avoids script conflicts
     
     // Get translation status
     $('#nexus-ai-wp-get-translation-status').on('click', function() {
