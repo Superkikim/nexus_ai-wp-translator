@@ -57,24 +57,19 @@ if (!defined('ABSPATH')) {
                         </th>
                         <td>
                             <select id="nexus_ai_wp_translator_model" name="nexus_ai_wp_translator_model">
-                                <option value="claude-3-5-sonnet-20241022" <?php selected($selected_model, 'claude-3-5-sonnet-20241022'); ?>>
-                                    <?php _e('Claude 3.5 Sonnet (Latest)', 'nexus-ai-wp-translator'); ?>
-                                </option>
-                                <option value="claude-3-sonnet-20240229" <?php selected($selected_model, 'claude-3-sonnet-20240229'); ?>>
-                                    <?php _e('Claude 3 Sonnet', 'nexus-ai-wp-translator'); ?>
-                                </option>
-                                <option value="claude-3-haiku-20240307" <?php selected($selected_model, 'claude-3-haiku-20240307'); ?>>
-                                    <?php _e('Claude 3 Haiku', 'nexus-ai-wp-translator'); ?>
-                                </option>
-                                <option value="claude-3-opus-20240229" <?php selected($selected_model, 'claude-3-opus-20240229'); ?>>
-                                    <?php _e('Claude 3 Opus', 'nexus-ai-wp-translator'); ?>
-                                </option>
+                                <?php if (empty($selected_model)): ?>
+                                    <option value=""><?php _e('Please test API connection to load models', 'nexus-ai-wp-translator'); ?></option>
+                                <?php else: ?>
+                                    <option value="<?php echo esc_attr($selected_model); ?>" selected>
+                                        <?php echo esc_html($selected_model); ?>
+                                    </option>
+                                <?php endif; ?>
                             </select>
                             <button type="button" id="nexus-ai-wp-refresh-models" class="button" style="margin-left: 10px;">
                                 <?php _e('Refresh Models', 'nexus-ai-wp-translator'); ?>
                             </button>
                             <p class="description">
-                                <?php _e('Select the Claude AI model to use for translations. Claude 3.5 Sonnet is recommended for best quality.', 'nexus-ai-wp-translator'); ?>
+                                <?php _e('Select the Claude AI model to use for translations. Test your API connection first to load available models.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
