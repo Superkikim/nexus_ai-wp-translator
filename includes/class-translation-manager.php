@@ -47,8 +47,14 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('wp_ajax_nexus_ai_wp_get_linked_posts', array($this, 'ajax_get_linked_posts'));
         add_action('wp_ajax_nexus_ai_wp_handle_post_action', array($this, 'ajax_handle_post_action'));
         
-        // Add admin scripts for post list and edit screens
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 20);
+        // Add admin scripts for post list and edit screens - MUST be in admin context
+        if (is_admin()) {
+            add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 20);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Registered enqueue_post_scripts hook in admin context');
+            }
+        }
     }
     
     /**
