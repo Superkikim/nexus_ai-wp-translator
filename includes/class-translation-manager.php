@@ -48,14 +48,23 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('wp_ajax_nexus_ai_wp_handle_post_action', array($this, 'ajax_handle_post_action'));
         
         // Add admin scripts for post list and edit screens
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 20);
     }
     
     /**
      * Enqueue scripts for post management
      */
     public function enqueue_post_scripts($hook) {
+        // Debug: Always log when this function is called
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: enqueue_post_scripts called for hook: ' . $hook);
+        }
+        
         if (in_array($hook, array('edit.php', 'post.php', 'post-new.php'))) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Loading posts.js for hook: ' . $hook);
+            }
+            
             wp_enqueue_script(
                 'nexus-ai-wp-translator-posts',
                 NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/posts.js',
@@ -77,6 +86,10 @@ class Nexus_AI_WP_Translator_Manager {
                     'processing' => __('Processing...', 'nexus-ai-wp-translator')
                 )
             ));
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: posts.js enqueued successfully');
+            }
             
             // Add CSS for the popup
             wp_add_inline_style('wp-admin', '
@@ -123,6 +136,10 @@ class Nexus_AI_WP_Translator_Manager {
                     margin-left: 10px;
                 }
             ');
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: posts.js NOT loaded - wrong hook: ' . $hook);
+            }
         }
     }
     
