@@ -140,20 +140,17 @@ if (!defined('ABSPATH')) {
 <script>
 console.log('NexusAI Debug: Meta box script loaded');
 
-// Wait for admin.js to be available
-function waitForAdminScript() {
-    if (typeof window.NexusAIWPTranslatorAdmin === 'undefined') {
-        console.log('NexusAI Debug: Waiting for admin script...');
-        setTimeout(waitForAdminScript, 100);
-        return;
-    }
-    console.log('NexusAI Debug: Admin script available, initializing meta box');
-    initMetaBoxScript();
-}
-
-function initMetaBoxScript() {
 jQuery(document).ready(function($) {
     console.log('NexusAI Debug: Meta box jQuery ready');
+    
+    // Check if admin script is available
+    if (typeof window.NexusAIWPTranslatorAdmin === 'undefined') {
+        console.error('NexusAI Debug: Admin script not available!');
+        // Continue with basic functionality
+    } else {
+        console.log('NexusAI Debug: Admin script available');
+    }
+    
     var postId = <?php echo intval($post->ID); ?>;
     
     // Translate post
@@ -173,26 +170,25 @@ jQuery(document).ready(function($) {
             return;
         }
         
-        // Check if admin functions are available
-        if (typeof window.NexusAIWPTranslatorAdmin === 'undefined') {
-            console.error('NexusAI Debug: Admin script not loaded!');
-            alert('Error: Admin script not loaded');
-            return;
+        // Show progress popup if available
+        if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
+            console.log('NexusAI Debug: About to show progress popup from meta box');
+            window.NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
         }
-        
-        console.log('NexusAI Debug: About to show progress popup from meta box');
-        
-        // Show progress popup using admin script
-        window.NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
         
         button.prop('disabled', true).text('<?php _e('Translating...', 'nexus-ai-wp-translator'); ?>');
         
         console.log('NexusAI Debug: Making AJAX request from meta box');
-        $.post(ajaxurl, {
+        
+        // Check if AJAX variables are available
+        var ajaxUrl = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.ajax_url : ajaxurl;
+        var nonce = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.nonce : '';
+        
+        $.post(ajaxUrl, {
             action: 'nexus_ai_wp_translate_post',
             post_id: postId,
             target_languages: targetLanguages,
-            nonce: nexus_ai_wp_translator_ajax.nonce
+            nonce: nonce
         }, function(response) {
             console.log('NexusAI Debug: Translation response in meta box:', response);
             
@@ -224,10 +220,13 @@ jQuery(document).ready(function($) {
         var button = $(this);
         button.prop('disabled', true);
         
-        $.post(ajaxurl, {
+        var ajaxUrl = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.ajax_url : ajaxurl;
+        var nonce = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.nonce : '';
+        
+        $.post(ajaxUrl, {
             action: 'nexus_ai_wp_get_translation_status',
             post_id: postId,
-            nonce: nexus_ai_wp_translator_ajax.nonce
+            nonce: nonce
         }, function(response) {
             if (response.success && response.data.length > 0) {
                 var html = '<ul>';
@@ -254,11 +253,14 @@ jQuery(document).ready(function($) {
         var postId = button.data('post-id');
         var relatedId = button.data('related-id');
         
-        $.post(ajaxurl, {
+        var ajaxUrl = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.ajax_url : ajaxurl;
+        var nonce = (typeof nexus_ai_wp_translator_ajax !== 'undefined') ? nexus_ai_wp_translator_ajax.nonce : '';
+        
+        $.post(ajaxUrl, {
             action: 'nexus_ai_wp_unlink_translation',
             post_id: postId,
             related_post_id: relatedId,
-            nonce: nexus_ai_wp_translator_ajax.nonce
+            nonce: nonce
         }, function(response) {
             if (response.success) {
                 button.closest('li').fadeOut();
@@ -280,8 +282,4 @@ jQuery(document).ready(function($) {
         }, 1000);
     });
 });
-}
-
-// Start waiting for admin script
-waitForAdminScript();
 </script>
