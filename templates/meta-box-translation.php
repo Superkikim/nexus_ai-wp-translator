@@ -139,13 +139,15 @@ if (!defined('ABSPATH')) {
 
 <script>
 console.log('NexusAI Debug: Meta box script loaded');
+console.log('NexusAI Debug: Meta box - jQuery available:', typeof jQuery !== 'undefined');
+console.log('NexusAI Debug: Meta box - Admin script available:', typeof window.NexusAIWPTranslatorAdmin !== 'undefined');
 
 jQuery(document).ready(function($) {
     console.log('NexusAI Debug: Meta box jQuery ready');
     
     // Check if admin script is available
     if (typeof window.NexusAIWPTranslatorAdmin === 'undefined') {
-        console.error('NexusAI Debug: Admin script not available!');
+        console.error('NexusAI Debug: Admin script not available! Available globals:', Object.keys(window).filter(k => k.includes('nexus') || k.includes('Nexus')));
         // Continue with basic functionality
     } else {
         console.log('NexusAI Debug: Admin script available');

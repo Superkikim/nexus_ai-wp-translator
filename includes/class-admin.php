@@ -177,8 +177,12 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: enqueue_admin_scripts called for hook: ' . $hook);
         }
         
-        // Only load on our admin pages
-        if (strpos($hook, 'nexus-ai-wp-translator') === false && $hook !== 'post.php' && $hook !== 'post-new.php') {
+        // Load on our admin pages AND post edit pages
+        $load_on_hooks = array('post.php', 'post-new.php');
+        $is_our_page = strpos($hook, 'nexus-ai-wp-translator') !== false;
+        $is_post_page = in_array($hook, $load_on_hooks);
+        
+        if (!$is_our_page && !$is_post_page) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Scripts not loaded - wrong hook: ' . $hook);
             }
@@ -187,17 +191,20 @@ class Nexus_AI_WP_Translator_Admin {
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Loading admin scripts for hook: ' . $hook);
+            error_log('Nexus AI WP Translator: Is our page: ' . ($is_our_page ? 'YES' : 'NO'));
+            error_log('Nexus AI WP Translator: Is post page: ' . ($is_post_page ? 'YES' : 'NO'));
         }
         
         // Enqueue jQuery first to ensure it's available
         wp_enqueue_script('jquery');
         
+        // Force load admin script with high priority
         wp_enqueue_script(
             'nexus-ai-wp-translator-admin',
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js',
             array('jquery'),
             NEXUS_AI_WP_TRANSLATOR_VERSION,
-            false  // Load in header to ensure it's available for inline scripts
+            true  // Load in footer but with dependency on jQuery
         );
         
         wp_enqueue_style(
@@ -206,6 +213,10 @@ class Nexus_AI_WP_Translator_Admin {
             array(),
             NEXUS_AI_WP_TRANSLATOR_VERSION
         );
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: admin.js enqueued with URL: ' . NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js');
+        }
         
         // Make AJAX variables available globally, not just for the external script
         $ajax_data = array(
@@ -227,6 +238,7 @@ class Nexus_AI_WP_Translator_Admin {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Scripts and styles enqueued successfully');
             error_log('Nexus AI WP Translator: AJAX URL: ' . admin_url('admin-ajax.php'));
+            error_log('Nexus AI WP Translator: AJAX data localized: ' . print_r($ajax_data, true));
         }
     }
     

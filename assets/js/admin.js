@@ -4,6 +4,8 @@
 
 // Debug: Log when script file is loaded
 console.log('NexusAI Debug: admin.js file loaded');
+console.log('NexusAI Debug: Current URL:', window.location.href);
+console.log('NexusAI Debug: jQuery available:', typeof jQuery !== 'undefined');
 
 // Check if jQuery is available
 if (typeof jQuery === 'undefined') {
@@ -15,6 +17,7 @@ if (typeof jQuery === 'undefined') {
 // Check if our localized variables are available
 if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
     console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
+    console.log('NexusAI Debug: Available global variables:', Object.keys(window));
 } else {
     console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
 }
@@ -34,6 +37,7 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
         
         init: function() {
             console.log('NexusAI Debug: Starting admin initialization');
+            console.log('NexusAI Debug: Admin object initialized successfully');
             this.initTabSwitching();
             this.initApiTesting();
             this.initSettingsSave();
