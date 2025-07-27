@@ -46,6 +46,8 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this, 'ajax_get_translation_status'));
         add_action('wp_ajax_nexus_ai_wp_get_linked_posts', array($this, 'ajax_get_linked_posts'));
         add_action('wp_ajax_nexus_ai_wp_handle_post_action', array($this, 'ajax_handle_post_action'));
+        add_action('wp_ajax_nexus_ai_wp_get_auto_translation_status', array($this, 'ajax_get_auto_translation_status'));
+        add_action('wp_ajax_nexus_ai_wp_dismiss_auto_translation', array($this, 'ajax_dismiss_auto_translation'));
         
         // Add admin scripts for post list and edit screens - MUST be in admin context
         if (is_admin()) {
@@ -175,8 +177,24 @@ class Nexus_AI_WP_Translator_Manager {
         
         $this->processing_posts[] = $post_id;
         
-        // For auto-translation, we could show a notification
-        // but for now we'll just process silently
+        // Store translation data in session for popup
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        
+        // Filter out source language from targets
+        $target_languages = array_filter($target_languages, function($lang) use ($source_lang) {
+            return $lang !== $source_lang;
+        });
+        
+        if (!empty($target_languages)) {
+            // Store in transient for popup display
+            set_transient('nexus_ai_wp_auto_translation_' . $post_id, array(
+                'post_id' => $post_id,
+                'post_title' => $post->post_title,
+                'target_languages' => $target_languages,
+                'status' => 'starting'
+            ), 300); // 5 minutes
+        }
         
         // Start translation process
         $this->translate_post($post_id);
@@ -426,6 +444,67 @@ class Nexus_AI_WP_Translator_Manager {
         }
         
         error_log("Nexus AI WP Translator: Completed delete process for post {$post_id}");
+    }
+    
+    /**
+     * AJAX: Get auto translation status
+     */
+    public function ajax_get_auto_translation_status() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        $post_id = intval($_POST['post_id']);
+        $translation_data = get_transient('nexus_ai_wp_auto_translation_' . $post_id);
+        
+        if (!$translation_data) {
+            wp_send_json_error('No auto translation data found');
+            return;
+        }
+        
+        // Get current translation status
+        $translations = $this->db->get_post_translations($post_id);
+        $completed_languages = array();
+        $failed_languages = array();
+        
+        foreach ($translations as $translation) {
+            if ($translation->source_post_id == $post_id) {
+                if ($translation->status === 'completed') {
+                    $completed_languages[] = $translation->target_language;
+                } else {
+                    $failed_languages[] = $translation->target_language;
+                }
+            }
+        }
+        
+        // Check if all translations are done
+        $all_done = count($completed_languages) + count($failed_languages) >= count($translation_data['target_languages']);
+        
+        wp_send_json_success(array(
+            'post_title' => $translation_data['post_title'],
+            'target_languages' => $translation_data['target_languages'],
+            'completed_languages' => $completed_languages,
+            'failed_languages' => $failed_languages,
+            'all_done' => $all_done
+        ));
+    }
+    
+    /**
+     * AJAX: Dismiss auto translation popup
+     */
+    public function ajax_dismiss_auto_translation() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        $post_id = intval($_POST['post_id']);
+        delete_transient('nexus_ai_wp_auto_translation_' . $post_id);
+        
+        wp_send_json_success('Auto translation popup dismissed');
     }
     
     /**

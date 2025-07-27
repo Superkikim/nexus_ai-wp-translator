@@ -51,6 +51,14 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
             } else {
                 console.log('NexusAI Debug: No API key found on page load, skipping model load');
             }
+            
+            // Check for auto translation on post edit pages
+            if ($('#post_ID').length > 0) {
+                console.log('NexusAI Debug: Post edit page detected, checking for auto translation');
+                setTimeout(function() {
+                    NexusAIWPTranslatorAdmin.checkAutoTranslation();
+                }, 1000); // Wait 1 second for page to fully load
+            }
         },
         
         /**
@@ -802,6 +810,175 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
         closeTranslationProgress: function() {
             console.log('NexusAI Debug: Closing translation progress popup');
             $('#nexus-ai-wp-progress-popup').removeClass('show').fadeOut(300, function() {
+                $(this).remove();
+            });
+        },
+        
+        /**
+         * Check for auto translation and show popup
+         */
+        checkAutoTranslation: function() {
+            console.log('NexusAI Debug: Checking for auto translation');
+            
+            var postId = this.getPostId();
+            if (!postId) {
+                console.log('NexusAI Debug: No post ID found for auto translation check');
+                return;
+            }
+            
+            console.log('NexusAI Debug: Checking auto translation for post:', postId);
+            
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_auto_translation_status',
+                post_id: postId,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('NexusAI Debug: Auto translation status response:', response);
+                
+                if (response.success && response.data) {
+                    NexusAIWPTranslatorAdmin.showAutoTranslationProgress(response.data);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: Auto translation check failed:', error);
+            });
+        },
+        
+        /**
+         * Show auto translation progress popup
+         */
+        showAutoTranslationProgress: function(data) {
+            console.log('NexusAI Debug: Showing auto translation progress:', data);
+            
+            // Language names mapping
+            var languageNames = {
+                'en': 'English',
+                'es': 'Spanish', 
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese',
+                'ru': 'Russian',
+                'ja': 'Japanese',
+                'ko': 'Korean',
+                'zh': 'Chinese',
+                'ar': 'Arabic',
+                'hi': 'Hindi',
+                'nl': 'Dutch',
+                'sv': 'Swedish',
+                'da': 'Danish',
+                'no': 'Norwegian',
+                'fi': 'Finnish',
+                'pl': 'Polish',
+                'cs': 'Czech',
+                'hu': 'Hungarian'
+            };
+            
+            var languagesHtml = '';
+            $.each(data.target_languages, function(i, langCode) {
+                var langName = languageNames[langCode] || langCode;
+                var isCompleted = data.completed_languages.indexOf(langCode) !== -1;
+                var isFailed = data.failed_languages.indexOf(langCode) !== -1;
+                var status = 'processing';
+                var statusText = 'Translating...';
+                var iconHtml = '<div class="nexus-ai-wp-progress-spinner"></div>';
+                
+                if (isCompleted) {
+                    status = 'completed';
+                    statusText = 'Completed';
+                    iconHtml = '<div class="nexus-ai-wp-progress-check"></div>';
+                } else if (isFailed) {
+                    status = 'error';
+                    statusText = 'Failed';
+                    iconHtml = '<div class="nexus-ai-wp-progress-error"></div>';
+                }
+                
+                languagesHtml += 
+                    '<div class="nexus-ai-wp-progress-language ' + status + '" data-lang="' + langCode + '">' +
+                        '<div class="nexus-ai-wp-progress-language-info">' +
+                            '<span class="nexus-ai-wp-progress-language-name">' + langName + '</span>' +
+                            '<span class="nexus-ai-wp-progress-language-code">' + langCode + '</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-progress-status">' +
+                            '<div class="nexus-ai-wp-progress-icon">' + iconHtml + '</div>' +
+                            '<span>' + statusText + '</span>' +
+                        '</div>' +
+                    '</div>';
+            });
+            
+            var summaryHtml = '';
+            var buttonsHtml = '';
+            
+            if (data.all_done) {
+                var successCount = data.completed_languages.length;
+                var errorCount = data.failed_languages.length;
+                
+                if (errorCount === 0) {
+                    summaryHtml = '<div class="nexus-ai-wp-progress-summary success">' +
+                        '<strong>Auto Translation Completed!</strong><br>' +
+                        'Successfully translated "' + data.post_title + '" to ' + successCount + ' language(s).' +
+                        '</div>';
+                } else {
+                    summaryHtml = '<div class="nexus-ai-wp-progress-summary error">' +
+                        '<strong>Auto Translation Completed with Errors</strong><br>' +
+                        'Success: ' + successCount + ', Errors: ' + errorCount +
+                        '</div>';
+                }
+                
+                buttonsHtml = '<div class="nexus-ai-wp-progress-buttons">' +
+                    '<button class="button button-primary" onclick="location.reload()">Refresh Page</button>' +
+                    '<button class="button" onclick="NexusAIWPTranslatorAdmin.dismissAutoTranslation()">Dismiss</button>' +
+                    '</div>';
+            }
+            
+            var popupHtml = 
+                '<div class="nexus-ai-wp-progress-popup" id="nexus-ai-wp-auto-progress-popup">' +
+                    '<div class="nexus-ai-wp-progress-content">' +
+                        '<button class="nexus-ai-wp-progress-close" onclick="NexusAIWPTranslatorAdmin.dismissAutoTranslation()">&times;</button>' +
+                        '<div class="nexus-ai-wp-progress-header">' +
+                            '<h3>' + (data.all_done ? 'Auto Translation Complete' : 'Auto Translation in Progress') + '</h3>' +
+                            '<p>Translating "' + data.post_title + '"...</p>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-progress-languages">' +
+                            languagesHtml +
+                        '</div>' +
+                        summaryHtml +
+                        buttonsHtml +
+                    '</div>' +
+                '</div>';
+            
+            // Remove existing popup
+            $('#nexus-ai-wp-auto-progress-popup').remove();
+            
+            // Add new popup
+            $('body').append(popupHtml);
+            $('#nexus-ai-wp-auto-progress-popup').addClass('show');
+            
+            // If not all done, poll for updates
+            if (!data.all_done) {
+                setTimeout(function() {
+                    NexusAIWPTranslatorAdmin.checkAutoTranslation();
+                }, 2000); // Check every 2 seconds
+            }
+        },
+        
+        /**
+         * Dismiss auto translation popup
+         */
+        dismissAutoTranslation: function() {
+            console.log('NexusAI Debug: Dismissing auto translation popup');
+            
+            var postId = this.getPostId();
+            if (postId) {
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_dismiss_auto_translation',
+                    post_id: postId,
+                    nonce: nexus_ai_wp_translator_ajax.nonce
+                });
+            }
+            
+            $('#nexus-ai-wp-auto-progress-popup').removeClass('show').fadeOut(300, function() {
                 $(this).remove();
             });
         }
