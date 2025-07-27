@@ -347,7 +347,9 @@ class Nexus_AI_WP_Translator_Admin {
         }
         
         $api_key = sanitize_text_field($_POST['api_key']);
-        error_log('Nexus AI WP Translator: AJAX API test requested');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: AJAX API test requested');
+        }
         
         // Temporarily update the API key for testing
         $old_key = get_option('nexus_ai_wp_translator_api_key');
@@ -375,6 +377,10 @@ class Nexus_AI_WP_Translator_Admin {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: AJAX get models requested');
+        }
+        
         $api_key = sanitize_text_field($_POST['api_key']);
         
         // Temporarily update the API key for testing
@@ -385,6 +391,10 @@ class Nexus_AI_WP_Translator_Admin {
         $this->api_handler->refresh_api_key();
         
         $result = $this->api_handler->get_available_models();
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Get models result: ' . print_r($result, true));
+        }
         
         // Restore old key
         update_option('nexus_ai_wp_translator_api_key', $old_key);
@@ -403,7 +413,9 @@ class Nexus_AI_WP_Translator_Admin {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
-        error_log('Nexus AI WP Translator: Saving settings via AJAX');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Saving settings via AJAX');
+        }
         
         // Validate and sanitize input data
         $api_key = isset($_POST['nexus_ai_wp_translator_api_key']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_api_key']) : '';
@@ -448,7 +460,9 @@ class Nexus_AI_WP_Translator_Admin {
         
         foreach ($settings as $key => $value) {
             update_option('nexus_ai_wp_translator_' . $key, $value);
-            error_log("Nexus AI WP Translator: Updated setting {$key}");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Updated setting {$key}");
+            }
         }
         
         wp_send_json_success(__('Settings saved successfully', 'nexus-ai-wp-translator'));
