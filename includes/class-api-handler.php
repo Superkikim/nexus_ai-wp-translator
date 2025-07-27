@@ -12,7 +12,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     private static $instance = null;
     private $api_key;
     private $api_endpoint = 'https://api.anthropic.com/v1/messages';
-    private $model = 'claude-3-sonnet-20240229';
+    private $models_endpoint = 'https://api.anthropic.com/v1/models';
     
     public static function get_instance() {
         if (null === self::$instance) {
@@ -33,6 +33,101 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
     
     /**
+     * Get available models from Claude API
+     */
+    public function get_available_models() {
+        if (empty($this->api_key)) {
+            return array(
+                'success' => false,
+                'message' => __('API key is required', 'nexus-ai-wp-translator')
+            );
+        }
+        
+        $headers = array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $this->api_key,
+            'anthropic-version' => '2023-06-01'
+        );
+        
+        $response = wp_remote_get($this->models_endpoint, array(
+            'headers' => $headers,
+            'timeout' => 30
+        ));
+        
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($response_code !== 200) {
+            $error_data = json_decode($response_body, true);
+            $error_message = isset($error_data['error']['message']) 
+                ? $error_data['error']['message'] 
+                : __('Failed to retrieve models', 'nexus-ai-wp-translator');
+                
+            return array(
+                'success' => false,
+                'message' => $error_message
+            );
+        }
+        
+        $data = json_decode($response_body, true);
+        
+        if (!isset($data['data']) || !is_array($data['data'])) {
+            // Fallback to known models if API doesn't return model list
+            $models = array(
+                'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+                'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
+                'claude-3-haiku-20240307' => 'Claude 3 Haiku',
+                'claude-3-opus-20240229' => 'Claude 3 Opus'
+            );
+        } else {
+            $models = array();
+            foreach ($data['data'] as $model) {
+                if (isset($model['id'])) {
+                    $display_name = $this->format_model_name($model['id']);
+                    $models[$model['id']] = $display_name;
+                }
+            }
+            
+            // If no models found, use fallback
+            if (empty($models)) {
+                $models = array(
+                    'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+                    'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
+                    'claude-3-haiku-20240307' => 'Claude 3 Haiku',
+                    'claude-3-opus-20240229' => 'Claude 3 Opus'
+                );
+            }
+        }
+        
+        return array(
+            'success' => true,
+            'models' => $models
+        );
+    }
+    
+    /**
+     * Format model name for display
+     */
+    private function format_model_name($model_id) {
+        $name_map = array(
+            'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+            'claude-3-5-sonnet-20240620' => 'Claude 3.5 Sonnet',
+            'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
+            'claude-3-haiku-20240307' => 'Claude 3 Haiku',
+            'claude-3-opus-20240229' => 'Claude 3 Opus'
+        );
+        
+        return isset($name_map[$model_id]) ? $name_map[$model_id] : ucwords(str_replace('-', ' ', $model_id));
+    }
+    
+    /**
      * Test API connection
      */
     public function test_api_connection() {
@@ -48,7 +143,10 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         $test_content = 'Hello, this is a test.';
         error_log('Nexus AI WP Translator: Starting test translation');
-        $result = $this->translate_content($test_content, 'en', 'es');
+        
+        // Use a simple test model for connection test
+        $test_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+        $result = $this->translate_content($test_content, 'en', 'es', $test_model);
         
         if ($result['success']) {
             error_log('Nexus AI WP Translator: API test successful');
@@ -65,7 +163,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate content using Claude AI
      */
-    public function translate_content($content, $source_lang, $target_lang) {
+    public function translate_content($content, $source_lang, $target_lang, $model = null) {
         error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
         
         if (empty($this->api_key)) {
@@ -87,6 +185,11 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         $start_time = microtime(true);
         
+        // Get model from parameter or settings
+        if (!$model) {
+            $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+        }
+        
         // Prepare the prompt
         $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang);
         error_log('Nexus AI WP Translator: Prepared prompt for translation');
@@ -99,7 +202,7 @@ class Nexus_AI_WP_Translator_API_Handler {
         );
         
         $body = array(
-            'model' => $this->model,
+            'model' => $model,
             'max_tokens' => 4000,
             'messages' => array(
                 array(

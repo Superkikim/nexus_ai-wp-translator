@@ -48,6 +48,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         // AJAX handlers
         add_action('wp_ajax_nexus_ai_wp_test_api', array($this, 'ajax_test_api'));
+        add_action('wp_ajax_nexus_ai_wp_get_models', array($this, 'ajax_get_models'));
         add_action('wp_ajax_nexus_ai_wp_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
@@ -139,6 +140,7 @@ class Nexus_AI_WP_Translator_Admin {
      */
     public function init_settings() {
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_api_key');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_model');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_source_language');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_target_languages');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_translate');
@@ -201,6 +203,7 @@ class Nexus_AI_WP_Translator_Admin {
     public function admin_page_settings() {
         $languages = $this->translation_manager->get_available_languages();
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
+        $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
         $auto_translate = get_option('nexus_ai_wp_translator_auto_translate', true);
@@ -362,6 +365,34 @@ class Nexus_AI_WP_Translator_Admin {
     }
     
     /**
+     * AJAX: Get available models
+     */
+    public function ajax_get_models() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        $api_key = sanitize_text_field($_POST['api_key']);
+        
+        // Temporarily update the API key for testing
+        $old_key = get_option('nexus_ai_wp_translator_api_key');
+        update_option('nexus_ai_wp_translator_api_key', $api_key);
+        
+        // Refresh API key in handler
+        $this->api_handler->refresh_api_key();
+        
+        $result = $this->api_handler->get_available_models();
+        
+        // Restore old key
+        update_option('nexus_ai_wp_translator_api_key', $old_key);
+        $this->api_handler->refresh_api_key();
+        
+        wp_send_json($result);
+    }
+    
+    /**
      * AJAX: Save settings
      */
     public function ajax_save_settings() {
@@ -375,6 +406,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         // Validate and sanitize input data
         $api_key = isset($_POST['nexus_ai_wp_translator_api_key']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_api_key']) : '';
+        $model = isset($_POST['nexus_ai_wp_translator_model']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_model']) : 'claude-3-5-sonnet-20241022';
         $source_language = isset($_POST['nexus_ai_wp_translator_source_language']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_source_language']) : 'en';
         $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
         $auto_translate = isset($_POST['nexus_ai_wp_translator_auto_translate']) ? true : false;
@@ -386,6 +418,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         $settings = array(
             'api_key' => $api_key,
+            'model' => $model,
             'source_language' => $source_language,
             'target_languages' => $target_languages,
             'auto_translate' => $auto_translate,
