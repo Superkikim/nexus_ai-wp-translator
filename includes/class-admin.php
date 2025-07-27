@@ -50,6 +50,7 @@ class Claude_Translator_Admin {
         add_action('wp_ajax_claude_test_api', array($this, 'ajax_test_api'));
         add_action('wp_ajax_claude_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_claude_get_stats', array($this, 'ajax_get_stats'));
+        add_action('wp_ajax_claude_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
     }
     
     /**
@@ -327,17 +328,44 @@ class Claude_Translator_Admin {
             wp_die(__('Permission denied', 'claude-translator'));
         }
         
+        // Validate and sanitize input data
+        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
+        $source_language = isset($_POST['source_language']) ? sanitize_text_field($_POST['source_language']) : 'en';
+        $target_languages = isset($_POST['target_languages']) ? array_map('sanitize_text_field', (array) $_POST['target_languages']) : array();
+        $auto_translate = isset($_POST['auto_translate']) ? true : false;
+        $throttle_limit = isset($_POST['throttle_limit']) ? intval($_POST['throttle_limit']) : 10;
+        $throttle_period = isset($_POST['throttle_period']) ? intval($_POST['throttle_period']) : 3600;
+        $retry_attempts = isset($_POST['retry_attempts']) ? intval($_POST['retry_attempts']) : 3;
+        $cache_translations = isset($_POST['cache_translations']) ? true : false;
+        $seo_friendly_urls = isset($_POST['seo_friendly_urls']) ? true : false;
+        
         $settings = array(
-            'api_key' => sanitize_text_field($_POST['api_key']),
-            'source_language' => sanitize_text_field($_POST['source_language']),
-            'target_languages' => array_map('sanitize_text_field', (array) $_POST['target_languages']),
-            'auto_translate' => isset($_POST['auto_translate']),
-            'throttle_limit' => intval($_POST['throttle_limit']),
-            'throttle_period' => intval($_POST['throttle_period']),
-            'retry_attempts' => intval($_POST['retry_attempts']),
-            'cache_translations' => isset($_POST['cache_translations']),
-            'seo_friendly_urls' => isset($_POST['seo_friendly_urls'])
+            'api_key' => $api_key,
+            'source_language' => $source_language,
+            'target_languages' => $target_languages,
+            'auto_translate' => $auto_translate,
+            'throttle_limit' => $throttle_limit,
+            'throttle_period' => $throttle_period,
+            'retry_attempts' => $retry_attempts,
+            'cache_translations' => $cache_translations,
+            'seo_friendly_urls' => $seo_friendly_urls
         );
+        
+        // Validate settings
+        if ($throttle_limit < 1) {
+            wp_send_json_error(__('Throttle limit must be at least 1', 'claude-translator'));
+            return;
+        }
+        
+        if ($throttle_period < 60) {
+            wp_send_json_error(__('Throttle period must be at least 60 seconds', 'claude-translator'));
+            return;
+        }
+        
+        if ($retry_attempts < 1 || $retry_attempts > 10) {
+            wp_send_json_error(__('Retry attempts must be between 1 and 10', 'claude-translator'));
+            return;
+        }
         
         foreach ($settings as $key => $value) {
             update_option('claude_translator_' . $key, $value);
@@ -360,5 +388,39 @@ class Claude_Translator_Admin {
         $stats = $this->db->get_translation_stats($period);
         
         wp_send_json_success($stats);
+    }
+    
+    /**
+     * AJAX: Clean up orphaned relationships
+     */
+    public function ajax_cleanup_orphaned() {
+        check_ajax_referer('claude_translator_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'claude-translator'));
+        }
+        
+        global $wpdb;
+        
+        // Delete relationships where source post doesn't exist
+        $deleted_source = $wpdb->query("
+            DELETE t FROM {$this->db->translations_table} t
+            LEFT JOIN {$wpdb->posts} p ON t.source_post_id = p.ID
+            WHERE p.ID IS NULL
+        ");
+        
+        // Delete relationships where translated post doesn't exist
+        $deleted_translated = $wpdb->query("
+            DELETE t FROM {$this->db->translations_table} t
+            LEFT JOIN {$wpdb->posts} p ON t.translated_post_id = p.ID
+            WHERE p.ID IS NULL
+        ");
+        
+        $total_deleted = $deleted_source + $deleted_translated;
+        
+        wp_send_json_success(sprintf(
+            __('Cleaned up %d orphaned relationships', 'claude-translator'),
+            $total_deleted
+        ));
     }
 }

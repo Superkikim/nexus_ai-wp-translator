@@ -16,22 +16,22 @@ if (!defined('ABSPATH')) {
         <div class="claude-stats-cards">
             <div class="claude-stat-card">
                 <h3><?php _e('Total Translations', 'claude-translator'); ?></h3>
-                <div class="stat-number"><?php echo intval($stats['total']); ?></div>
+                <div class="stat-number"><?php echo number_format(intval($stats['total'] ?? 0)); ?></div>
             </div>
             
             <div class="claude-stat-card">
                 <h3><?php _e('Recent (7 days)', 'claude-translator'); ?></h3>
-                <div class="stat-number"><?php echo intval($stats['recent']); ?></div>
+                <div class="stat-number"><?php echo number_format(intval($stats['recent'] ?? 0)); ?></div>
             </div>
             
             <div class="claude-stat-card">
                 <h3><?php _e('Success Rate', 'claude-translator'); ?></h3>
-                <div class="stat-number"><?php echo floatval($stats['success_rate']); ?>%</div>
+                <div class="stat-number"><?php echo number_format(floatval($stats['success_rate'] ?? 0), 1); ?>%</div>
             </div>
             
             <div class="claude-stat-card">
                 <h3><?php _e('API Calls (7 days)', 'claude-translator'); ?></h3>
-                <div class="stat-number"><?php echo intval($stats['api_calls']); ?></div>
+                <div class="stat-number"><?php echo number_format(intval($stats['api_calls'] ?? 0)); ?></div>
             </div>
         </div>
         

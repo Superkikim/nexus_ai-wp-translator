@@ -1,5 +1,4 @@
 <?php
-<?php
 /**
  * Plugin Name: Claude AI Translator
  * Plugin URI: https://your-domain.com/claude-translator

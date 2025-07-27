@@ -181,34 +181,44 @@ class Claude_Translator_Database {
             "SELECT COUNT(*) FROM {$this->translations_table}"
         );
         
+        // Handle period parameter properly
+        $interval_clause = '';
+        switch ($period) {
+            case '1 day':
+                $interval_clause = 'INTERVAL 1 DAY';
+                break;
+            case '7 days':
+                $interval_clause = 'INTERVAL 7 DAY';
+                break;
+            case '30 days':
+                $interval_clause = 'INTERVAL 30 DAY';
+                break;
+            default:
+                $interval_clause = 'INTERVAL 7 DAY';
+        }
+        
         // Recent translations
-        $stats['recent'] = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->translations_table} 
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL %s)",
-                $period
-            )
+        $stats['recent'] = (int) $this->wpdb->get_var(
+            "SELECT COUNT(*) FROM {$this->translations_table} 
+            WHERE created_at >= DATE_SUB(NOW(), {$interval_clause})"
         );
         
         // Success rate
-        $stats['success_rate'] = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT ROUND(
-                    (COUNT(CASE WHEN status = 'completed' THEN 1 END) * 100.0 / COUNT(*)), 2
-                ) FROM {$this->logs_table} 
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL %s)",
-                $period
-            )
+        $stats['success_rate'] = (float) $this->wpdb->get_var(
+            "SELECT COALESCE(ROUND(
+                (COUNT(CASE WHEN status = 'success' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2
+            ), 0) FROM {$this->logs_table} 
+            WHERE created_at >= DATE_SUB(NOW(), {$interval_clause})"
         );
         
         // API calls
-        $stats['api_calls'] = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT SUM(api_calls_count) FROM {$this->logs_table} 
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL %s)",
-                $period
-            )
+        $stats['api_calls'] = (int) $this->wpdb->get_var(
+            "SELECT COALESCE(SUM(api_calls_count), 0) FROM {$this->logs_table} 
+            WHERE created_at >= DATE_SUB(NOW(), {$interval_clause})"
         );
+        
+        // Ensure all values are properly typed
+        $stats['total'] = (int) $stats['total'];
         
         return $stats;
     }
