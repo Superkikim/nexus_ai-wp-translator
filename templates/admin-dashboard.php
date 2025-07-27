@@ -134,7 +134,7 @@ if (!defined('ABSPATH')) {
                     <th><?php _e('Throttle Status', 'claude-translator'); ?></th>
                     <td>
                         <?php
-                        $db = Claude_Translator_Database::get_instance();
+                        $db = Nexus_AI_WP_Translator_Database::get_instance();
                         $throttle_limit = get_option('claude_translator_throttle_limit', 10);
                         $current_calls = $db->get_throttle_status(60);
                         
@@ -158,9 +158,9 @@ jQuery(document).ready(function($) {
         button.prop('disabled', true).text('<?php _e('Refreshing...', 'claude-translator'); ?>');
         
         $.post(ajaxurl, {
-            action: 'claude_get_stats',
+            action: 'nexus_ai_wp_get_stats',
             period: '7 days',
-            nonce: claude_translator_ajax.nonce
+            nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
                 location.reload();

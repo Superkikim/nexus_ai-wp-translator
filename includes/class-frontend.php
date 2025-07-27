@@ -44,8 +44,8 @@ class Nexus_AI_WP_Translator_Frontend {
         add_shortcode('claude_language_switcher', array($this, 'language_switcher_shortcode'));
         
         // AJAX handlers for frontend
-        add_action('wp_ajax_claude_set_language_preference', array($this, 'ajax_set_language_preference'));
-        add_action('wp_ajax_nopriv_claude_set_language_preference', array($this, 'ajax_set_language_preference'));
+        add_action('wp_ajax_nexus_ai_wp_set_language_preference', array($this, 'ajax_set_language_preference'));
+        add_action('wp_ajax_nopriv_nexus_ai_wp_set_language_preference', array($this, 'ajax_set_language_preference'));
     }
     
     /**

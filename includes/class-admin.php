@@ -47,10 +47,10 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('manage_pages_custom_column', array($this, 'display_posts_columns'), 10, 2);
         
         // AJAX handlers
-        add_action('wp_ajax_claude_test_api', array($this, 'ajax_test_api'));
-        add_action('wp_ajax_claude_save_settings', array($this, 'ajax_save_settings'));
-        add_action('wp_ajax_claude_get_stats', array($this, 'ajax_get_stats'));
-        add_action('wp_ajax_claude_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
+        add_action('wp_ajax_nexus_ai_wp_test_api', array($this, 'ajax_test_api'));
+        add_action('wp_ajax_nexus_ai_wp_save_settings', array($this, 'ajax_save_settings'));
+        add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
+        add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
     }
     
     /**

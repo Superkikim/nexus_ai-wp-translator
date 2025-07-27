@@ -42,9 +42,9 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('untrash_post', array($this, 'handle_post_untrash'));
         
         // AJAX handlers
-        add_action('wp_ajax_claude_translate_post', array($this, 'ajax_translate_post'));
-        add_action('wp_ajax_claude_unlink_translation', array($this, 'ajax_unlink_translation'));
-        add_action('wp_ajax_claude_get_translation_status', array($this, 'ajax_get_translation_status'));
+        add_action('wp_ajax_nexus_ai_wp_translate_post', array($this, 'ajax_translate_post'));
+        add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this, 'ajax_unlink_translation'));
+        add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this, 'ajax_get_translation_status'));
     }
     
     /**

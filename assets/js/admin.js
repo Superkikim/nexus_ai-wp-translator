@@ -67,9 +67,9 @@
                 resultDiv.html('<div class="claude-spinner"></div> Testing connection...');
                 
                 $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_test_api',
+                    action: 'nexus_ai_wp_test_api',
                     api_key: apiKey,
-                    nonce: claude_translator_ajax.nonce
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     var noticeClass = response.success ? 'success' : 'error';
@@ -109,9 +109,9 @@
                 button.prop('disabled', true).text('Saving...');
                 
                 var formData = form.serialize();
-                formData += '&action=claude_save_settings&nonce=' + claude_translator_ajax.nonce;
+                formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
                 
-                $.post(claude_translator_ajax.ajax_url, formData)
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, formData)
                 .done(function(response) {
                     var noticeClass = response.success ? 'success' : 'error';
                     ClaudeTranslatorAdmin.showGlobalNotice(noticeClass, response.data);
@@ -144,14 +144,14 @@
                     return;
                 }
                 
-                button.prop('disabled', true).text(claude_translator_ajax.strings.translating);
+                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
                 $('#claude-translation-status').html('<div class="notice notice-info"><p>Translation in progress...</p></div>');
                 
-                $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_translate_post',
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_translate_post',
                     post_id: postId,
                     target_languages: targetLanguages,
-                    nonce: claude_translator_ajax.nonce
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     var noticeClass = response.success ? 'notice-success' : 'notice-error';
@@ -182,10 +182,10 @@
                 
                 button.prop('disabled', true);
                 
-                $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_get_translation_status',
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_get_translation_status',
                     post_id: postId,
-                    nonce: claude_translator_ajax.nonce
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     if (response.success && response.data.length > 0) {
@@ -206,7 +206,7 @@
             
             // Unlink translation
             $(document).on('click', '.claude-unlink-translation, .unlink-translation', function() {
-                if (!confirm(claude_translator_ajax.strings.confirm_unlink)) {
+                if (!confirm(nexus_ai_wp_translator_ajax.strings.confirm_unlink)) {
                     return;
                 }
                 
@@ -217,11 +217,11 @@
                 
                 button.prop('disabled', true).text('Unlinking...');
                 
-                $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_unlink_translation',
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_unlink_translation',
                     post_id: postId,
                     related_post_id: relatedId,
-                    nonce: claude_translator_ajax.nonce
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     if (response.success) {
@@ -248,10 +248,10 @@
                 var button = $(this);
                 button.prop('disabled', true).text('Refreshing...');
                 
-                $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_get_stats',
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_get_stats',
                     period: '7 days',
-                    nonce: claude_translator_ajax.nonce
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     if (response.success) {
@@ -278,9 +278,9 @@
                 var button = $(this);
                 button.prop('disabled', true).text('Cleaning up...');
                 
-                $.post(claude_translator_ajax.ajax_url, {
-                    action: 'claude_cleanup_orphaned',
-                    nonce: claude_translator_ajax.nonce
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_cleanup_orphaned',
+                    nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
                     if (response.success) {

@@ -33,7 +33,6 @@ class Nexus_AI_WP_Translator_Language_Switcher_Widget extends WP_Widget {
             echo $args['before_title'] . $title . $args['after_title'];
         }
         
-        $frontend = Claude_Translator_Frontend::get_instance();
         $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
         echo $frontend->render_language_switcher(array(
             'style' => $style,
