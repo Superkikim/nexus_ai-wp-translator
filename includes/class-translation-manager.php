@@ -13,6 +13,7 @@ class Nexus_AI_WP_Translator_Manager {
     private $db;
     private $api_handler;
     private $processing_posts = array(); // Prevent infinite loops
+    private $trashing_posts = array(); // Prevent infinite loops in trash operations
     
     public static function get_instance() {
         if (null === self::$instance) {
@@ -243,59 +244,126 @@ class Nexus_AI_WP_Translator_Manager {
      * Handle post trash
      */
     public function handle_post_trash($post_id) {
+        // Prevent infinite loops
+        if (in_array($post_id, $this->trashing_posts)) {
+            error_log("Nexus AI WP Translator: Skipping trash for post {$post_id} - already processing");
+            return;
+        }
+        
+        $this->trashing_posts[] = $post_id;
+        error_log("Nexus AI WP Translator: Starting trash process for post {$post_id}");
+        
         $translations = $this->db->get_post_translations($post_id);
+        error_log("Nexus AI WP Translator: Found " . count($translations) . " translations for post {$post_id}");
         
         foreach ($translations as $translation) {
             $related_post_id = ($translation->source_post_id == $post_id) 
                 ? $translation->translated_post_id 
                 : $translation->source_post_id;
             
-            if ($related_post_id && get_post_status($related_post_id) !== 'trash') {
+            if ($related_post_id && get_post_status($related_post_id) !== 'trash' && !in_array($related_post_id, $this->trashing_posts)) {
+                error_log("Nexus AI WP Translator: Trashing related post {$related_post_id}");
                 wp_trash_post($related_post_id);
+            } else {
+                error_log("Nexus AI WP Translator: Skipping related post {$related_post_id} - already trashed or processing");
             }
         }
         
         $this->db->log_translation_activity($post_id, 'trash', 'completed', 'Post and translations trashed');
+        
+        // Remove from processing list
+        $key = array_search($post_id, $this->trashing_posts);
+        if ($key !== false) {
+            unset($this->trashing_posts[$key]);
+        }
+        
+        error_log("Nexus AI WP Translator: Completed trash process for post {$post_id}");
     }
     
     /**
      * Handle post delete
      */
     public function handle_post_delete($post_id) {
+        // Prevent infinite loops
+        static $deleting_posts = array();
+        
+        if (in_array($post_id, $deleting_posts)) {
+            error_log("Nexus AI WP Translator: Skipping delete for post {$post_id} - already processing");
+            return;
+        }
+        
+        $deleting_posts[] = $post_id;
+        error_log("Nexus AI WP Translator: Starting delete process for post {$post_id}");
+        
         $translations = $this->db->get_post_translations($post_id);
+        error_log("Nexus AI WP Translator: Found " . count($translations) . " translations for post {$post_id}");
         
         foreach ($translations as $translation) {
             $related_post_id = ($translation->source_post_id == $post_id) 
                 ? $translation->translated_post_id 
                 : $translation->source_post_id;
             
-            if ($related_post_id) {
+            if ($related_post_id && !in_array($related_post_id, $deleting_posts)) {
+                error_log("Nexus AI WP Translator: Deleting related post {$related_post_id}");
                 wp_delete_post($related_post_id, true);
+            } else {
+                error_log("Nexus AI WP Translator: Skipping related post {$related_post_id} - already processing");
             }
         }
         
         // Clean up database
         $this->db->delete_translation_relationships($post_id);
         $this->db->log_translation_activity($post_id, 'delete', 'completed', 'Post and translations deleted');
+        
+        // Remove from processing list
+        $key = array_search($post_id, $deleting_posts);
+        if ($key !== false) {
+            unset($deleting_posts[$key]);
+        }
+        
+        error_log("Nexus AI WP Translator: Completed delete process for post {$post_id}");
     }
     
     /**
      * Handle post untrash
      */
     public function handle_post_untrash($post_id) {
+        // Prevent infinite loops
+        static $untrashing_posts = array();
+        
+        if (in_array($post_id, $untrashing_posts)) {
+            error_log("Nexus AI WP Translator: Skipping untrash for post {$post_id} - already processing");
+            return;
+        }
+        
+        $untrashing_posts[] = $post_id;
+        error_log("Nexus AI WP Translator: Starting untrash process for post {$post_id}");
+        
         $translations = $this->db->get_post_translations($post_id);
+        error_log("Nexus AI WP Translator: Found " . count($translations) . " translations for post {$post_id}");
         
         foreach ($translations as $translation) {
             $related_post_id = ($translation->source_post_id == $post_id) 
                 ? $translation->translated_post_id 
                 : $translation->source_post_id;
             
-            if ($related_post_id && get_post_status($related_post_id) === 'trash') {
+            if ($related_post_id && get_post_status($related_post_id) === 'trash' && !in_array($related_post_id, $untrashing_posts)) {
+                error_log("Nexus AI WP Translator: Untrashing related post {$related_post_id}");
                 wp_untrash_post($related_post_id);
+            } else {
+                error_log("Nexus AI WP Translator: Skipping related post {$related_post_id} - not trashed or already processing");
             }
         }
         
         $this->db->log_translation_activity($post_id, 'untrash', 'completed', 'Post and translations restored');
+        
+        // Remove from processing list
+        $key = array_search($post_id, $untrashing_posts);
+        if ($key !== false) {
+            unset($untrashing_posts[$key]);
+        }
+        
+        error_log("Nexus AI WP Translator: Completed untrash process for post {$post_id}");
     }
     
     /**
