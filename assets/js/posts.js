@@ -192,11 +192,14 @@
                 nonce: nexus_ai_wp_translator_posts.nonce
             })
             .done(function(response) {
-                console.log('Post action response:', response);
+                console.log('NexusAI Debug: Post action response:', response);
+                console.log('NexusAI Debug: Response type:', typeof response);
+                console.log('NexusAI Debug: Response success:', response ? response.success : 'NO RESPONSE');
                 
                 NexusAIWPTranslatorPosts.closePopup();
                 
                 if (response && response.success) {
+                    console.log('NexusAI Debug: Action successful, redirecting...');
                     // Redirect or reload as appropriate
                     if (action === 'delete') {
                         // Redirect to post list
@@ -206,11 +209,16 @@
                         window.location.reload();
                     }
                 } else {
-                    alert('Error: ' + (response && response.data ? response.data : 'Unknown error occurred'));
+                    console.log('NexusAI Debug: Action failed, showing alert');
+                    var errorMessage = 'Error: ' + (response && response.data ? response.data : 'Unknown error occurred');
+                    console.log('NexusAI Debug: Error message:', errorMessage);
+                    alert(errorMessage);
                 }
             })
             .fail(function(xhr, status, error) {
-                console.log('Post action failed:', error);
+                console.log('NexusAI Debug: Post action failed:', error);
+                console.log('NexusAI Debug: XHR status:', xhr.status);
+                console.log('NexusAI Debug: XHR response:', xhr.responseText);
                 NexusAIWPTranslatorPosts.closePopup();
                 alert('Network error occurred: ' + error);
             });
