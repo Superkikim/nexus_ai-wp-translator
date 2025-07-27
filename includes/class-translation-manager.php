@@ -49,7 +49,7 @@ class Nexus_AI_WP_Translator_Manager {
         
         // Add admin scripts for post list and edit screens - MUST be in admin context
         if (is_admin()) {
-            add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 20);
+            add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 5);
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Registered enqueue_post_scripts hook in admin context');
