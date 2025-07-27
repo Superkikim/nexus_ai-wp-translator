@@ -141,23 +141,64 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
         
-        $test_content = 'Hello, this is a test.';
-        error_log('Nexus AI WP Translator: Starting test translation');
+        error_log('Nexus AI WP Translator: Making simple API test request');
         
-        // Use a simple test model for connection test
-        $test_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
-        $result = $this->translate_content($test_content, 'en', 'es', $test_model);
+        $headers = array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $this->api_key,
+            'anthropic-version' => '2023-06-01'
+        );
         
-        if ($result['success']) {
-            error_log('Nexus AI WP Translator: API test successful');
+        // Simple test message - just check if API key works
+        $body = array(
+            'model' => 'claude-3-haiku-20240307', // Use fastest/cheapest model for test
+            'max_tokens' => 10,
+            'messages' => array(
+                array(
+                    'role' => 'user',
+                    'content' => 'Hi'
+                )
+            )
+        );
+        
+        $response = wp_remote_post($this->api_endpoint, array(
+            'headers' => $headers,
+            'body' => wp_json_encode($body),
+            'timeout' => 30
+        ));
+        
+        if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            error_log('Nexus AI WP Translator: Connection test failed - ' . $error_message);
+            return array(
+                'success' => false,
+                'message' => $error_message
+            );
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        error_log("Nexus AI WP Translator: API test response code: {$response_code}");
+        
+        if ($response_code === 200) {
+            error_log('Nexus AI WP Translator: API connection test successful');
             return array(
                 'success' => true,
                 'message' => __('API connection successful', 'nexus-ai-wp-translator')
             );
+        } else {
+            $error_data = json_decode($response_body, true);
+            $error_message = isset($error_data['error']['message']) 
+                ? $error_data['error']['message'] 
+                : __('API connection failed', 'nexus-ai-wp-translator');
+            
+            error_log('Nexus AI WP Translator: API test failed - ' . $error_message);
+            return array(
+                'success' => false,
+                'message' => $error_message
+            );
         }
-        
-        error_log('Nexus AI WP Translator: API test failed - ' . $result['message']);
-        return $result;
     }
     
     /**

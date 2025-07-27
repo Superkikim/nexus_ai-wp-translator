@@ -53,13 +53,6 @@
          * Initialize API testing functionality
          */
         initApiTesting: function() {
-            // Check if API key exists on page load and show model selection
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-            if (apiKey) {
-                $('#model-selection-row').show();
-                NexusAIWPTranslatorAdmin.loadAvailableModels();
-            }
-            
             $('#nexus-ai-wp-test-api').on('click', function() {
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
@@ -85,7 +78,6 @@
                     // If API test successful, load available models
                     if (response.success) {
                         $('#model-selection-row').show();
-                        NexusAIWPTranslatorAdmin.loadAvailableModels();
                     }
                 })
                 .fail(function() {
@@ -93,6 +85,22 @@
                 })
                 .always(function() {
                     button.prop('disabled', false).text('Test Connection');
+                });
+            });
+            
+            // Refresh models button
+            $('#nexus-ai-wp-refresh-models').on('click', function() {
+                var button = $(this);
+                var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+                
+                if (!apiKey) {
+                    alert('Please enter and test your API key first.');
+                    return;
+                }
+                
+                button.prop('disabled', true).text('Loading...');
+                NexusAIWPTranslatorAdmin.loadAvailableModels(function() {
+                    button.prop('disabled', false).text('Refresh Models');
                 });
             });
             
@@ -141,16 +149,21 @@
         /**
          * Load available models after successful API test
          */
-        loadAvailableModels: function() {
+        loadAvailableModels: function(callback) {
             var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
             var modelSelect = $('#nexus_ai_wp_translator_model');
             
-            if (!apiKey) return;
+            if (!apiKey) {
+                if (callback) callback();
+                return;
+            }
             
             // Store current selection
             var currentSelection = modelSelect.val();
             
-            modelSelect.html('<option value="">Loading models...</option>');
+            // Show loading state
+            var loadingOption = '<option value="">Loading models...</option>';
+            modelSelect.html(loadingOption);
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_models',
@@ -168,22 +181,15 @@
                     });
                 } else {
                     // Fallback to default models if API call fails
-                    modelSelect.html(
-                        '<option value="claude-3-5-sonnet-20241022" ' + (currentSelection === 'claude-3-5-sonnet-20241022' ? 'selected' : '') + '>Claude 3.5 Sonnet (Latest)</option>' +
-                        '<option value="claude-3-sonnet-20240229" ' + (currentSelection === 'claude-3-sonnet-20240229' ? 'selected' : '') + '>Claude 3 Sonnet</option>' +
-                        '<option value="claude-3-haiku-20240307" ' + (currentSelection === 'claude-3-haiku-20240307' ? 'selected' : '') + '>Claude 3 Haiku</option>' +
-                        '<option value="claude-3-opus-20240229" ' + (currentSelection === 'claude-3-opus-20240229' ? 'selected' : '') + '>Claude 3 Opus</option>'
-                    );
+                    NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
                 }
             })
             .fail(function() {
                 // Fallback to default models if request fails
-                modelSelect.html(
-                    '<option value="claude-3-5-sonnet-20241022" ' + (currentSelection === 'claude-3-5-sonnet-20241022' ? 'selected' : '') + '>Claude 3.5 Sonnet (Latest)</option>' +
-                    '<option value="claude-3-sonnet-20240229" ' + (currentSelection === 'claude-3-sonnet-20240229' ? 'selected' : '') + '>Claude 3 Sonnet</option>' +
-                    '<option value="claude-3-haiku-20240307" ' + (currentSelection === 'claude-3-haiku-20240307' ? 'selected' : '') + '>Claude 3 Haiku</option>' +
-                    '<option value="claude-3-opus-20240229" ' + (currentSelection === 'claude-3-opus-20240229' ? 'selected' : '') + '>Claude 3 Opus</option>'
-                );
+                NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
+            })
+            .always(function() {
+                if (callback) callback();
             });
         },
         
@@ -354,6 +360,24 @@
                 .always(function() {
                     button.prop('disabled', false).text('Clean Up Orphaned Relationships');
                 });
+            });
+        },
+        
+        /**
+         * Set default models in dropdown
+         */
+        setDefaultModels: function(modelSelect, currentSelection) {
+            var defaultModels = [
+                {id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)'},
+                {id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet'},
+                {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'},
+                {id: 'claude-3-opus-20240229', name: 'Claude 3 Opus'}
+            ];
+            
+            modelSelect.empty();
+            $.each(defaultModels, function(index, model) {
+                var selected = (model.id === currentSelection || (model.id === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                modelSelect.append('<option value="' + model.id + '" ' + selected + '>' + model.name + '</option>');
             });
         },
         
