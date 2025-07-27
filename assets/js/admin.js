@@ -53,6 +53,7 @@
          * Initialize API testing functionality
          */
         initApiTesting: function() {
+            // Auto-save API key when testing
             $('#nexus-ai-wp-test-api').on('click', function() {
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
@@ -63,29 +64,19 @@
                     return;
                 }
                 
-                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.testing);
-                resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
-                
-                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-                    action: 'nexus_ai_wp_test_api',
-                    api_key: apiKey,
-                    nonce: nexus_ai_wp_translator_ajax.nonce
-                })
-                .done(function(response) {
-                    var noticeClass = response.success ? 'success' : 'error';
-                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
-                    
-                    // If API test successful, load available models
-                    if (response.success) {
-                        $('#model-selection-row').show();
-                    }
-                })
-                .fail(function() {
-                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
-                })
-                .always(function() {
-                    button.prop('disabled', false).text('Test Connection');
+                // Auto-save API key before testing
+                NexusAIWPTranslatorAdmin.autoSaveApiKey(apiKey, function() {
+                    // Proceed with test after saving
+                    NexusAIWPTranslatorAdmin.performApiTest(button, apiKey, resultDiv);
                 });
+            });
+            
+            // Auto-save when model selection changes
+            $(document).on('change', '#nexus_ai_wp_translator_model', function() {
+                var selectedModel = $(this).val();
+                if (selectedModel) {
+                    NexusAIWPTranslatorAdmin.autoSaveModel(selectedModel);
+                }
             });
             
             // Refresh models button
@@ -117,6 +108,77 @@
                     $(this).text('Show');
                 }
             });
+        },
+        
+        /**
+         * Auto-save API key
+         */
+        autoSaveApiKey: function(apiKey, callback) {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_save_settings',
+                nexus_ai_wp_translator_api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('API key auto-saved:', response.success ? 'success' : 'failed');
+                if (callback) callback();
+            })
+            .fail(function() {
+                console.log('Failed to auto-save API key');
+                if (callback) callback(); // Continue anyway
+            });
+        },
+        
+        /**
+         * Auto-save selected model
+         */
+        autoSaveModel: function(model) {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_save_settings',
+                nexus_ai_wp_translator_model: model,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('Model auto-saved:', response.success ? 'success' : 'failed');
+                // Show subtle feedback
+                var feedback = $('<span class="model-saved-feedback" style="color: #46b450; margin-left: 10px;">✓ Saved</span>');
+                $('#nexus_ai_wp_translator_model').after(feedback);
+                setTimeout(function() {
+                    feedback.fadeOut(function() { $(this).remove(); });
+                }, 2000);
+            })
+            .fail(function() {
+                console.log('Failed to auto-save model');
+            });
+        },
+        
+        /**
+         * Perform API test (extracted from initApiTesting)
+         */
+        performApiTest: function(button, apiKey, resultDiv) {
+                button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.testing);
+                resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
+                
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_test_api',
+                    api_key: apiKey,
+                    nonce: nexus_ai_wp_translator_ajax.nonce
+                })
+                .done(function(response) {
+                    var noticeClass = response.success ? 'success' : 'error';
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
+                    
+                    // If API test successful, load available models
+                    if (response.success) {
+                        $('#model-selection-row').show();
+                    }
+                })
+                .fail(function() {
+                    NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
+                })
+                .always(function() {
+                    button.prop('disabled', false).text('Test Connection');
+                });
         },
         
         /**
