@@ -257,12 +257,19 @@ if (!defined('ABSPATH')) {
 <script>
 console.log('NexusAI Debug: Inline script in admin-settings.php started');
 
-// Check if our variables are available in inline script
-if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
-    console.error('NexusAI Debug: nexus_ai_wp_translator_ajax not available in inline script!');
-} else {
-    console.log('NexusAI Debug: AJAX variables in inline script:', nexus_ai_wp_translator_ajax);
+// Wait for variables to be available
+function waitForAjaxVars() {
+    if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+        console.log('NexusAI Debug: Waiting for AJAX variables...');
+        setTimeout(waitForAjaxVars, 100);
+        return;
+    }
+    console.log('NexusAI Debug: AJAX variables available in inline script:', nexus_ai_wp_translator_ajax);
+    initInlineScript();
 }
+
+function initInlineScript() {
+    console.log('NexusAI Debug: Initializing inline script functionality');
 
 jQuery(document).ready(function($) {
     console.log('NexusAI Debug: Inline script jQuery ready');
@@ -299,7 +306,7 @@ jQuery(document).ready(function($) {
         var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
         if (!apiKey) return;
         
-        $.post(ajaxurl, {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_save_settings',
             nexus_ai_wp_translator_api_key: apiKey,
             nonce: nexus_ai_wp_translator_ajax.nonce
@@ -346,19 +353,56 @@ jQuery(document).ready(function($) {
         button.prop('disabled', true).text('<?php _e('Testing...', 'nexus-ai-wp-translator'); ?>');
         resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
         
-        $.post(ajaxurl, {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_test_api',
             api_key: apiKey,
             nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             var noticeClass = response.success ? 'notice-success' : 'notice-error';
             resultDiv.html('<div class="notice ' + noticeClass + '"><p>' + response.message + '</p></div>');
+            
+            // Load models after successful API test
+            if (response.success) {
+                console.log('NexusAI Debug: API test successful, loading models...');
+                loadModels(apiKey);
+            }
         }).fail(function() {
             resultDiv.html('<div class="notice notice-error"><p><?php _e('Connection failed. Please check your API key.', 'nexus-ai-wp-translator'); ?></p></div>');
         }).always(function() {
             button.prop('disabled', false).text('<?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>');
         });
     });
+    
+    // Load models function
+    function loadModels(apiKey) {
+        console.log('NexusAI Debug: Loading models with API key');
+        var modelSelect = $('#nexus_ai_wp_translator_model');
+        var currentSelection = modelSelect.val();
+        
+        modelSelect.html('<option value="">Loading models...</option>');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_get_models',
+            api_key: apiKey,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        }, function(response) {
+            console.log('NexusAI Debug: Models response:', response);
+            
+            if (response.success && response.models) {
+                modelSelect.empty();
+                $.each(response.models, function(modelId, displayName) {
+                    var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                    modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
+                });
+            } else {
+                // Fallback models
+                modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+            }
+        }).fail(function() {
+            console.log('NexusAI Debug: Failed to load models, using fallback');
+            modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+        });
+    }
     
     // AJAX save settings
     $('#nexus-ai-wp-save-settings').on('click', function() {
@@ -371,7 +415,7 @@ jQuery(document).ready(function($) {
         var formData = form.serialize();
         formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
         
-        $.post(ajaxurl, formData, function(response) {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, formData, function(response) {
             if (response.success) {
                 apiKeyChanged = false;
                 $('<div class="notice notice-success is-dismissible"><p>' + response.data + '</p></div>')
@@ -385,4 +429,8 @@ jQuery(document).ready(function($) {
         });
     });
 });
+}
+
+// Start waiting for AJAX variables
+waitForAjaxVars();
 </script>

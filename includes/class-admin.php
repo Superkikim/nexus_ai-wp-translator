@@ -197,7 +197,8 @@ class Nexus_AI_WP_Translator_Admin {
             NEXUS_AI_WP_TRANSLATOR_VERSION
         );
         
-        wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', array(
+        // Make AJAX variables available globally, not just for the external script
+        $ajax_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
             'debug' => defined('WP_DEBUG') && WP_DEBUG,
@@ -209,11 +210,20 @@ class Nexus_AI_WP_Translator_Admin {
                 'loading_models' => __('Loading models...', 'nexus-ai-wp-translator'),
                 'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'nexus-ai-wp-translator')
             )
-        ));
+        );
+        
+        wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', $ajax_data);
+        
+        // Also make it available for inline scripts
+        wp_add_inline_script('nexus-ai-wp-translator-admin', 
+            'window.nexus_ai_wp_translator_ajax = ' . wp_json_encode($ajax_data) . ';', 
+            'before'
+        );
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Scripts and styles enqueued successfully');
             error_log('Nexus AI WP Translator: AJAX URL: ' . admin_url('admin-ajax.php'));
+            error_log('Nexus AI WP Translator: AJAX variables made available globally');
         }
     }
     
