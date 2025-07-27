@@ -51,7 +51,7 @@ if (!defined('ABSPATH')) {
                         </td>
                     </tr>
                     
-                    <tr id="model-selection-row" style="display: none;">
+                    <tr id="model-selection-row">
                         <th scope="row">
                             <label for="nexus_ai_wp_translator_model"><?php _e('AI Model', 'nexus-ai-wp-translator'); ?></label>
                         </th>
