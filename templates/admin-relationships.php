@@ -71,7 +71,20 @@ if (!defined('ABSPATH')) {
                         </td>
                         <td>
                             <span class="status-badge status-<?php echo esc_attr($relationship->status); ?>">
-                                <?php echo esc_html(ucfirst($relationship->status)); ?>
+                                <?php 
+                                $status_display = $relationship->status;
+                                switch ($relationship->status) {
+                                    case 'source_deleted':
+                                        $status_display = __('Source Deleted', 'nexus-ai-wp-translator');
+                                        break;
+                                    case 'translation_deleted':
+                                        $status_display = __('Translation Deleted', 'nexus-ai-wp-translator');
+                                        break;
+                                    default:
+                                        $status_display = ucfirst($relationship->status);
+                                }
+                                echo esc_html($status_display);
+                                ?>
                             </span>
                         </td>
                         <td>

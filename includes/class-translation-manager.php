@@ -597,11 +597,33 @@ class Nexus_AI_WP_Translator_Manager {
         error_log("Nexus AI WP Translator: Handling post action - Post: {$post_id}, Action: {$post_action}, Choice: {$user_choice}");
         
         if ($user_choice === 'unlink_only') {
-            // Unlink all translations first
-            $this->db->delete_translation_relationships($post_id);
-            
-            // Remove translation meta from related posts
+            // Mark relationships as orphaned instead of deleting them
             $translations = $this->db->get_post_translations($post_id);
+            foreach ($translations as $translation) {
+                // Update the relationship status to indicate source was deleted
+                global $wpdb;
+                if ($translation->source_post_id == $post_id) {
+                    // This post is the source, mark as source_deleted
+                    $wpdb->update(
+                        $this->db->translations_table,
+                        array('status' => 'source_deleted'),
+                        array('id' => $translation->id),
+                        array('%s'),
+                        array('%d')
+                    );
+                } else {
+                    // This post is a translation, mark as translation_deleted
+                    $wpdb->update(
+                        $this->db->translations_table,
+                        array('status' => 'translation_deleted'),
+                        array('id' => $translation->id),
+                        array('%s'),
+                        array('%d')
+                    );
+                }
+            }
+            
+            // Remove translation meta from related posts but keep relationships
             foreach ($translations as $translation) {
                 $related_post_id = ($translation->source_post_id == $post_id) 
                     ? $translation->translated_post_id 

@@ -196,7 +196,7 @@
                 
                 NexusAIWPTranslatorPosts.closePopup();
                 
-                if (response.success) {
+                if (response && response.success) {
                     // Redirect or reload as appropriate
                     if (action === 'delete') {
                         // Redirect to post list
@@ -206,7 +206,7 @@
                         window.location.reload();
                     }
                 } else {
-                    alert('Error: ' + (response.data || 'Unknown error occurred'));
+                    alert('Error: ' + (response && response.data ? response.data : 'Unknown error occurred'));
                 }
             })
             .fail(function(xhr, status, error) {
