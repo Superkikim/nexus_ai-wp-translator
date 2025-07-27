@@ -206,7 +206,7 @@ class Nexus_AI_WP_Translator_Admin {
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js',
             array('jquery'),
             NEXUS_AI_WP_TRANSLATOR_VERSION,
-            true  // Load in footer but with dependency on jQuery
+            false  // Load in header to ensure availability for inline scripts
         );
         
         wp_enqueue_style(

@@ -22,6 +22,54 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
     console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
 }
 
+// Define the admin object immediately when script loads
+var NexusAIWPTranslatorAdmin = {
+    initialized: false,
+    
+    init: function() {
+        if (this.initialized) {
+            console.log('NexusAI Debug: Admin already initialized, skipping');
+            return;
+        }
+        this.initialized = true;
+        
+        console.log('NexusAI Debug: Starting admin initialization');
+        console.log('NexusAI Debug: Admin object initialized successfully');
+        this.initTabSwitching();
+        this.initApiTesting();
+        this.initSettingsSave();
+        this.initTranslationActions();
+        this.initStatusRefresh();
+        this.initBulkActions();
+        
+        // Load models on page load if API key exists
+        var apiKey = $('#nexus_ai_wp_translator_api_key').val();
+        console.log('NexusAI Debug: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+        
+        if (apiKey && apiKey.trim().length > 0) {
+            console.log('NexusAI Debug: API key found on page load, loading models automatically');
+            this.loadAvailableModels();
+        } else {
+            console.log('NexusAI Debug: No API key found on page load, skipping model load');
+        }
+        
+        // Check for auto translation on post edit pages
+        if ($('#post_ID').length > 0) {
+            console.log('NexusAI Debug: Post edit page detected, checking for auto translation');
+            var self = this;
+            setTimeout(function() {
+                self.checkAutoTranslation();
+            }, 1000); // Wait 1 second for page to fully load
+        }
+    },
+        }
+    }
+};
+
+// Make NexusAIWPTranslatorAdmin globally available immediately
+window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
+console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
+
 (function($) {
     'use strict';
     
@@ -30,40 +78,12 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
     // Initialize when document is ready
     $(document).ready(function() {
         console.log('NexusAI Debug: Document ready, initializing admin interface');
-        NexusAIWPTranslatorAdmin.init();
+        if (window.NexusAIWPTranslatorAdmin) {
+            window.NexusAIWPTranslatorAdmin.init();
+        } else {
+            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+        }
     });
-    
-    var NexusAIWPTranslatorAdmin = {
-        
-        init: function() {
-            console.log('NexusAI Debug: Starting admin initialization');
-            console.log('NexusAI Debug: Admin object initialized successfully');
-            this.initTabSwitching();
-            this.initApiTesting();
-            this.initSettingsSave();
-            this.initTranslationActions();
-            this.initStatusRefresh();
-            this.initBulkActions();
-            
-            // Load models on page load if API key exists
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val();
-            console.log('NexusAI Debug: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
-            
-            if (apiKey && apiKey.trim().length > 0) {
-                console.log('NexusAI Debug: API key found on page load, loading models automatically');
-                this.loadAvailableModels();
-            } else {
-                console.log('NexusAI Debug: No API key found on page load, skipping model load');
-            }
-            
-            // Check for auto translation on post edit pages
-            if ($('#post_ID').length > 0) {
-                console.log('NexusAI Debug: Post edit page detected, checking for auto translation');
-                setTimeout(function() {
-                    NexusAIWPTranslatorAdmin.checkAutoTranslation();
-                }, 1000); // Wait 1 second for page to fully load
-            }
-        },
         
         /**
          * Initialize tab switching functionality
@@ -985,11 +1005,4 @@ if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
             $('#nexus-ai-wp-auto-progress-popup').removeClass('show').fadeOut(300, function() {
                 $(this).remove();
             });
-        }
-    };
-    
-    // Make NexusAIWPTranslatorAdmin globally available
-    window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
-    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
-    
 })(jQuery);

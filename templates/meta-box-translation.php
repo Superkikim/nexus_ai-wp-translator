@@ -140,14 +140,36 @@ if (!defined('ABSPATH')) {
 <script>
 console.log('NexusAI Debug: Meta box script loaded');
 console.log('NexusAI Debug: Meta box - jQuery available:', typeof jQuery !== 'undefined');
-console.log('NexusAI Debug: Meta box - Admin script available:', typeof window.NexusAIWPTranslatorAdmin !== 'undefined');
+
+// Check if admin script is available with better debugging
+function checkAdminScript() {
+    if (typeof window.NexusAIWPTranslatorAdmin !== 'undefined') {
+        console.log('NexusAI Debug: Meta box - Admin script available: true');
+        return true;
+    } else {
+        console.log('NexusAI Debug: Meta box - Admin script available: false');
+        console.log('NexusAI Debug: Available globals containing "nexus":', 
+            Object.keys(window).filter(k => k.toLowerCase().includes('nexus')));
+        return false;
+    }
+}
+
+checkAdminScript();
 
 jQuery(document).ready(function($) {
     console.log('NexusAI Debug: Meta box jQuery ready');
     
-    // Check if admin script is available
-    if (typeof window.NexusAIWPTranslatorAdmin === 'undefined') {
-        console.error('NexusAI Debug: Admin script not available! Available globals:', Object.keys(window).filter(k => k.includes('nexus') || k.includes('Nexus')));
+    // Check if admin script is available with retry mechanism
+    var adminScriptAvailable = checkAdminScript();
+    
+    if (!adminScriptAvailable) {
+        console.log('NexusAI Debug: Admin script not available on document ready, trying again in 500ms...');
+        setTimeout(function() {
+            adminScriptAvailable = checkAdminScript();
+            if (!adminScriptAvailable) {
+                console.error('NexusAI Debug: Admin script still not available after retry!');
+            }
+        }, 500);
         // Continue with basic functionality
     } else {
         console.log('NexusAI Debug: Admin script available');

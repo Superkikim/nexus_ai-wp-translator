@@ -84,6 +84,9 @@ class Nexus_AI_WP_Translator_Plugin {
         // Prevent multiple initializations
         static $initialized = false;
         if ($initialized) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Components already initialized, skipping (hook: ' . current_action() . ')');
+            }
             return;
         }
         $initialized = true;
