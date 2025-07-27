@@ -51,6 +51,36 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
+        
+        // Post meta box save
+        add_action('save_post', array($this, 'save_translation_meta_box'));
+    }
+    
+    /**
+     * Save translation meta box data
+     */
+    public function save_translation_meta_box($post_id) {
+        // Check if our nonce is set and verify it
+        if (!isset($_POST['nexus_ai_wp_translator_meta_box_nonce']) || 
+            !wp_verify_nonce($_POST['nexus_ai_wp_translator_meta_box_nonce'], 'nexus_ai_wp_translator_meta_box')) {
+            return;
+        }
+        
+        // Check if user has permission to edit the post
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+        
+        // Don't save during autosave
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+        
+        // Save post language
+        if (isset($_POST['nexus_ai_wp_post_language'])) {
+            $post_language = sanitize_text_field($_POST['nexus_ai_wp_post_language']);
+            update_post_meta($post_id, '_nexus_ai_wp_translator_language', $post_language);
+        }
     }
     
     /**
@@ -247,7 +277,15 @@ class Nexus_AI_WP_Translator_Admin {
         $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
         $translations = $this->db->get_post_translations($post->ID);
         $languages = $this->translation_manager->get_available_languages();
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
+        
+        // Get configured settings
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        
+        // If post language is not set, default to source language
+        if (empty($post_language)) {
+            $post_language = $source_language;
+        }
         
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
     }

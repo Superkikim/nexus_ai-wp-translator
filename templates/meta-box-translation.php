@@ -17,13 +17,15 @@ if (!defined('ABSPATH')) {
             <strong><?php _e('Post Language:', 'nexus-ai-wp-translator'); ?></strong>
         </label>
         <select id="nexus_ai_wp_post_language" name="nexus_ai_wp_post_language">
-            <option value=""><?php _e('Auto-detect', 'nexus-ai-wp-translator'); ?></option>
             <?php foreach ($languages as $code => $name): ?>
                 <option value="<?php echo esc_attr($code); ?>" <?php selected($post_language, $code); ?>>
                     <?php echo esc_html($name); ?>
                 </option>
             <?php endforeach; ?>
         </select>
+        <p class="description">
+            <?php printf(__('Current source language: %s', 'nexus-ai-wp-translator'), $languages[$source_language] ?? $source_language); ?>
+        </p>
     </div>
     
     <!-- Source Post Information -->
@@ -81,17 +83,26 @@ if (!defined('ABSPATH')) {
             <div class="nexus-ai-wp-translation-actions">
                 <div class="target-languages">
                     <label><?php _e('Translate to:', 'nexus-ai-wp-translator'); ?></label>
-                    <?php foreach ($target_languages as $lang_code): ?>
-                        <?php if ($lang_code !== $post_language): ?>
-                            <label>
-                                <input type="checkbox" 
-                                       name="nexus_ai_wp_translate_to[]" 
-                                       value="<?php echo esc_attr($lang_code); ?>" 
-                                       class="nexus-ai-wp-target-language" />
-                                <?php echo esc_html($languages[$lang_code] ?? $lang_code); ?>
-                            </label>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                    <?php if (!empty($target_languages)): ?>
+                        <?php foreach ($target_languages as $lang_code): ?>
+                            <?php if ($lang_code !== $post_language): ?>
+                                <label>
+                                    <input type="checkbox" 
+                                           name="nexus_ai_wp_translate_to[]" 
+                                           value="<?php echo esc_attr($lang_code); ?>" 
+                                           class="nexus-ai-wp-target-language" />
+                                    <?php echo esc_html($languages[$lang_code] ?? $lang_code); ?>
+                                </label><br>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="description">
+                            <?php printf(
+                                __('No target languages configured. Please <a href="%s">configure target languages</a> in settings.', 'nexus-ai-wp-translator'),
+                                admin_url('admin.php?page=nexus-ai-wp-translator-settings')
+                            ); ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
                 
                 <p>
