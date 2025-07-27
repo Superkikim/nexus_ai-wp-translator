@@ -33,9 +33,14 @@ class Nexus_AI_WP_Translator_Admin {
      * Initialize admin hooks
      */
     private function init_hooks() {
-        // Add debug to verify hooks are being initialized
+        static $hooks_initialized = false;
+        if ($hooks_initialized) {
+            return;
+        }
+        $hooks_initialized = true;
+        
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: init_hooks() called - registering AJAX handlers');
+            error_log('Nexus AI WP Translator: [ADMIN] Registering admin hooks and AJAX handlers');
         }
         
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -65,9 +70,8 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_auto_translation_status', array($this->translation_manager, 'ajax_get_auto_translation_status'));
         add_action('wp_ajax_nexus_ai_wp_dismiss_auto_translation', array($this->translation_manager, 'ajax_dismiss_auto_translation'));
         
-        // Debug: List all registered AJAX actions
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Registered AJAX actions: nexus_ai_wp_test_api, nexus_ai_wp_get_models, nexus_ai_wp_save_settings, nexus_ai_wp_translate_post, nexus_ai_wp_unlink_translation, nexus_ai_wp_get_translation_status, nexus_ai_wp_get_auto_translation_status, nexus_ai_wp_dismiss_auto_translation');
+            error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status, get_auto_translation_status, dismiss_auto_translation');
         }
         
         // Post meta box save
@@ -172,10 +176,7 @@ class Nexus_AI_WP_Translator_Admin {
      * Enqueue admin scripts
      */
     public function enqueue_admin_scripts($hook) {
-        // Debug: Always log when this function is called
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: enqueue_admin_scripts called for hook: ' . $hook);
-        }
+        static $script_enqueued = false;
         
         // Load on our admin pages AND post edit pages
         $load_on_hooks = array('post.php', 'post-new.php');
@@ -183,16 +184,17 @@ class Nexus_AI_WP_Translator_Admin {
         $is_post_page = in_array($hook, $load_on_hooks);
         
         if (!$is_our_page && !$is_post_page) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Scripts not loaded - wrong hook: ' . $hook);
-            }
             return;
         }
         
+        // Prevent multiple enqueues
+        if ($script_enqueued) {
+            return;
+        }
+        $script_enqueued = true;
+        
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Loading admin scripts for hook: ' . $hook);
-            error_log('Nexus AI WP Translator: Is our page: ' . ($is_our_page ? 'YES' : 'NO'));
-            error_log('Nexus AI WP Translator: Is post page: ' . ($is_post_page ? 'YES' : 'NO'));
+            error_log('Nexus AI WP Translator: [SCRIPTS] Loading admin scripts for hook: ' . $hook . ' (our_page: ' . ($is_our_page ? 'Y' : 'N') . ', post_page: ' . ($is_post_page ? 'Y' : 'N') . ')');
         }
         
         // Enqueue jQuery first to ensure it's available
@@ -215,7 +217,9 @@ class Nexus_AI_WP_Translator_Admin {
         );
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: admin.js enqueued with URL: ' . NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js');
+            $script_url = NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js';
+            $file_exists = file_exists(NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/admin.js') ? 'EXISTS' : 'MISSING';
+            error_log('Nexus AI WP Translator: [SCRIPTS] admin.js enqueued - URL: ' . $script_url . ' - File: ' . $file_exists);
         }
         
         // Make AJAX variables available globally, not just for the external script
@@ -236,9 +240,7 @@ class Nexus_AI_WP_Translator_Admin {
         wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', $ajax_data);
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Scripts and styles enqueued successfully');
-            error_log('Nexus AI WP Translator: AJAX URL: ' . admin_url('admin-ajax.php'));
-            error_log('Nexus AI WP Translator: AJAX data localized: ' . print_r($ajax_data, true));
+            error_log('Nexus AI WP Translator: [SCRIPTS] AJAX variables localized - URL: ' . admin_url('admin-ajax.php'));
         }
     }
     

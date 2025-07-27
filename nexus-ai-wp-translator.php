@@ -81,9 +81,15 @@ class Nexus_AI_WP_Translator_Plugin {
      * Initialize plugin components
      */
     public function init_components() {
-        // Debug: Confirm components are being initialized
+        // Prevent multiple initializations
+        static $initialized = false;
+        if ($initialized) {
+            return;
+        }
+        $initialized = true;
+        
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Initializing plugin components');
+            error_log('Nexus AI WP Translator: [INIT] Plugin components initialized (hook: ' . current_action() . ')');
         }
         
         // Initialize database
@@ -92,7 +98,7 @@ class Nexus_AI_WP_Translator_Plugin {
         // Initialize admin interface
         if (is_admin()) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Initializing admin interface');
+                error_log('Nexus AI WP Translator: [INIT] Admin interface loaded');
             }
             Nexus_AI_WP_Translator_Admin::get_instance();
         }
@@ -105,6 +111,10 @@ class Nexus_AI_WP_Translator_Plugin {
         
         // Initialize language switcher widget
         add_action('widgets_init', array($this, 'register_widgets'));
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [INIT] All components loaded successfully');
+        }
     }
     
     /**

@@ -33,6 +33,16 @@ class Nexus_AI_WP_Translator_Manager {
      * Initialize WordPress hooks
      */
     private function init_hooks() {
+        static $hooks_initialized = false;
+        if ($hooks_initialized) {
+            return;
+        }
+        $hooks_initialized = true;
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [MANAGER] Translation manager hooks initialized');
+        }
+        
         // Post publication hooks  
         add_action('publish_post', array($this, 'handle_post_publish'), 10, 2);
         add_action('publish_page', array($this, 'handle_post_publish'), 10, 2);
@@ -52,10 +62,6 @@ class Nexus_AI_WP_Translator_Manager {
         // Add admin scripts for post list and edit screens - MUST be in admin context
         if (is_admin()) {
             add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 5);
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Registered enqueue_post_scripts hook in admin context');
-            }
         }
     }
     
@@ -63,14 +69,16 @@ class Nexus_AI_WP_Translator_Manager {
      * Enqueue scripts for post management
      */
     public function enqueue_post_scripts($hook) {
-        // Debug: Always log when this function is called
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: enqueue_post_scripts called for hook: ' . $hook);
-        }
+        static $post_scripts_enqueued = false;
         
         if (in_array($hook, array('edit.php', 'post.php', 'post-new.php')) || strpos($hook, 'nexus-ai-wp-translator') !== false) {
+            if ($post_scripts_enqueued) {
+                return;
+            }
+            $post_scripts_enqueued = true;
+            
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Loading posts.js for hook: ' . $hook);
+                error_log('Nexus AI WP Translator: [SCRIPTS] Loading posts.js for hook: ' . $hook);
             }
             
             wp_enqueue_script(
@@ -94,10 +102,6 @@ class Nexus_AI_WP_Translator_Manager {
                     'processing' => __('Processing...', 'nexus-ai-wp-translator')
                 )
             ));
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: posts.js enqueued successfully');
-            }
             
             // Add CSS for the popup
             wp_add_inline_style('wp-admin', '
@@ -144,10 +148,6 @@ class Nexus_AI_WP_Translator_Manager {
                     margin-left: 10px;
                 }
             ');
-        } else {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: posts.js NOT loaded - wrong hook: ' . $hook);
-            }
         }
     }
     
