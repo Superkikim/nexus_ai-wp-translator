@@ -56,6 +56,9 @@ class Nexus_AI_WP_Translator_Plugin {
         add_action('plugins_loaded', array($this, 'load_textdomain'));
         register_activation_hook(__FILE__, array($this, 'activate'));
         register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+
+        // Register uninstall hook
+        register_uninstall_hook(__FILE__, 'nexus_ai_wp_translator_uninstall');
         
         // Initialize components
         add_action('init', array($this, 'init_components'));
@@ -147,6 +150,38 @@ class Nexus_AI_WP_Translator_Plugin {
         // Flush rewrite rules
         flush_rewrite_rules();
     }
+}
+
+/**
+ * Plugin uninstall function
+ */
+function nexus_ai_wp_translator_uninstall() {
+    // Remove all plugin options
+    $options = array(
+        'nexus_ai_wp_translator_api_key',
+        'nexus_ai_wp_translator_model',
+        'nexus_ai_wp_translator_source_language',
+        'nexus_ai_wp_translator_target_languages',
+        'nexus_ai_wp_translator_auto_translate',
+        'nexus_ai_wp_translator_throttle_limit',
+        'nexus_ai_wp_translator_throttle_period',
+        'nexus_ai_wp_translator_retry_attempts',
+        'nexus_ai_wp_translator_cache_translations',
+        'nexus_ai_wp_translator_seo_friendly_urls'
+    );
+    
+    foreach ($options as $option) {
+        delete_option($option);
+    }
+    
+    // Drop custom tables
+    global $wpdb;
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}nexus_ai_wp_translations");
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}nexus_ai_wp_translation_logs");
+    $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}nexus_ai_wp_user_preferences");
+    
+    // Clear any cached translations
+    wp_cache_flush();
 }
 
 // Initialize plugin
