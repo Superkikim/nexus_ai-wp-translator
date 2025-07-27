@@ -53,6 +53,13 @@
          * Initialize API testing functionality
          */
         initApiTesting: function() {
+            // Check if API key exists on page load and show model selection
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+            if (apiKey) {
+                $('#model-selection-row').show();
+                NexusAIWPTranslatorAdmin.loadAvailableModels();
+            }
+            
             $('#nexus-ai-wp-test-api').on('click', function() {
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
@@ -77,6 +84,7 @@
                     
                     // If API test successful, load available models
                     if (response.success) {
+                        $('#model-selection-row').show();
                         NexusAIWPTranslatorAdmin.loadAvailableModels();
                     }
                 })
@@ -136,12 +144,13 @@
         loadAvailableModels: function() {
             var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
             var modelSelect = $('#nexus_ai_wp_translator_model');
-            var modelRow = $('#model-selection-row');
             
             if (!apiKey) return;
             
-            modelSelect.html('<option value="">' + nexus_ai_wp_translator_ajax.strings.loading_models + '</option>');
-            modelRow.show();
+            // Store current selection
+            var currentSelection = modelSelect.val();
+            
+            modelSelect.html('<option value="">Loading models...</option>');
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_models',
@@ -154,15 +163,27 @@
                     
                     // Add models to dropdown
                     $.each(response.models, function(modelId, displayName) {
-                        var selected = (modelId === 'claude-3-5-sonnet-20241022') ? 'selected' : '';
+                        var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
                         modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                     });
                 } else {
-                    modelSelect.html('<option value="">Error loading models</option>');
+                    // Fallback to default models if API call fails
+                    modelSelect.html(
+                        '<option value="claude-3-5-sonnet-20241022" ' + (currentSelection === 'claude-3-5-sonnet-20241022' ? 'selected' : '') + '>Claude 3.5 Sonnet (Latest)</option>' +
+                        '<option value="claude-3-sonnet-20240229" ' + (currentSelection === 'claude-3-sonnet-20240229' ? 'selected' : '') + '>Claude 3 Sonnet</option>' +
+                        '<option value="claude-3-haiku-20240307" ' + (currentSelection === 'claude-3-haiku-20240307' ? 'selected' : '') + '>Claude 3 Haiku</option>' +
+                        '<option value="claude-3-opus-20240229" ' + (currentSelection === 'claude-3-opus-20240229' ? 'selected' : '') + '>Claude 3 Opus</option>'
+                    );
                 }
             })
             .fail(function() {
-                modelSelect.html('<option value="">Failed to load models</option>');
+                // Fallback to default models if request fails
+                modelSelect.html(
+                    '<option value="claude-3-5-sonnet-20241022" ' + (currentSelection === 'claude-3-5-sonnet-20241022' ? 'selected' : '') + '>Claude 3.5 Sonnet (Latest)</option>' +
+                    '<option value="claude-3-sonnet-20240229" ' + (currentSelection === 'claude-3-sonnet-20240229' ? 'selected' : '') + '>Claude 3 Sonnet</option>' +
+                    '<option value="claude-3-haiku-20240307" ' + (currentSelection === 'claude-3-haiku-20240307' ? 'selected' : '') + '>Claude 3 Haiku</option>' +
+                    '<option value="claude-3-opus-20240229" ' + (currentSelection === 'claude-3-opus-20240229' ? 'selected' : '') + '>Claude 3 Opus</option>'
+                );
             });
         },
         
