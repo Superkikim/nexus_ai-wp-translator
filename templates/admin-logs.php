@@ -9,29 +9,29 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1><?php _e('Translation Logs', 'claude-translator'); ?></h1>
+    <h1><?php _e('Translation Logs', 'nexus-ai-wp-translator'); ?></h1>
     
-    <div class="claude-logs-filters">
+    <div class="nexus-ai-wp-logs-filters">
         <form method="get" action="">
-            <input type="hidden" name="page" value="claude-translator-logs" />
+            <input type="hidden" name="page" value="nexus-ai-wp-translator-logs" />
             
             <select name="status">
-                <option value=""><?php _e('All Statuses', 'claude-translator'); ?></option>
-                <option value="success" <?php selected($_GET['status'] ?? '', 'success'); ?>><?php _e('Success', 'claude-translator'); ?></option>
-                <option value="error" <?php selected($_GET['status'] ?? '', 'error'); ?>><?php _e('Error', 'claude-translator'); ?></option>
-                <option value="processing" <?php selected($_GET['status'] ?? '', 'processing'); ?>><?php _e('Processing', 'claude-translator'); ?></option>
+                <option value=""><?php _e('All Statuses', 'nexus-ai-wp-translator'); ?></option>
+                <option value="success" <?php selected($_GET['status'] ?? '', 'success'); ?>><?php _e('Success', 'nexus-ai-wp-translator'); ?></option>
+                <option value="error" <?php selected($_GET['status'] ?? '', 'error'); ?>><?php _e('Error', 'nexus-ai-wp-translator'); ?></option>
+                <option value="processing" <?php selected($_GET['status'] ?? '', 'processing'); ?>><?php _e('Processing', 'nexus-ai-wp-translator'); ?></option>
             </select>
             
             <select name="action">
-                <option value=""><?php _e('All Actions', 'claude-translator'); ?></option>
-                <option value="translate" <?php selected($_GET['action'] ?? '', 'translate'); ?>><?php _e('Translate', 'claude-translator'); ?></option>
-                <option value="delete" <?php selected($_GET['action'] ?? '', 'delete'); ?>><?php _e('Delete', 'claude-translator'); ?></option>
-                <option value="trash" <?php selected($_GET['action'] ?? '', 'trash'); ?>><?php _e('Trash', 'claude-translator'); ?></option>
+                <option value=""><?php _e('All Actions', 'nexus-ai-wp-translator'); ?></option>
+                <option value="translate" <?php selected($_GET['action'] ?? '', 'translate'); ?>><?php _e('Translate', 'nexus-ai-wp-translator'); ?></option>
+                <option value="delete" <?php selected($_GET['action'] ?? '', 'delete'); ?>><?php _e('Delete', 'nexus-ai-wp-translator'); ?></option>
+                <option value="trash" <?php selected($_GET['action'] ?? '', 'trash'); ?>><?php _e('Trash', 'nexus-ai-wp-translator'); ?></option>
             </select>
             
-            <input type="submit" class="button" value="<?php _e('Filter', 'claude-translator'); ?>" />
-            <a href="<?php echo admin_url('admin.php?page=claude-translator-logs'); ?>" class="button">
-                <?php _e('Clear Filters', 'claude-translator'); ?>
+            <input type="submit" class="button" value="<?php _e('Filter', 'nexus-ai-wp-translator'); ?>" />
+            <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-logs'); ?>" class="button">
+                <?php _e('Clear Filters', 'nexus-ai-wp-translator'); ?>
             </a>
         </form>
     </div>
@@ -40,13 +40,13 @@ if (!defined('ABSPATH')) {
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th><?php _e('Date/Time', 'claude-translator'); ?></th>
-                    <th><?php _e('Post', 'claude-translator'); ?></th>
-                    <th><?php _e('Action', 'claude-translator'); ?></th>
-                    <th><?php _e('Status', 'claude-translator'); ?></th>
-                    <th><?php _e('Message', 'claude-translator'); ?></th>
-                    <th><?php _e('API Calls', 'claude-translator'); ?></th>
-                    <th><?php _e('Processing Time', 'claude-translator'); ?></th>
+                    <th><?php _e('Date/Time', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Post', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Action', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Status', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Message', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('API Calls', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Processing Time', 'nexus-ai-wp-translator'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -54,7 +54,7 @@ if (!defined('ABSPATH')) {
                     <tr>
                         <td>
                             <strong><?php echo date('Y-m-d H:i:s', strtotime($log->created_at)); ?></strong><br>
-                            <small><?php echo human_time_diff(strtotime($log->created_at), current_time('timestamp')) . ' ' . __('ago', 'claude-translator'); ?></small>
+                            <small><?php echo human_time_diff(strtotime($log->created_at), current_time('timestamp')) . ' ' . __('ago', 'nexus-ai-wp-translator'); ?></small>
                         </td>
                         <td>
                             <?php if ($log->post_title): ?>
@@ -64,7 +64,7 @@ if (!defined('ABSPATH')) {
                                 <br><small>ID: <?php echo $log->post_id; ?></small>
                             <?php else: ?>
                                 <span class="deleted-post">
-                                    <?php _e('Deleted Post', 'claude-translator'); ?>
+                                    <?php _e('Deleted Post', 'nexus-ai-wp-translator'); ?>
                                     <br><small>ID: <?php echo $log->post_id; ?></small>
                                 </span>
                             <?php endif; ?>
@@ -82,13 +82,13 @@ if (!defined('ABSPATH')) {
                                 <span class="log-message-short">
                                     <?php echo esc_html(substr($log->message, 0, 100)); ?>...
                                     <button type="button" class="button-link expand-message">
-                                        <?php _e('Show More', 'claude-translator'); ?>
+                                        <?php _e('Show More', 'nexus-ai-wp-translator'); ?>
                                     </button>
                                 </span>
                                 <span class="log-message-full" style="display: none;">
                                     <?php echo esc_html($log->message); ?>
                                     <button type="button" class="button-link collapse-message">
-                                        <?php _e('Show Less', 'claude-translator'); ?>
+                                        <?php _e('Show Less', 'nexus-ai-wp-translator'); ?>
                                     </button>
                                 </span>
                             <?php else: ?>
@@ -134,7 +134,7 @@ if (!defined('ABSPATH')) {
         </div>
     <?php else: ?>
         <div class="notice notice-info">
-            <p><?php _e('No translation logs found.', 'claude-translator'); ?></p>
+            <p><?php _e('No translation logs found.', 'nexus-ai-wp-translator'); ?></p>
         </div>
     <?php endif; ?>
 </div>

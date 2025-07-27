@@ -9,23 +9,23 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="wrap">
-    <h1><?php _e('Translation Relationships', 'claude-translator'); ?></h1>
+    <h1><?php _e('Translation Relationships', 'nexus-ai-wp-translator'); ?></h1>
     
     <p class="description">
-        <?php _e('Manage the relationships between source posts and their translations. You can unlink translations or view their status.', 'claude-translator'); ?>
+        <?php _e('Manage the relationships between source posts and their translations. You can unlink translations or view their status.', 'nexus-ai-wp-translator'); ?>
     </p>
     
     <?php if ($relationships): ?>
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th><?php _e('Source Post', 'claude-translator'); ?></th>
-                    <th><?php _e('Source Language', 'claude-translator'); ?></th>
-                    <th><?php _e('Translated Post', 'claude-translator'); ?></th>
-                    <th><?php _e('Target Language', 'claude-translator'); ?></th>
-                    <th><?php _e('Status', 'claude-translator'); ?></th>
-                    <th><?php _e('Created', 'claude-translator'); ?></th>
-                    <th><?php _e('Actions', 'claude-translator'); ?></th>
+                    <th><?php _e('Source Post', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Source Language', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Translated Post', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Target Language', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Status', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Created', 'nexus-ai-wp-translator'); ?></th>
+                    <th><?php _e('Actions', 'nexus-ai-wp-translator'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -42,7 +42,7 @@ if (!defined('ABSPATH')) {
                                 <?php endif; ?>
                             <?php else: ?>
                                 <span class="deleted-post">
-                                    <?php _e('Deleted/Trashed Post', 'claude-translator'); ?>
+                                    <?php _e('Deleted/Trashed Post', 'nexus-ai-wp-translator'); ?>
                                     <br><small>ID: <?php echo $relationship->source_post_id; ?></small>
                                 </span>
                             <?php endif; ?>
@@ -61,7 +61,7 @@ if (!defined('ABSPATH')) {
                                 <?php endif; ?>
                             <?php else: ?>
                                 <span class="deleted-post">
-                                    <?php _e('Deleted/Trashed Post', 'claude-translator'); ?>
+                                    <?php _e('Deleted/Trashed Post', 'nexus-ai-wp-translator'); ?>
                                     <br><small>ID: <?php echo $relationship->translated_post_id; ?></small>
                                 </span>
                             <?php endif; ?>
@@ -76,19 +76,19 @@ if (!defined('ABSPATH')) {
                         </td>
                         <td>
                             <?php echo date('Y-m-d H:i', strtotime($relationship->created_at)); ?><br>
-                            <small><?php echo human_time_diff(strtotime($relationship->created_at), current_time('timestamp')) . ' ' . __('ago', 'claude-translator'); ?></small>
+                            <small><?php echo human_time_diff(strtotime($relationship->created_at), current_time('timestamp')) . ' ' . __('ago', 'nexus-ai-wp-translator'); ?></small>
                         </td>
                         <td>
                             <div class="row-actions">
                                 <?php if ($relationship->source_title && $relationship->translated_title): ?>
                                     <span class="view-source">
                                         <a href="<?php echo get_permalink($relationship->source_post_id); ?>" target="_blank">
-                                            <?php _e('View Source', 'claude-translator'); ?>
+                                            <?php _e('View Source', 'nexus-ai-wp-translator'); ?>
                                         </a> |
                                     </span>
                                     <span class="view-translation">
                                         <a href="<?php echo get_permalink($relationship->translated_post_id); ?>" target="_blank">
-                                            <?php _e('View Translation', 'claude-translator'); ?>
+                                            <?php _e('View Translation', 'nexus-ai-wp-translator'); ?>
                                         </a> |
                                     </span>
                                 <?php endif; ?>
@@ -97,7 +97,7 @@ if (!defined('ABSPATH')) {
                                             class="button-link unlink-translation" 
                                             data-source-id="<?php echo $relationship->source_post_id; ?>" 
                                             data-translated-id="<?php echo $relationship->translated_post_id; ?>">
-                                        <?php _e('Unlink', 'claude-translator'); ?>
+                                        <?php _e('Unlink', 'nexus-ai-wp-translator'); ?>
                                     </button>
                                 </span>
                             </div>
@@ -131,19 +131,19 @@ if (!defined('ABSPATH')) {
         </div>
     <?php else: ?>
         <div class="notice notice-info">
-            <p><?php _e('No translation relationships found.', 'claude-translator'); ?></p>
+            <p><?php _e('No translation relationships found.', 'nexus-ai-wp-translator'); ?></p>
         </div>
     <?php endif; ?>
     
     <!-- Bulk Actions -->
-    <div class="claude-bulk-actions">
-        <h2><?php _e('Bulk Actions', 'claude-translator'); ?></h2>
+    <div class="nexus-ai-wp-bulk-actions">
+        <h2><?php _e('Bulk Actions', 'nexus-ai-wp-translator'); ?></h2>
         <p>
             <button type="button" id="cleanup-orphaned" class="button">
-                <?php _e('Clean Up Orphaned Relationships', 'claude-translator'); ?>
+                <?php _e('Clean Up Orphaned Relationships', 'nexus-ai-wp-translator'); ?>
             </button>
             <span class="description">
-                <?php _e('Remove relationships where source or translated posts have been deleted.', 'claude-translator'); ?>
+                <?php _e('Remove relationships where source or translated posts have been deleted.', 'nexus-ai-wp-translator'); ?>
             </span>
         </p>
     </div>
@@ -153,7 +153,7 @@ if (!defined('ABSPATH')) {
 jQuery(document).ready(function($) {
     // Unlink translation
     $('.unlink-translation').on('click', function() {
-        if (!confirm('<?php _e('Are you sure you want to unlink this translation? This action cannot be undone.', 'claude-translator'); ?>')) {
+        if (!confirm('<?php _e('Are you sure you want to unlink this translation? This action cannot be undone.', 'nexus-ai-wp-translator'); ?>')) {
             return;
         }
         
@@ -162,48 +162,48 @@ jQuery(document).ready(function($) {
         var translatedId = button.data('translated-id');
         var row = button.closest('tr');
         
-        button.prop('disabled', true).text('<?php _e('Unlinking...', 'claude-translator'); ?>');
+        button.prop('disabled', true).text('<?php _e('Unlinking...', 'nexus-ai-wp-translator'); ?>');
         
         $.post(ajaxurl, {
-            action: 'claude_unlink_translation',
+            action: 'nexus_ai_wp_unlink_translation',
             post_id: sourceId,
             related_post_id: translatedId,
-            nonce: claude_translator_ajax.nonce
+            nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
                 row.fadeOut(300, function() {
                     $(this).remove();
                 });
             } else {
-                alert('<?php _e('Error:', 'claude-translator'); ?> ' + response.data);
-                button.prop('disabled', false).text('<?php _e('Unlink', 'claude-translator'); ?>');
+                alert('<?php _e('Error:', 'nexus-ai-wp-translator'); ?> ' + response.data);
+                button.prop('disabled', false).text('<?php _e('Unlink', 'nexus-ai-wp-translator'); ?>');
             }
         }).fail(function() {
-            alert('<?php _e('Network error occurred', 'claude-translator'); ?>');
-            button.prop('disabled', false).text('<?php _e('Unlink', 'claude-translator'); ?>');
+            alert('<?php _e('Network error occurred', 'nexus-ai-wp-translator'); ?>');
+            button.prop('disabled', false).text('<?php _e('Unlink', 'nexus-ai-wp-translator'); ?>');
         });
     });
     
     // Clean up orphaned relationships
     $('#cleanup-orphaned').on('click', function() {
-        if (!confirm('<?php _e('Are you sure you want to clean up orphaned relationships? This will remove all relationships where posts have been deleted.', 'claude-translator'); ?>')) {
+        if (!confirm('<?php _e('Are you sure you want to clean up orphaned relationships? This will remove all relationships where posts have been deleted.', 'nexus-ai-wp-translator'); ?>')) {
             return;
         }
         
         var button = $(this);
-        button.prop('disabled', true).text('<?php _e('Cleaning up...', 'claude-translator'); ?>');
+        button.prop('disabled', true).text('<?php _e('Cleaning up...', 'nexus-ai-wp-translator'); ?>');
         
         $.post(ajaxurl, {
-            action: 'claude_cleanup_orphaned',
-            nonce: claude_translator_ajax.nonce
+            action: 'nexus_ai_wp_cleanup_orphaned',
+            nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
                 location.reload();
             } else {
-                alert('<?php _e('Error:', 'claude-translator'); ?> ' + response.data);
+                alert('<?php _e('Error:', 'nexus-ai-wp-translator'); ?> ' + response.data);
             }
         }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Clean Up Orphaned Relationships', 'claude-translator'); ?>');
+            button.prop('disabled', false).text('<?php _e('Clean Up Orphaned Relationships', 'nexus-ai-wp-translator'); ?>');
         });
     });
 });
