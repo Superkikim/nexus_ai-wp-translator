@@ -19,6 +19,17 @@
             this.initTranslationActions();
             this.initStatusRefresh();
             this.initBulkActions();
+            
+            // Load models on page load if API key exists
+            console.log('NexusAI Debug: Initializing admin interface');
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+            if (apiKey) {
+                console.log('NexusAI Debug: API key found on page load, showing model selection');
+                $('#model-selection-row').show();
+                this.loadAvailableModels();
+            } else {
+                console.log('NexusAI Debug: No API key found on page load');
+            }
         },
         
         /**
@@ -81,17 +92,21 @@
             
             // Refresh models button
             $('#nexus-ai-wp-refresh-models').on('click', function() {
+                console.log('NexusAI Debug: Refresh models button clicked');
                 var button = $(this);
                 var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
                 
                 if (!apiKey) {
+                    console.log('NexusAI Debug: No API key for refresh models');
                     alert('Please enter and test your API key first.');
                     return;
                 }
                 
                 button.prop('disabled', true).text('Loading...');
+                console.log('NexusAI Debug: Starting manual model refresh');
                 NexusAIWPTranslatorAdmin.loadAvailableModels(function() {
                     button.prop('disabled', false).text('Refresh Models');
+                    console.log('NexusAI Debug: Manual model refresh completed');
                 });
             });
             
@@ -156,6 +171,7 @@
          * Perform API test (extracted from initApiTesting)
          */
         performApiTest: function(button, apiKey, resultDiv) {
+                console.log('NexusAI Debug: Starting API test with key:', apiKey.substring(0, 10) + '...');
                 button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.testing);
                 resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
                 
@@ -165,15 +181,19 @@
                     nonce: nexus_ai_wp_translator_ajax.nonce
                 })
                 .done(function(response) {
+                    console.log('NexusAI Debug: API test response:', response);
                     var noticeClass = response.success ? 'success' : 'error';
                     NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
                     
                     // If API test successful, load available models
                     if (response.success) {
+                        console.log('NexusAI Debug: API test successful, showing model selection and loading models');
                         $('#model-selection-row').show();
+                        NexusAIWPTranslatorAdmin.loadAvailableModels();
                     }
                 })
                 .fail(function() {
+                    console.log('NexusAI Debug: API test failed - network error');
                     NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
                 })
                 .always(function() {
@@ -212,20 +232,24 @@
          * Load available models after successful API test
          */
         loadAvailableModels: function(callback) {
+            console.log('NexusAI Debug: Starting to load available models');
             var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
             var modelSelect = $('#nexus_ai_wp_translator_model');
             
             if (!apiKey) {
+                console.log('NexusAI Debug: No API key found, cannot load models');
                 if (callback) callback();
                 return;
             }
             
             // Store current selection
             var currentSelection = modelSelect.val();
+            console.log('NexusAI Debug: Current model selection:', currentSelection);
             
             // Show loading state
             var loadingOption = '<option value="">Loading models...</option>';
             modelSelect.html(loadingOption);
+            console.log('NexusAI Debug: Set loading state in dropdown');
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_models',
@@ -233,24 +257,30 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
+                console.log('NexusAI Debug: Get models response:', response);
                 if (response.success && response.models) {
+                    console.log('NexusAI Debug: Models received:', response.models);
                     modelSelect.empty();
                     
                     // Add models to dropdown
                     $.each(response.models, function(modelId, displayName) {
                         var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
                         modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
+                        console.log('NexusAI Debug: Added model:', modelId, displayName);
                     });
                 } else {
+                    console.log('NexusAI Debug: Failed to get models, using fallback');
                     // Fallback to default models if API call fails
                     NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
                 }
             })
             .fail(function() {
+                console.log('NexusAI Debug: Get models request failed, using fallback');
                 // Fallback to default models if request fails
                 NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
             })
             .always(function() {
+                console.log('NexusAI Debug: Load models completed');
                 if (callback) callback();
             });
         },

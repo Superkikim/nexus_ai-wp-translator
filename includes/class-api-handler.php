@@ -36,7 +36,10 @@ class Nexus_AI_WP_Translator_API_Handler {
      * Get available models from Claude API
      */
     public function get_available_models() {
+        error_log('Nexus AI WP Translator: Getting available models from API');
+        
         if (empty($this->api_key)) {
+            error_log('Nexus AI WP Translator: No API key provided for getting models');
             return array(
                 'success' => false,
                 'message' => __('API key is required', 'nexus-ai-wp-translator')
@@ -49,12 +52,15 @@ class Nexus_AI_WP_Translator_API_Handler {
             'anthropic-version' => '2023-06-01'
         );
         
+        error_log('Nexus AI WP Translator: Making request to models endpoint: ' . $this->models_endpoint);
+        
         $response = wp_remote_get($this->models_endpoint, array(
             'headers' => $headers,
             'timeout' => 30
         ));
         
         if (is_wp_error($response)) {
+            error_log('Nexus AI WP Translator: WP Error getting models: ' . $response->get_error_message());
             return array(
                 'success' => false,
                 'message' => $response->get_error_message()
@@ -63,12 +69,16 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
+        error_log('Nexus AI WP Translator: Models API response code: ' . $response_code);
+        error_log('Nexus AI WP Translator: Models API response body: ' . $response_body);
         
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
             $error_message = isset($error_data['error']['message']) 
                 ? $error_data['error']['message'] 
                 : __('Failed to retrieve models', 'nexus-ai-wp-translator');
+            
+            error_log('Nexus AI WP Translator: Models API error: ' . $error_message);
                 
             return array(
                 'success' => false,
@@ -77,8 +87,10 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
         
         $data = json_decode($response_body, true);
+        error_log('Nexus AI WP Translator: Decoded models data: ' . print_r($data, true));
         
         if (!isset($data['data']) || !is_array($data['data'])) {
+            error_log('Nexus AI WP Translator: No models data in response, using fallback models');
             // Fallback to known models if API doesn't return model list
             $models = array(
                 'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
@@ -87,16 +99,19 @@ class Nexus_AI_WP_Translator_API_Handler {
                 'claude-3-opus-20240229' => 'Claude 3 Opus'
             );
         } else {
+            error_log('Nexus AI WP Translator: Processing models from API response');
             $models = array();
             foreach ($data['data'] as $model) {
                 if (isset($model['id'])) {
                     $display_name = $this->format_model_name($model['id']);
                     $models[$model['id']] = $display_name;
+                    error_log('Nexus AI WP Translator: Added model: ' . $model['id'] . ' -> ' . $display_name);
                 }
             }
             
             // If no models found, use fallback
             if (empty($models)) {
+                error_log('Nexus AI WP Translator: No models found in API response, using fallback');
                 $models = array(
                     'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
                     'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
@@ -105,6 +120,8 @@ class Nexus_AI_WP_Translator_API_Handler {
                 );
             }
         }
+        
+        error_log('Nexus AI WP Translator: Final models array: ' . print_r($models, true));
         
         return array(
             'success' => true,
