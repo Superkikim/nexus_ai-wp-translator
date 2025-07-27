@@ -83,7 +83,26 @@ class Nexus_AI_WP_Translator_Frontend {
         
         // 3. Check session (non-logged in users)
         if (!is_user_logged_in() && isset($_SESSION['claude_translator_language'])) {
-        if (!is_user_logged_in() && isset($_SESSION['nexus_ai_wp_translator_language'])) {
+            $lang = $_SESSION['nexus_ai_wp_translator_language'];
+            if ($this->is_valid_language($lang)) {
+                return $lang;
+            }
+        }
+        
+        // 4. Check browser Accept-Language header
+        $browser_lang = $this->detect_browser_language();
+        if ($browser_lang && $this->is_valid_language($browser_lang)) {
+            return $browser_lang;
+        }
+        
+        // 5. Default to source language
+        return get_option('nexus_ai_wp_translator_source_language', 'en');
+    }
+    
+    /**
+     * Detect browser language from Accept-Language header
+     */
+    private function detect_browser_language() {
             $lang = $_SESSION['nexus_ai_wp_translator_language'];
             if ($this->is_valid_language($lang)) {
                 return $lang;
