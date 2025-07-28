@@ -693,20 +693,6 @@ class Nexus_AI_WP_Translator_Manager {
             wp_send_json_error(__('Failed to get status: ', 'nexus-ai-wp-translator') . $e->getMessage());
         }
     }
-        
-        if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
-        }
-        
-        $post_id = intval($_POST['post_id']);
-        $target_languages = isset($_POST['target_languages']) ? (array) $_POST['target_languages'] : null;
-        
-        $result = $this->translate_post($post_id, $target_languages);
-        
-        wp_send_json($result);
-    }
-    
-     */
     
     /**
      * AJAX: Get linked posts
