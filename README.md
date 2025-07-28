@@ -24,6 +24,9 @@ A comprehensive WordPress plugin that automatically translates posts using Claud
 - **User Preferences**: Store language choices for logged-in users
 - **SEO-Friendly URLs**: Optional language-specific URL structure
 - **Responsive Design**: Works perfectly on all devices
+- **Browser Language Detection**: Automatic detection and redirection based on user's browser locale
+- **Smart Content Loading**: Automatic fallback to source language when translations are unavailable
+- **Navigation Integration**: Seamless integration with WordPress navigation menus
 
 ### 🔧 Technical Features
 - **WordPress Standards**: Follows all WordPress coding standards and best practices
@@ -78,11 +81,12 @@ Configure throttling to prevent excessive API usage:
 
 ### Automatic Translation
 
-Once configured, posts will automatically translate to all target languages when published. You can:
+Translation is now manual and controlled through the admin dashboard. You can:
 
-- Monitor progress in the **Dashboard**
-- View translation status in post edit screens
-- Check logs for any issues
+- Navigate to **Nexus AI WP Translator** → **Dashboard**
+- Use the **Articles**, **Pages**, or **Events** tabs to view content
+- Click **Translate** button next to any content to translate it to all target languages
+- Monitor progress and view results in the **Logs** section
 
 ### Manual Translation
 
@@ -95,6 +99,97 @@ From any post edit screen:
 
 ### Language Switching
 
+The plugin provides multiple ways for users to switch between languages on your website:
+
+#### Automatic Browser Detection
+
+The plugin automatically detects the user's browser language and redirects them to the appropriate content version if available. This happens on the first visit and can be overridden by manual selection.
+
+**Features:**
+- Detects browser locale (e.g., `en-US`, `fr-FR`, `es-ES`)
+- Falls back to short language codes (e.g., `en`, `fr`, `es`)
+- Only redirects if the detected language is configured as a target language
+- Respects user's manual language selections
+
+#### Navigation Menu Integration
+
+The language switcher is automatically added to your primary navigation menu. No additional configuration required.
+
+**Automatic Integration:**
+- Appears in menus with `theme_location` of `primary` or `main`
+- Displays as a horizontal list of language options
+- Shows current language as active
+- Indicates unavailable translations for current content
+
+#### Widget
+
+Add the **Nexus AI WP Language Switcher** widget to any widget area:
+
+1. Go to **Appearance** → **Widgets**
+2. Find **Nexus AI WP Language Switcher**
+3. Drag it to your desired widget area
+4. Configure display options:
+   - **Title**: Widget title (default: "Language")
+   - **Display Style**: Choose between "Dropdown" or "List"
+   - **Show Flags**: Enable/disable flag icons (if available)
+
+#### Shortcode
+
+Use the `[nexus_ai_wp_language_switcher]` shortcode anywhere in your content:
+
+**Basic Usage:**
+```
+[nexus_ai_wp_language_switcher]
+```
+
+**With Parameters:**
+```
+[nexus_ai_wp_language_switcher style="dropdown" show_current="yes" show_flags="no"]
+```
+
+**Available Parameters:**
+- `style`: "dropdown" or "list" (default: dropdown)
+- `show_current`: "yes" or "no" (default: yes) - Whether to show current language
+- `show_flags`: "yes" or "no" (default: no) - Whether to show flag icons
+
+#### Template Function
+
+For theme developers, use the template function:
+
+```php
+<?php
+if (function_exists('nexus_ai_wp_translator_language_switcher')) {
+    $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
+    echo $frontend->render_language_switcher(array(
+        'style' => 'list',
+        'show_current' => true,
+        'show_flags' => false
+    ));
+}
+?>
+```
+
+### Smart Content Loading
+
+The plugin intelligently serves content based on user language preferences:
+
+#### For Individual Posts/Pages
+- Automatically redirects to translated version if available
+- Falls back to source language if translation doesn't exist
+- Maintains SEO-friendly URLs
+
+#### For Archives and Home Page
+- Filters content to show posts in the preferred language
+- Shows source language posts when translations aren't available
+- Maintains consistent user experience across the site
+
+#### Language Preference Storage
+- **Logged-in users**: Preferences stored in database
+- **Anonymous users**: Preferences stored in browser session
+- **GDPR Compliant**: Optional cookie consent integration
+
+### Language Switching
+
 #### Widget
 Add the **Nexus AI WP Language Switcher** widget to any widget area.
 
@@ -104,12 +199,14 @@ Use `[nexus_ai_wp_language_switcher]` anywhere in your content.
 Parameters:
 - `style`: "dropdown" or "list" (default: dropdown)
 - `show_current`: "yes" or "no" (default: yes)
+- `show_flags`: "yes" or "no" (default: no)
 
 #### Template Function
 ```php
 <?php
 if (function_exists('nexus_ai_wp_translator_language_switcher')) {
-    nexus_ai_wp_translator_language_switcher();
+    $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
+    echo $frontend->render_language_switcher();
 }
 ?>
 ```
@@ -222,6 +319,24 @@ $params = apply_filters('nexus_ai_wp_translator_api_params', $params, $content, 
 
 ### Common Issues
 
+#### Language Switcher Not Appearing
+- Verify your theme uses standard WordPress navigation functions
+- Check if your primary menu has `theme_location` set to 'primary' or 'main'
+- Ensure target languages are configured in **Settings** → **Languages**
+- Clear any caching plugins
+
+#### Browser Detection Not Working
+- Check that target languages include the user's browser language
+- Verify JavaScript is enabled in the browser
+- Clear browser cache and cookies
+- Check browser console for JavaScript errors
+
+#### Content Not Switching Languages
+- Ensure posts/pages have been translated using the dashboard
+- Check translation status in **Nexus AI WP Translator** → **Relationships**
+- Verify post language is set correctly in the post meta box
+- Check for conflicting plugins that modify post queries
+
 #### API Connection Failed
 - Verify your API key is correct
 - Check your server can make outbound HTTPS requests
@@ -251,12 +366,19 @@ Check `/wp-content/debug.log` for Nexus AI WP Translator errors.
 
 ## Performance Optimization
 
+### Language Detection Performance
+
+1. **Browser Detection**: Runs only on first visit per session
+2. **Content Filtering**: Optimized database queries for language-specific content
+3. **Caching Integration**: Compatible with popular caching plugins
+
 ### Best Practices
 
 1. **Configure Appropriate Throttling**: Set reasonable API limits based on your usage
 2. **Enable Caching**: Reduces redundant API calls
 3. **Monitor API Usage**: Regular check dashboard statistics
 4. **Use Selective Translation**: Don't translate every post automatically if not needed
+5. **Optimize Language Switcher**: Use list style for better performance than dropdown
 
 ### Server Requirements
 
@@ -286,6 +408,17 @@ We welcome contributions! Please:
 4. Add proper documentation
 5. Include tests where applicable
 6. Submit a pull request
+
+## Frequently Asked Questions
+
+### How do I customize the language switcher appearance?
+The language switcher inherits your theme's navigation styles. You can add custom CSS targeting `.nexus-ai-wp-language-switcher` classes.
+
+### Can I disable automatic browser detection?
+Currently, browser detection is enabled by default. You can modify the behavior by customizing the frontend JavaScript or using the provided hooks.
+
+### Does this work with caching plugins?
+Yes, the plugin is compatible with most caching plugins. However, you may need to exclude language-specific URLs from caching for optimal performance.
 
 ## Support
 
