@@ -80,6 +80,7 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-admin.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-frontend.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-language-switcher.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-gutenberg-block.php';
     }
     
     /**
@@ -119,6 +120,9 @@ class Nexus_AI_WP_Translator_Plugin {
             
             // Initialize language switcher widget
             add_action('widgets_init', array($this, 'register_widgets'));
+            
+            // Initialize Gutenberg block
+            Nexus_AI_WP_Translator_Gutenberg_Block::get_instance();
             
             // Mark as initialized only after successful completion
             $initialized = true;

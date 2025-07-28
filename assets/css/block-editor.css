@@ -1,0 +1,65 @@
+/* Nexus AI WP Translator Block Editor Styles */
+
+.nexus-ai-wp-block-language-switcher-preview {
+    background: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-block-language-switcher-preview.has-text-align-left {
+    text-align: left;
+    align-items: flex-start;
+}
+
+.nexus-ai-wp-block-language-switcher-preview.has-text-align-right {
+    text-align: right;
+    align-items: flex-end;
+}
+
+.nexus-ai-wp-block-language-switcher-preview.has-text-align-center {
+    text-align: center;
+    align-items: center;
+}
+
+/* Block in editor */
+.wp-block-nexus-ai-wp-translator-language-switcher {
+    margin: 1em 0;
+}
+
+/* Inspector controls styling */
+.components-panel__body .components-base-control__label {
+    font-weight: 600;
+}
+
+/* Block toolbar alignment */
+.block-editor-block-toolbar .components-toolbar-group {
+    border-right: 1px solid #e0e0e0;
+}
+
+/* Preview states */
+.nexus-ai-wp-block-language-switcher-preview:hover {
+    border-color: #0073aa;
+    background: #f0f6fc;
+}
+
+.nexus-ai-wp-block-language-switcher-preview .dashicon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    margin-bottom: 8px;
+}
+
+/* Responsive preview */
+@media (max-width: 782px) {
+    .nexus-ai-wp-block-language-switcher-preview {
+        padding: 15px;
+        min-height: 60px;
+    }
+}
