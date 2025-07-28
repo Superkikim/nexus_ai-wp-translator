@@ -694,12 +694,17 @@ class Nexus_AI_WP_Translator_Manager {
      * AJAX: Handle post action with user choice
      */
     public function ajax_handle_post_action() {
+        error_log("Nexus AI WP Translator: *** ajax_handle_post_action() STARTED ***");
+        
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
             error_log("Nexus AI WP Translator: Permission denied for user in ajax_handle_post_action");
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
+        
+        // Log all POST data for debugging
+        error_log("Nexus AI WP Translator: POST data: " . print_r($_POST, true));
         
         $post_id = intval($_POST['post_id']);
         $post_action = sanitize_text_field($_POST['post_action']); // 'delete' or 'trash'
@@ -726,119 +731,129 @@ class Nexus_AI_WP_Translator_Manager {
             return;
         }
         
+        // Wrap everything in try-catch to prevent fatal errors
         try {
-        if ($user_choice === 'unlink_only') {
-            // Mark relationships as orphaned instead of deleting them
-            $translations = $this->db->get_post_translations($post_id);
-            error_log("Nexus AI WP Translator: Found " . count($translations) . " translations to mark as orphaned");
-            
-            foreach ($translations as $translation) {
-                // Update the relationship status to indicate source was deleted
-                global $wpdb;
-                if ($translation->source_post_id == $post_id) {
-                    // This post is the source, mark as source_deleted
-                    $update_result = $wpdb->update(
-                        $this->db->translations_table,
-                        array('status' => 'source_deleted'),
-                        array('id' => $translation->id),
-                        array('%s'),
-                        array('%d')
-                    );
-                    error_log("Nexus AI WP Translator: Updated translation {$translation->id} to source_deleted, result: " . ($update_result !== false ? 'SUCCESS' : 'FAILED'));
-                } else {
-                    // This post is a translation, mark as translation_deleted
-                    $update_result = $wpdb->update(
-                        $this->db->translations_table,
-                        array('status' => 'translation_deleted'),
-                        array('id' => $translation->id),
-                        array('%s'),
-                        array('%d')
-                    );
-                    error_log("Nexus AI WP Translator: Updated translation {$translation->id} to translation_deleted, result: " . ($update_result !== false ? 'SUCCESS' : 'FAILED'));
-                }
-            }
-            
-            // Remove translation meta from related posts but keep relationships
-            foreach ($translations as $translation) {
-                $related_post_id = ($translation->source_post_id == $post_id) 
-                    ? $translation->translated_post_id 
-                    : $translation->source_post_id;
+            if ($user_choice === 'unlink_only') {
+                error_log("Nexus AI WP Translator: Processing unlink_only for post {$post_id}");
                 
-                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
-                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
-                error_log("Nexus AI WP Translator: Removed meta from post {$related_post_id}");
-            }
-            
-            // Now perform the action on the main post only
-            if ($post_action === 'delete') {
-                $delete_result = wp_delete_post($post_id, true);
-                error_log("Nexus AI WP Translator: Delete post {$post_id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
-                if (!$delete_result) {
-                    throw new Exception("Failed to delete post {$post_id}");
-                }
-            } else {
-                $trash_result = wp_trash_post($post_id);
-                error_log("Nexus AI WP Translator: Trash post {$post_id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
-                if (!$trash_result) {
-                    throw new Exception("Failed to trash post {$post_id}");
-                }
-            }
-            
-            $this->db->log_translation_activity($post_id, $post_action . '_unlink_only', 'completed', 'Post processed with unlink only option');
-            
-        } else { // delete_all
-            // Get all linked posts first
-            $translations = $this->db->get_post_translations($post_id);
-            $all_post_ids = array($post_id);
-            error_log("Nexus AI WP Translator: Delete all - found " . count($translations) . " translations");
-            
-            foreach ($translations as $translation) {
-                $related_post_id = ($translation->source_post_id == $post_id) 
-                    ? $translation->translated_post_id 
-                    : $translation->source_post_id;
+                // Mark relationships as orphaned instead of deleting them
+                $translations = $this->db->get_post_translations($post_id);
+                error_log("Nexus AI WP Translator: Found " . count($translations) . " translations to mark as orphaned");
                 
-                if (!in_array($related_post_id, $all_post_ids)) {
-                    $all_post_ids[] = $related_post_id;
+                foreach ($translations as $translation) {
+                    // Update the relationship status to indicate source was deleted
+                    global $wpdb;
+                    if ($translation->source_post_id == $post_id) {
+                        // This post is the source, mark as source_deleted
+                        $update_result = $wpdb->update(
+                            $this->db->translations_table,
+                            array('status' => 'source_deleted'),
+                            array('id' => $translation->id),
+                            array('%s'),
+                            array('%d')
+                        );
+                        error_log("Nexus AI WP Translator: Updated translation {$translation->id} to source_deleted, result: " . ($update_result !== false ? 'SUCCESS' : 'FAILED'));
+                    } else {
+                        // This post is a translation, mark as translation_deleted
+                        $update_result = $wpdb->update(
+                            $this->db->translations_table,
+                            array('status' => 'translation_deleted'),
+                            array('id' => $translation->id),
+                            array('%s'),
+                            array('%d')
+                        );
+                        error_log("Nexus AI WP Translator: Updated translation {$translation->id} to translation_deleted, result: " . ($update_result !== false ? 'SUCCESS' : 'FAILED'));
+                    }
                 }
-            }
-            
-            error_log("Nexus AI WP Translator: Will process posts: " . implode(', ', $all_post_ids));
-            
-            // Delete relationships first
-            $this->db->delete_translation_relationships($post_id);
-            
-            // Perform action on all posts
-            $failed_posts = array();
-            foreach ($all_post_ids as $id) {
+                
+                // Remove translation meta from related posts but keep relationships
+                foreach ($translations as $translation) {
+                    $related_post_id = ($translation->source_post_id == $post_id) 
+                        ? $translation->translated_post_id 
+                        : $translation->source_post_id;
+                    
+                    delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
+                    delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
+                    error_log("Nexus AI WP Translator: Removed meta from post {$related_post_id}");
+                }
+                
+                // Now perform the action on the main post only
                 if ($post_action === 'delete') {
-                    $delete_result = wp_delete_post($id, true);
-                    error_log("Nexus AI WP Translator: Delete post {$id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
+                    error_log("Nexus AI WP Translator: About to delete post {$post_id}");
+                    $delete_result = wp_delete_post($post_id, true);
+                    error_log("Nexus AI WP Translator: Delete post {$post_id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
                     if (!$delete_result) {
-                        $failed_posts[] = $id;
+                        throw new Exception("Failed to delete post {$post_id}");
                     }
                 } else {
-                    $trash_result = wp_trash_post($id);
-                    error_log("Nexus AI WP Translator: Trash post {$id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
+                    error_log("Nexus AI WP Translator: About to trash post {$post_id}");
+                    $trash_result = wp_trash_post($post_id);
+                    error_log("Nexus AI WP Translator: Trash post {$post_id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
                     if (!$trash_result) {
-                        $failed_posts[] = $id;
+                        throw new Exception("Failed to trash post {$post_id}");
                     }
                 }
+                
+                $this->db->log_translation_activity($post_id, $post_action . '_unlink_only', 'completed', 'Post processed with unlink only option');
+                
+            } else { // delete_all
+                error_log("Nexus AI WP Translator: Processing delete_all for post {$post_id}");
+                
+                // Get all linked posts first
+                $translations = $this->db->get_post_translations($post_id);
+                $all_post_ids = array($post_id);
+                error_log("Nexus AI WP Translator: Delete all - found " . count($translations) . " translations");
+                
+                foreach ($translations as $translation) {
+                    $related_post_id = ($translation->source_post_id == $post_id) 
+                        ? $translation->translated_post_id 
+                        : $translation->source_post_id;
+                    
+                    if (!in_array($related_post_id, $all_post_ids)) {
+                        $all_post_ids[] = $related_post_id;
+                    }
+                }
+                
+                error_log("Nexus AI WP Translator: Will process posts: " . implode(', ', $all_post_ids));
+                
+                // Delete relationships first
+                error_log("Nexus AI WP Translator: Deleting translation relationships for post {$post_id}");
+                $this->db->delete_translation_relationships($post_id);
+                
+                // Perform action on all posts
+                $failed_posts = array();
+                foreach ($all_post_ids as $id) {
+                    if ($post_action === 'delete') {
+                        error_log("Nexus AI WP Translator: About to delete post {$id}");
+                        $delete_result = wp_delete_post($id, true);
+                        error_log("Nexus AI WP Translator: Delete post {$id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
+                        if (!$delete_result) {
+                            $failed_posts[] = $id;
+                        }
+                    } else {
+                        error_log("Nexus AI WP Translator: About to trash post {$id}");
+                        $trash_result = wp_trash_post($id);
+                        error_log("Nexus AI WP Translator: Trash post {$id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
+                        if (!$trash_result) {
+                            $failed_posts[] = $id;
+                        }
+                    }
+                }
+                
+                if (!empty($failed_posts)) {
+                    throw new Exception("Failed to process posts: " . implode(', ', $failed_posts));
+                }
+                
+                $this->db->log_translation_activity($post_id, $post_action . '_all', 'completed', 'All linked posts processed: ' . implode(', ', $all_post_ids));
             }
             
-            if (!empty($failed_posts)) {
-                throw new Exception("Failed to process posts: " . implode(', ', $failed_posts));
-            }
+            error_log("Nexus AI WP Translator: Post action completed successfully");
+            wp_send_json_success(array(
+                'message' => __('Action completed successfully', 'nexus-ai-wp-translator'),
+                'action' => $post_action,
+                'choice' => $user_choice
+            ));
             
-            $this->db->log_translation_activity($post_id, $post_action . '_all', 'completed', 'All linked posts processed: ' . implode(', ', $all_post_ids));
-        }
-        
-        error_log("Nexus AI WP Translator: Post action completed successfully");
-        wp_send_json_success(array(
-            'message' => __('Action completed successfully', 'nexus-ai-wp-translator'),
-            'action' => $post_action,
-            'choice' => $user_choice
-        ));
-        
         } catch (Exception $e) {
             error_log("Nexus AI WP Translator: Exception in ajax_handle_post_action: " . $e->getMessage());
             error_log("Nexus AI WP Translator: Exception trace: " . $e->getTraceAsString());
@@ -847,7 +862,13 @@ class Nexus_AI_WP_Translator_Manager {
             error_log("Nexus AI WP Translator: Fatal error in ajax_handle_post_action: " . $e->getMessage());
             error_log("Nexus AI WP Translator: Error trace: " . $e->getTraceAsString());
             wp_send_json_error('Fatal error occurred: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            error_log("Nexus AI WP Translator: Throwable in ajax_handle_post_action: " . $e->getMessage());
+            error_log("Nexus AI WP Translator: Throwable trace: " . $e->getTraceAsString());
+            wp_send_json_error('Unexpected error occurred: ' . $e->getMessage());
         }
+        
+        error_log("Nexus AI WP Translator: *** ajax_handle_post_action() ENDED ***");
     }
     
     /**
