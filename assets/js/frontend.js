@@ -240,11 +240,12 @@
          * Get supported languages
          */
         getSupportedLanguages: function() {
-            var languages = [];
-            
             // Get from global variable if available
             if (typeof nexus_ai_wp_translator.available_languages !== 'undefined') {
                 return nexus_ai_wp_translator.available_languages;
+            }
+            
+            var languages = [];
             
             // Get from dropdown options
             $('.nexus-ai-wp-language-select option').each(function() {
@@ -254,6 +255,10 @@
                 }
             });
             
+            if (languages.length > 0) {
+                return languages;
+            }
+            
             // Get from list links
             $('.nexus-ai-wp-language-list a').each(function() {
                 var lang = $(this).data('lang');
@@ -261,7 +266,6 @@
                     languages.push(lang);
                 }
             });
-            }
             
             return languages;
         },

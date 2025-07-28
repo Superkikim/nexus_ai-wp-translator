@@ -32,17 +32,11 @@ class Nexus_AI_WP_Translator_Frontend {
         // Initialize language detection early
         add_action('init', array($this, 'init_language_detection'));
         
-        // Setup language switching and content handling
-        add_action('template_redirect', array($this, 'setup_language_switching'), 1);
-        
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
         
         // Add language selector to navigation - higher priority to ensure it runs
         add_filter('wp_nav_menu_items', array($this, 'add_language_selector_to_nav'), 10, 2);
-        
-        // Force add language switcher if not in nav
-        add_action('wp_footer', array($this, 'ensure_language_switcher_exists'));
         
         // URL rewriting for SEO-friendly URLs
         if (get_option('nexus_ai_wp_translator_seo_friendly_urls', true)) {
@@ -68,7 +62,15 @@ class Nexus_AI_WP_Translator_Frontend {
      * Initialize language detection
      */
     public function init_language_detection() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [INIT] Starting language detection');
+        }
+        
         $this->current_language = $this->detect_current_language();
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [INIT] Current language set to: ' . $this->current_language);
+        }
         
         // Store language in session if not logged in
         if (!is_user_logged_in() && !isset($_SESSION)) {
@@ -108,17 +110,33 @@ class Nexus_AI_WP_Translator_Frontend {
         }
         
         // 3. Check session (non-logged in users)
-        if (!is_user_logged_in() && isset($_SESSION['claude_translator_language'])) {
-            $lang = $_SESSION['nexus_ai_wp_translator_language'];
+        if (!is_user_logged_in()) {
+            if (!isset($_SESSION)) {
+                session_start();
+            }
+            if (isset($_SESSION['nexus_ai_wp_translator_language'])) {
+                $lang = $_SESSION['nexus_ai_wp_translator_language'];
+                if ($this->is_valid_language($lang)) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Language from session: {$lang}");
+                    }
+                    return $lang;
+                }
+            }
+        }
+        
+        // 4. Check cookie (fallback for session issues)
+        if (isset($_COOKIE['nexus_ai_wp_translator_language'])) {
+            $lang = sanitize_text_field($_COOKIE['nexus_ai_wp_translator_language']);
             if ($this->is_valid_language($lang)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("Nexus AI WP Translator: Language from session: {$lang}");
+                    error_log("Nexus AI WP Translator: Language from cookie: {$lang}");
                 }
                 return $lang;
             }
         }
         
-        // 4. Check browser Accept-Language header
+        // 5. Check browser Accept-Language header
         $browser_lang = $this->detect_browser_language();
         if ($browser_lang && $this->is_valid_language($browser_lang)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -128,7 +146,7 @@ class Nexus_AI_WP_Translator_Frontend {
             return $browser_lang;
         }
         
-        // 5. Default to source language
+        // 6. Default to source language
         $default_lang = get_option('nexus_ai_wp_translator_source_language', 'en');
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log("Nexus AI WP Translator: Using default language: {$default_lang}");
@@ -141,10 +159,17 @@ class Nexus_AI_WP_Translator_Frontend {
      */
     private function detect_browser_language() {
         if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: No Accept-Language header found');
+            }
             return false;
         }
         
         $accept_language = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Accept-Language header: ' . $accept_language);
+        }
+        
         $languages = explode(',', $accept_language);
         
         foreach ($languages as $lang) {
@@ -153,18 +178,31 @@ class Nexus_AI_WP_Translator_Frontend {
                 $lang = substr($lang, 0, strpos($lang, ';'));
             }
             
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Testing browser language: ' . $lang);
+            }
+            
             // Try full language code first (e.g., en-US)
             if ($this->is_valid_language($lang)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('Nexus AI WP Translator: Found valid full language: ' . $lang);
+                }
                 return $lang;
             }
             
             // Try just the language part (e.g., en from en-US)
             $lang_short = substr($lang, 0, 2);
             if ($this->is_valid_language($lang_short)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('Nexus AI WP Translator: Found valid short language: ' . $lang_short);
+                }
                 return $lang_short;
             }
         }
         
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: No valid browser language found');
+        }
         return false;
     }
     
@@ -182,14 +220,73 @@ class Nexus_AI_WP_Translator_Frontend {
      * Store language preference
      */
     private function store_language_preference($language) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Storing language preference: {$language}");
+        }
+        
         if (is_user_logged_in()) {
             $this->db->store_user_preference(get_current_user_id(), $language);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Stored in database for user: " . get_current_user_id());
+            }
         } else {
             if (!isset($_SESSION)) {
                 session_start();
             }
             $_SESSION['nexus_ai_wp_translator_language'] = $language;
+            
+            // Also store in cookie as fallback
+            setcookie('nexus_ai_wp_translator_language', $language, time() + (30 * DAY_IN_SECONDS), '/');
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Stored in session and cookie");
+            }
         }
+    }
+    
+    /**
+     * Get all available languages from content
+     */
+    public function get_available_content_languages() {
+        global $wpdb;
+        
+        // Get source language
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $languages = array($source_language);
+        
+        // Get languages from translated content
+        $translated_languages = $wpdb->get_col(
+            "SELECT DISTINCT meta_value 
+             FROM {$wpdb->postmeta} 
+             WHERE meta_key = '_nexus_ai_wp_translator_language' 
+             AND meta_value != '' 
+             AND meta_value != '{$source_language}'"
+        );
+        
+        if ($translated_languages) {
+            $languages = array_merge($languages, $translated_languages);
+        }
+        
+        // Get target languages from translations table
+        $target_languages = $wpdb->get_col(
+            "SELECT DISTINCT target_language 
+             FROM {$this->db->translations_table} 
+             WHERE status = 'completed'"
+        );
+        
+        if ($target_languages) {
+            $languages = array_merge($languages, $target_languages);
+        }
+        
+        // Remove duplicates and sort
+        $languages = array_unique($languages);
+        sort($languages);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Available content languages: ' . implode(', ', $languages));
+        }
+        
+        return $languages;
     }
     
     /**
@@ -197,7 +294,7 @@ class Nexus_AI_WP_Translator_Frontend {
      */
     public function setup_language_switching() {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: setup_language_switching called - is_singular: ' . (is_singular() ? 'yes' : 'no') . ', current_language: ' . $this->current_language);
+            error_log('Nexus AI WP Translator: setup_language_switching called - is_singular: ' . (is_singular() ? 'yes' : 'no') . ', current_language: ' . ($this->current_language ?: 'EMPTY'));
         }
         
         if (is_singular()) {
@@ -341,13 +438,9 @@ class Nexus_AI_WP_Translator_Frontend {
         wp_localize_script('nexus-ai-wp-translator-frontend', 'nexus_ai_wp_translator', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
-            'current_language' => $this->current_language,
+            'current_language' => $this->get_current_language(),
             'source_language' => get_option('nexus_ai_wp_translator_source_language', 'en'),
-            'available_languages' => array_merge(
-                array(get_option('nexus_ai_wp_translator_source_language', 'en')),
-                get_option('nexus_ai_wp_translator_target_languages', array())
-            ),
-            'language_switcher_html' => $this->render_language_switcher(array('style' => 'list'))
+            'available_languages' => $this->get_available_content_languages()
         ));
     }
     
@@ -419,41 +512,10 @@ class Nexus_AI_WP_Translator_Frontend {
         ));
     }
     
-    /**
-     * Get current language
-     */
-    public function get_current_language() {
-        return $this->current_language;
-    }
+    
     
     /**
-     * Add language selector to navigation menus
-     */
-    public function add_language_selector_to_nav($items, $args) {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: add_language_selector_to_nav called for theme_location: ' . ($args->theme_location ?? 'none'));
-        }
-        
-        // Add to primary menu or main menu
-        if (isset($args->theme_location) && ($args->theme_location === 'primary' || $args->theme_location === 'main' || $args->theme_location === 'header-menu')) {
-            $language_switcher = $this->render_language_switcher(array(
-                'style' => 'list',
-                'show_current' => true,
-                'container_class' => 'menu-item-language-switcher'
-            ));
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Adding language switcher to navigation');
-            }
-            
-            $items .= '<li class="menu-item menu-item-language-switcher">' . $language_switcher . '</li>';
-        }
-        
-        return $items;
-    }
-    
-    /**
-     * Enhanced language switcher rendering
+     * Render language switcher
      */
     public function render_language_switcher($args = array()) {
         $defaults = array(
@@ -465,9 +527,8 @@ class Nexus_AI_WP_Translator_Frontend {
         
         $args = wp_parse_args($args, $defaults);
         
-        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
-        $available_languages = array_merge(array($source_language), $target_languages);
+        // Get all available languages from actual content
+        $available_languages = $this->get_available_content_languages();
         
         $language_names = array(
             'en' => __('English', 'nexus-ai-wp-translator'),
@@ -492,13 +553,8 @@ class Nexus_AI_WP_Translator_Frontend {
             'hu' => __('Magyar', 'nexus-ai-wp-translator')
         );
         
-        // Get current post/page translations if on singular
-        $available_translations = array();
-        if (is_singular()) {
-            global $post;
-            if ($post) {
-                $available_translations = $this->get_post_languages($post->ID);
-            }
+        if (empty($available_languages)) {
+            return ''; // No languages available
         }
         
         ob_start();
@@ -516,21 +572,10 @@ class Nexus_AI_WP_Translator_Frontend {
                 $selected = ($lang === $this->current_language) ? 'selected' : '';
                 $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
                 
-                // Check if translation is available for current content
-                $is_available = true;
-                $url = '';
+                // Build URL for language switch
+                $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
                 
-                if (is_singular() && !empty($available_translations)) {
-                    $is_available = isset($available_translations[$lang]);
-                    $url = $is_available ? get_permalink($available_translations[$lang]) : '';
-                } else {
-                    $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
-                }
-                
-                $disabled = !$is_available ? 'disabled' : '';
-                $display_name = $name . (!$is_available ? ' (' . __('Not available', 'nexus-ai-wp-translator') . ')' : '');
-                
-                echo '<option value="' . esc_attr($lang) . '" data-url="' . esc_url($url) . '" ' . $selected . ' ' . $disabled . '>' . esc_html($display_name) . '</option>';
+                echo '<option value="' . esc_attr($lang) . '" data-url="' . esc_url($url) . '" ' . $selected . '>' . esc_html($name) . '</option>';
             }
             
             echo '</select>';
@@ -543,27 +588,11 @@ class Nexus_AI_WP_Translator_Frontend {
                 $class = ($lang === $this->current_language) ? 'current' : '';
                 $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
                 
-                // Check if translation is available for current content
-                $is_available = true;
-                $url = '';
-                
-                if (is_singular() && !empty($available_translations)) {
-                    $is_available = isset($available_translations[$lang]);
-                    $url = $is_available ? get_permalink($available_translations[$lang]) : '';
-                } else {
-                    $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
-                }
-                
-                if (!$is_available) {
-                    $class .= ' unavailable';
-                }
+                // Build URL for language switch
+                $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
                 
                 echo '<li class="' . esc_attr($class) . '">';
-                if ($is_available) {
-                    echo '<a href="' . esc_url($url) . '" data-lang="' . esc_attr($lang) . '">' . esc_html($name) . '</a>';
-                } else {
-                    echo '<span class="unavailable-lang" data-lang="' . esc_attr($lang) . '">' . esc_html($name) . '</span>';
-                }
+                echo '<a href="' . esc_url($url) . '" data-lang="' . esc_attr($lang) . '">' . esc_html($name) . '</a>';
                 echo '</li>';
             }
             
@@ -600,28 +629,9 @@ class Nexus_AI_WP_Translator_Frontend {
     }
     
     /**
-     * Ensure language switcher exists even if not added to nav
+     * Get current language (public method)
      */
-    public function ensure_language_switcher_exists() {
-        // Check if language switcher was already added to navigation
-        static $switcher_added = false;
-        
-        if ($switcher_added) {
-            return;
-        }
-        
-        // If no language switcher in nav, add a floating one
-        if (!has_nav_menu('primary') && !has_nav_menu('main') && !has_nav_menu('header-menu')) {
-            echo '<div id="nexus-ai-wp-floating-language-switcher" style="position: fixed; top: 20px; right: 20px; z-index: 9999; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">';
-            echo '<strong>Language:</strong><br>';
-            echo $this->render_language_switcher(array('style' => 'dropdown'));
-            echo '</div>';
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Added floating language switcher');
-            }
-        }
-        
-        $switcher_added = true;
+    public function get_current_language() {
+        return $this->current_language ?: get_option('nexus_ai_wp_translator_source_language', 'en');
     }
 }
