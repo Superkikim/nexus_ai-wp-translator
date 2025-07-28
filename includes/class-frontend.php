@@ -532,7 +532,26 @@ class Nexus_AI_WP_Translator_Frontend {
         ));
     }
     
-    
+    /**
+     * Add language selector to navigation
+     */
+    public function add_language_selector_to_nav($items, $args) {
+        // Only add to primary navigation
+        if ($args->theme_location !== 'primary' && $args->theme_location !== 'main') {
+            return $items;
+        }
+        
+        $switcher = $this->render_language_switcher(array(
+            'style' => 'list',
+            'container_class' => 'menu-item-language-switcher'
+        ));
+        
+        if ($switcher) {
+            $items .= '<li class="menu-item menu-item-language-switcher">' . $switcher . '</li>';
+        }
+        
+        return $items;
+    }
     
     /**
      * Render language switcher
@@ -593,8 +612,6 @@ class Nexus_AI_WP_Translator_Frontend {
                 error_log('Nexus AI WP Translator: [FRONTEND] Returning empty string');
             }
             return '<div class="nexus-ai-wp-language-switcher-debug" style="color: red; border: 1px solid red; padding: 5px;">DEBUG: No languages found</div>';
-            }
-            return ''; // No languages available
         }
         
         ob_start();
@@ -697,6 +714,5 @@ class Nexus_AI_WP_Translator_Frontend {
      */
     public function get_current_language() {
         return $this->current_language ?: get_option('nexus_ai_wp_translator_source_language', 'en');
-    }
     }
 }
