@@ -451,7 +451,7 @@ var NexusAIWPTranslatorAdmin = {
             // Show progress popup
             NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
             
-            button.prop('disabled', true).text('<?php _e(\'Translating...', \'nexus-ai-wp-translator'); ?>');
+            button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
             button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
             
             console.log('NexusAI Debug: Making AJAX request for translation');
