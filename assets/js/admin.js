@@ -434,7 +434,7 @@ var NexusAIWPTranslatorAdmin = {
             console.log('NexusAI Debug: Post ID:', postId, 'Target languages:', targetLanguages);
             
             if (targetLanguages.length === 0) {
-                alert('<?php _e(\'Please select at least one target language.', \'nexus-ai-wp-translator'); ?>');
+                alert('Please select at least one target language.');
                 return;
             }
             
@@ -452,6 +452,7 @@ var NexusAIWPTranslatorAdmin = {
             NexusAIWPTranslatorAdmin.showTranslationProgress(targetLanguages);
             
             button.prop('disabled', true).text('<?php _e(\'Translating...', \'nexus-ai-wp-translator'); ?>');
+            button.prop('disabled', true).text(nexus_ai_wp_translator_ajax.strings.translating);
             
             console.log('NexusAI Debug: Making AJAX request for translation');
             
@@ -482,7 +483,7 @@ var NexusAIWPTranslatorAdmin = {
                 });
             })
             .always(function() {
-                button.prop('disabled', false).text('<?php _e(\'Translate Now', \'nexus-ai-wp-translator'); ?>');
+                button.prop('disabled', false).text('Translate Now');
             });
         });
         
