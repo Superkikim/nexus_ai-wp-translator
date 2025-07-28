@@ -102,6 +102,9 @@ class Nexus_AI_WP_Translator_Plugin {
         
         try {
             // Initialize database
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing database');
+            }
             Nexus_AI_WP_Translator_Database::get_instance();
             
             // Initialize admin interface
@@ -113,15 +116,24 @@ class Nexus_AI_WP_Translator_Plugin {
             }
             
             // Initialize frontend
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing frontend');
+            }
             Nexus_AI_WP_Translator_Frontend::get_instance();
             
             // Initialize translation manager
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing translation manager');
+            }
             Nexus_AI_WP_Translator_Manager::get_instance();
             
             // Initialize language switcher widget
             add_action('widgets_init', array($this, 'register_widgets'));
             
             // Initialize Gutenberg block
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing Gutenberg block');
+            }
             Nexus_AI_WP_Translator_Gutenberg_Block::get_instance();
             
             // Mark as initialized only after successful completion

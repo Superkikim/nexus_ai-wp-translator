@@ -5,11 +5,34 @@
 (function() {
     'use strict';
     
+    console.log('Nexus AI WP Translator: Block editor script loading...');
+    
+    // Check if required WordPress objects are available
+    if (typeof wp === 'undefined') {
+        console.error('Nexus AI WP Translator: WordPress wp object not available');
+        return;
+    }
+    
+    if (!wp.blocks) {
+        console.error('Nexus AI WP Translator: wp.blocks not available');
+        return;
+    }
+    
+    console.log('Nexus AI WP Translator: WordPress objects available, registering block...');
+    
     const { registerBlockType } = wp.blocks;
     const { InspectorControls, BlockControls, AlignmentToolbar } = wp.blockEditor;
     const { PanelBody, SelectControl, ToggleControl } = wp.components;
     const { __ } = wp.i18n;
     const { createElement: el, Fragment } = wp.element;
+    
+    // Check if our localized data is available
+    if (typeof nexusAiWpTranslatorBlock === 'undefined') {
+        console.error('Nexus AI WP Translator: nexusAiWpTranslatorBlock not available');
+        return;
+    }
+    
+    console.log('Nexus AI WP Translator: Localized data available:', nexusAiWpTranslatorBlock);
     
     registerBlockType('nexus-ai-wp-translator/language-switcher', {
         title: nexusAiWpTranslatorBlock.title,
@@ -126,4 +149,6 @@
             return null;
         }
     });
+    
+    console.log('Nexus AI WP Translator: Block registered successfully!');
 })();
