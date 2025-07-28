@@ -1,6 +1,6 @@
 # Nexus AI WP Translator WordPress Plugin
 
-A comprehensive WordPress plugin that automatically translates posts using Nexus AI API with advanced management features, user preferences, and SEO optimization.
+A comprehensive WordPress plugin that automatically translates posts using Claude AI API with advanced management features, user preferences, and SEO optimization.
 
 ## Features
 
@@ -53,8 +53,8 @@ A comprehensive WordPress plugin that automatically translates posts using Nexus
 
 ### 1. API Key Setup
 
-1. Get your Claude AI API key from [Anthropic Console](https://console.anthropic.com/)
-2. Go to **Claude Translator** → **Settings** → **API Settings**
+1. Get your Nexus AI API key from [Anthropic Console](https://console.anthropic.com/)
+2. Go to **Nexus AI WP Translator** → **Settings** → **API Settings**
 3. Enter your API key and click **Test Connection**
 4. Save settings once connection is verified
 
@@ -88,7 +88,7 @@ Once configured, posts will automatically translate to all target languages when
 
 From any post edit screen:
 
-1. Scroll to the **Claude Translator** meta box
+1. Scroll to the **Nexus AI WP Translator** meta box
 2. Select target languages
 3. Click **Translate Now**
 4. Monitor progress and view results
@@ -96,10 +96,10 @@ From any post edit screen:
 ### Language Switching
 
 #### Widget
-Add the **Claude Language Switcher** widget to any widget area.
+Add the **Nexus AI WP Language Switcher** widget to any widget area.
 
 #### Shortcode
-Use `[claude_language_switcher]` anywhere in your content.
+Use `[nexus_ai_wp_language_switcher]` anywhere in your content.
 
 Parameters:
 - `style`: "dropdown" or "list" (default: dropdown)
@@ -108,8 +108,8 @@ Parameters:
 #### Template Function
 ```php
 <?php
-if (function_exists('claude_translator_language_switcher')) {
-    claude_translator_language_switcher();
+if (function_exists('nexus_ai_wp_translator_language_switcher')) {
+    nexus_ai_wp_translator_language_switcher();
 }
 ?>
 ```
@@ -118,11 +118,11 @@ if (function_exists('claude_translator_language_switcher')) {
 
 The plugin creates three custom tables:
 
-### wp_claude_translations
+### wp_nexus_ai_wp_translations
 Stores translation relationships between posts.
 
 ```sql
-CREATE TABLE wp_claude_translations (
+CREATE TABLE wp_nexus_ai_wp_translations (
     id bigint(20) NOT NULL AUTO_INCREMENT,
     source_post_id bigint(20) NOT NULL,
     translated_post_id bigint(20) NOT NULL,
@@ -135,11 +135,11 @@ CREATE TABLE wp_claude_translations (
 );
 ```
 
-### wp_claude_translation_logs
+### wp_nexus_ai_wp_translation_logs
 Tracks all translation activities and errors.
 
 ```sql
-CREATE TABLE wp_claude_translation_logs (
+CREATE TABLE wp_nexus_ai_wp_translation_logs (
     id bigint(20) NOT NULL AUTO_INCREMENT,
     post_id bigint(20) NOT NULL,
     action varchar(50) NOT NULL,
@@ -152,11 +152,11 @@ CREATE TABLE wp_claude_translation_logs (
 );
 ```
 
-### wp_claude_user_preferences
+### wp_nexus_ai_wp_user_preferences
 Stores user language preferences.
 
 ```sql
-CREATE TABLE wp_claude_user_preferences (
+CREATE TABLE wp_nexus_ai_wp_user_preferences (
     id bigint(20) NOT NULL AUTO_INCREMENT,
     user_id bigint(20) NOT NULL,
     preferred_language varchar(10) NOT NULL,
@@ -196,26 +196,26 @@ CREATE TABLE wp_claude_user_preferences (
 
 ```php
 // Before translation starts
-do_action('claude_translator_before_translate', $post_id, $target_languages);
+do_action('nexus_ai_wp_translator_before_translate', $post_id, $target_languages);
 
 // After translation completes
-do_action('claude_translator_after_translate', $post_id, $results);
+do_action('nexus_ai_wp_translator_after_translate', $post_id, $results);
 
 // Before post relationship is stored
-do_action('claude_translator_before_store_relationship', $source_id, $translated_id, $source_lang, $target_lang);
+do_action('nexus_ai_wp_translator_before_store_relationship', $source_id, $translated_id, $source_lang, $target_lang);
 ```
 
 ### Filters
 
 ```php
 // Modify translation content before storing
-$content = apply_filters('claude_translator_translated_content', $content, $source_content, $target_language);
+$content = apply_filters('nexus_ai_wp_translator_translated_content', $content, $source_content, $target_language);
 
 // Modify supported languages
-$languages = apply_filters('claude_translator_supported_languages', $languages);
+$languages = apply_filters('nexus_ai_wp_translator_supported_languages', $languages);
 
 // Modify API request parameters
-$params = apply_filters('claude_translator_api_params', $params, $content, $source_lang, $target_lang);
+$params = apply_filters('nexus_ai_wp_translator_api_params', $params, $content, $source_lang, $target_lang);
 ```
 
 ## Troubleshooting
@@ -247,7 +247,7 @@ define('WP_DEBUG', true);
 define('WP_DEBUG_LOG', true);
 ```
 
-Check `/wp-content/debug.log` for Claude Translator errors.
+Check `/wp-content/debug.log` for Nexus AI WP Translator errors.
 
 ## Performance Optimization
 
@@ -317,4 +317,4 @@ This plugin is licensed under the GPL v2 or later.
 
 **Made with ❤️ for the WordPress community**
 
-For more information about Claude AI, visit [Anthropic](https://www.anthropic.com/).
+For more information about Nexus AI, visit [Anthropic](https://www.anthropic.com/).

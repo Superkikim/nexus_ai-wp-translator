@@ -356,7 +356,7 @@ jQuery(document).ready(function($) {
         }
         
         button.prop('disabled', true).text('<?php _e('Testing...', 'claude-translator'); ?>');
-        button.prop('disabled', true).text('<?php _e('Testing...', 'nexus-ai-wp-translator'); ?>');
+        button.prop('disabled', true).text('Testing...');
         resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -373,9 +373,9 @@ jQuery(document).ready(function($) {
                 loadModels(apiKey);
             }
         }).fail(function() {
-            resultDiv.html('<div class="notice notice-error"><p><?php _e('Connection failed. Please check your API key.', 'nexus-ai-wp-translator'); ?></p></div>');
+            resultDiv.html('<div class="notice notice-error"><p>Connection failed. Please check your API key.</p></div>');
         }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>');
+            button.prop('disabled', false).text('Test Connection');
         });
     });
     
@@ -415,8 +415,7 @@ jQuery(document).ready(function($) {
         var button = $(this);
         var form = $('#nexus-ai-wp-translator-settings-form');
         
-        button.prop('disabled', true).text('<?php _e('Saving...', 'claude-translator'); ?>');
-        button.prop('disabled', true).text('<?php _e('Saving...', 'nexus-ai-wp-translator'); ?>');
+        button.prop('disabled', true).text('Saving...');
         
         var formData = form.serialize();
         formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
@@ -431,7 +430,7 @@ jQuery(document).ready(function($) {
                     .insertAfter('h1');
             }
         }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>');
+            button.prop('disabled', false).text('Save Settings (AJAX)');
         });
     });
 });
