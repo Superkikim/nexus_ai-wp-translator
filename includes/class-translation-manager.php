@@ -697,6 +697,7 @@ class Nexus_AI_WP_Translator_Manager {
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
         
         if (!current_user_can('edit_posts')) {
+            error_log("Nexus AI WP Translator: Permission denied for user in ajax_handle_post_action");
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
@@ -705,6 +706,25 @@ class Nexus_AI_WP_Translator_Manager {
         $user_choice = sanitize_text_field($_POST['user_choice']); // 'delete_all' or 'unlink_only'
         
         error_log("Nexus AI WP Translator: Handling post action - Post: {$post_id}, Action: {$post_action}, Choice: {$user_choice}");
+        
+        // Validate input parameters
+        if (empty($post_id) || empty($post_action) || empty($user_choice)) {
+            error_log("Nexus AI WP Translator: Missing required parameters");
+            wp_send_json_error('Missing required parameters');
+            return;
+        }
+        
+        if (!in_array($post_action, array('delete', 'trash'))) {
+            error_log("Nexus AI WP Translator: Invalid post action: {$post_action}");
+            wp_send_json_error('Invalid post action');
+            return;
+        }
+        
+        if (!in_array($user_choice, array('delete_all', 'unlink_only'))) {
+            error_log("Nexus AI WP Translator: Invalid user choice: {$user_choice}");
+            wp_send_json_error('Invalid user choice');
+            return;
+        }
         
         try {
         if ($user_choice === 'unlink_only') {
@@ -753,9 +773,15 @@ class Nexus_AI_WP_Translator_Manager {
             if ($post_action === 'delete') {
                 $delete_result = wp_delete_post($post_id, true);
                 error_log("Nexus AI WP Translator: Delete post {$post_id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
+                if (!$delete_result) {
+                    throw new Exception("Failed to delete post {$post_id}");
+                }
             } else {
                 $trash_result = wp_trash_post($post_id);
                 error_log("Nexus AI WP Translator: Trash post {$post_id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
+                if (!$trash_result) {
+                    throw new Exception("Failed to trash post {$post_id}");
+                }
             }
             
             $this->db->log_translation_activity($post_id, $post_action . '_unlink_only', 'completed', 'Post processed with unlink only option');
@@ -782,14 +808,25 @@ class Nexus_AI_WP_Translator_Manager {
             $this->db->delete_translation_relationships($post_id);
             
             // Perform action on all posts
+            $failed_posts = array();
             foreach ($all_post_ids as $id) {
                 if ($post_action === 'delete') {
                     $delete_result = wp_delete_post($id, true);
                     error_log("Nexus AI WP Translator: Delete post {$id} result: " . ($delete_result ? 'SUCCESS' : 'FAILED'));
+                    if (!$delete_result) {
+                        $failed_posts[] = $id;
+                    }
                 } else {
                     $trash_result = wp_trash_post($id);
                     error_log("Nexus AI WP Translator: Trash post {$id} result: " . ($trash_result ? 'SUCCESS' : 'FAILED'));
+                    if (!$trash_result) {
+                        $failed_posts[] = $id;
+                    }
                 }
+            }
+            
+            if (!empty($failed_posts)) {
+                throw new Exception("Failed to process posts: " . implode(', ', $failed_posts));
             }
             
             $this->db->log_translation_activity($post_id, $post_action . '_all', 'completed', 'All linked posts processed: ' . implode(', ', $all_post_ids));

@@ -192,13 +192,23 @@
                 nonce: nexus_ai_wp_translator_posts.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Post action response:', response);
+                console.log('NexusAI Debug: Post action response received');
+                console.log('NexusAI Debug: Response:', response);
                 console.log('NexusAI Debug: Response type:', typeof response);
-                console.log('NexusAI Debug: Response success:', response ? response.success : 'NO RESPONSE');
+                console.log('NexusAI Debug: Response is null/undefined:', response === null || response === undefined);
+                
+                if (response === null || response === undefined) {
+                    console.error('NexusAI Debug: Response is null or undefined!');
+                    NexusAIWPTranslatorPosts.closePopup();
+                    alert('Error: No response received from server');
+                    return;
+                }
+                
+                console.log('NexusAI Debug: Response success property:', response.success);
                 
                 NexusAIWPTranslatorPosts.closePopup();
                 
-                if (response && response.success) {
+                if (response.success) {
                     console.log('NexusAI Debug: Action successful, redirecting...');
                     // Redirect or reload as appropriate
                     if (action === 'delete') {
@@ -210,17 +220,21 @@
                     }
                 } else {
                     console.log('NexusAI Debug: Action failed, showing alert');
-                    var errorMessage = 'Error: ' + (response && response.data ? response.data : 'Unknown error occurred');
+                    var errorMessage = 'Error: ' + (response.data ? response.data : 'Unknown error occurred');
                     console.log('NexusAI Debug: Error message:', errorMessage);
                     alert(errorMessage);
                 }
             })
             .fail(function(xhr, status, error) {
-                console.log('NexusAI Debug: Post action failed:', error);
-                console.log('NexusAI Debug: XHR status:', xhr.status);
-                console.log('NexusAI Debug: XHR response:', xhr.responseText);
+                console.error('NexusAI Debug: AJAX request failed completely');
+                console.error('NexusAI Debug: Status:', status);
+                console.error('NexusAI Debug: Error:', error);
+                console.error('NexusAI Debug: XHR status:', xhr.status);
+                console.error('NexusAI Debug: XHR response text:', xhr.responseText);
+                console.error('NexusAI Debug: XHR ready state:', xhr.readyState);
+                
                 NexusAIWPTranslatorPosts.closePopup();
-                alert('Network error occurred: ' + error);
+                alert('Network error occurred: ' + error + ' (Status: ' + xhr.status + ')');
             });
         },
         
