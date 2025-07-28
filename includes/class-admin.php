@@ -10,11 +10,11 @@ if (!defined('ABSPATH')) {
 class Nexus_AI_WP_Translator_Admin {
     
     private static $instance = null;
-    private static $hooks_initialized = false;
-    private static $script_enqueued = false;
     private $db;
     private $api_handler;
     private $translation_manager;
+    private $hooks_initialized = false;
+    private $script_enqueued = false;
     
     public static function get_instance() {
         if (null === self::$instance) {
@@ -33,28 +33,18 @@ class Nexus_AI_WP_Translator_Admin {
      * Initialize dependencies with error checking
      */
     private function init_dependencies() {
-        try {
-            $this->db = Nexus_AI_WP_Translator_Database::get_instance();
-            $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
-            $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
-        } catch (Exception $e) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Failed to initialize admin dependencies: ' . $e->getMessage());
-            }
-            // Set fallback null values to prevent fatal errors
-            $this->db = null;
-            $this->api_handler = null;
-            $this->translation_manager = null;
-        }
+        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
+        $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
+        $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
     }
     /**
      * Initialize admin hooks
      */
     private function init_hooks() {
-        if (self::$hooks_initialized) {
+        if ($this->hooks_initialized) {
             return;
         }
-        self::$hooks_initialized = true;
+        $this->hooks_initialized = true;
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [ADMIN] Registering admin hooks and AJAX handlers');
@@ -81,11 +71,13 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
         
         // Translation AJAX handlers (from translation manager)
-        add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
-        add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this->translation_manager, 'ajax_unlink_translation'));
-        add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
-        add_action('wp_ajax_nexus_ai_wp_get_auto_translation_status', array($this->translation_manager, 'ajax_get_auto_translation_status'));
-        add_action('wp_ajax_nexus_ai_wp_dismiss_auto_translation', array($this->translation_manager, 'ajax_dismiss_auto_translation'));
+        if ($this->translation_manager) {
+            add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
+            add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this->translation_manager, 'ajax_unlink_translation'));
+            add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
+            add_action('wp_ajax_nexus_ai_wp_get_auto_translation_status', array($this->translation_manager, 'ajax_get_auto_translation_status'));
+            add_action('wp_ajax_nexus_ai_wp_dismiss_auto_translation', array($this->translation_manager, 'ajax_dismiss_auto_translation'));
+        }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status, get_auto_translation_status, dismiss_auto_translation');
@@ -203,10 +195,10 @@ class Nexus_AI_WP_Translator_Admin {
         }
         
         // Prevent multiple enqueues
-        if (self::$script_enqueued) {
+        if ($this->script_enqueued) {
             return;
         }
-        self::$script_enqueued = true;
+        $this->script_enqueued = true;
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] Loading admin scripts for hook: ' . $hook . ' (our_page: ' . ($is_our_page ? 'Y' : 'N') . ', post_page: ' . ($is_post_page ? 'Y' : 'N') . ')');
@@ -263,6 +255,10 @@ class Nexus_AI_WP_Translator_Admin {
      * Dashboard page
      */
     public function admin_page_dashboard() {
+        if (!$this->db) {
+            echo '<div class="notice notice-error"><p>' . __('Database connection error', 'nexus-ai-wp-translator') . '</p></div>';
+            return;
+        }
         $stats = $this->db->get_translation_stats();
         $recent_logs = $this->db->get_translation_logs(10);
         
@@ -273,6 +269,10 @@ class Nexus_AI_WP_Translator_Admin {
      * Settings page
      */
     public function admin_page_settings() {
+        if (!$this->translation_manager) {
+            echo '<div class="notice notice-error"><p>' . __('Translation manager error', 'nexus-ai-wp-translator') . '</p></div>';
+            return;
+        }
         $languages = $this->translation_manager->get_available_languages();
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
@@ -424,6 +424,11 @@ class Nexus_AI_WP_Translator_Admin {
                 error_log('Nexus AI WP Translator: Permission denied for user');
             }
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+        
+        if (!$this->api_handler) {
+            wp_send_json_error(__('API handler not available', 'nexus-ai-wp-translator'));
+            return;
         }
         
         $api_key = sanitize_text_field($_POST['api_key']);
