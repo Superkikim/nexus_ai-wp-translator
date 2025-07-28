@@ -126,7 +126,10 @@
                     }
                 }, debugInfo),
                 el('div', {
-                    key: 'status'
+                    key: 'status',
+                    style: {
+                        fontSize: '12px',
+                        color: '#999'
                     }
                 }, __('Style: ', 'nexus-ai-wp-translator') + style)
             ]);
