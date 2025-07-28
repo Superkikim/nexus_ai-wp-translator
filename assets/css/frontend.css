@@ -66,6 +66,53 @@
     border-color: #0073aa;
 }
 
+.nexus-ai-wp-language-list li.unavailable span {
+    background-color: #f0f0f0;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.nexus-ai-wp-language-list li.unavailable {
+    opacity: 0.6;
+}
+
+/* Navigation Integration */
+.menu-item-language-switcher {
+    position: relative;
+}
+
+.menu-item-language-switcher .nexus-ai-wp-language-switcher {
+    display: inline-block;
+}
+
+.menu-item-language-switcher .nexus-ai-wp-language-select {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: inherit;
+    padding: 5px 8px;
+    font-size: 14px;
+}
+
+.menu-item-language-switcher .nexus-ai-wp-language-list {
+    display: flex;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-item-language-switcher .nexus-ai-wp-language-list li {
+    margin: 0;
+}
+
+.menu-item-language-switcher .nexus-ai-wp-language-list a {
+    padding: 4px 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    border-radius: 2px;
+}
+
 /* Widget Styles */
 .widget_nexus_ai_wp_language_switcher {
     margin-bottom: 20px;

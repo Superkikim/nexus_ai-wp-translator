@@ -33,6 +33,9 @@ class Nexus_AI_WP_Translator_Frontend {
         add_action('wp', array($this, 'setup_language_switching'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
         
+        // Add language selector to navigation
+        add_filter('wp_nav_menu_items', array($this, 'add_language_selector_to_nav'), 10, 2);
+        
         // URL rewriting for SEO-friendly URLs
         if (get_option('nexus_ai_wp_translator_seo_friendly_urls', true)) {
             add_action('init', array($this, 'add_rewrite_rules'));
@@ -285,7 +288,13 @@ class Nexus_AI_WP_Translator_Frontend {
         wp_localize_script('nexus-ai-wp-translator-frontend', 'nexus_ai_wp_translator', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
-            'current_language' => $this->current_language
+            'current_language' => $this->current_language,
+            'source_language' => get_option('nexus_ai_wp_translator_source_language', 'en'),
+            'available_languages' => array_merge(
+                array(get_option('nexus_ai_wp_translator_source_language', 'en')),
+                get_option('nexus_ai_wp_translator_target_languages', array())
+            ),
+            'language_switcher_html' => $this->render_language_switcher(array('style' => 'list'))
         ));
     }
     

@@ -14,8 +14,9 @@
         
         init: function() {
             this.initLanguageSwitcher();
-            this.initLanguageDetection();
+            this.initBrowserLanguageDetection();
             this.handleLanguageChange();
+            this.initNavigationIntegration();
         },
         
         /**
@@ -37,9 +38,19 @@
         },
         
         /**
-         * Initialize language detection
+         * Initialize navigation integration
          */
-        initLanguageDetection: function() {
+        initNavigationIntegration: function() {
+            // Add language switcher to navigation if not already present
+            if ($('.menu-item-language-switcher').length === 0) {
+                this.addLanguageSwitcherToNav();
+            }
+        },
+        
+        /**
+         * Initialize browser language detection
+         */
+        initBrowserLanguageDetection: function() {
             // Check if we need to redirect based on browser language
             if (this.shouldRedirectForLanguage()) {
                 this.redirectToPreferredLanguage();
@@ -62,6 +73,15 @@
          * Switch to a specific language
          */
         switchLanguage: function(language) {
+            console.log('Switching to language:', language);
+            
+            // Get URL from dropdown option if available
+            var targetUrl = $('.nexus-ai-wp-language-select option[value="' + language + '"]').data('url');
+            
+            if (targetUrl && targetUrl !== '') {
+                window.location.href = targetUrl;
+                return;
+            }
             // Show loading state
             this.showLoadingState();
             
@@ -81,6 +101,16 @@
         },
         
         /**
+         * Add language switcher to navigation
+         */
+        addLanguageSwitcherToNav: function() {
+            var primaryNav = $('.main-navigation ul, .primary-menu, nav ul').first();
+            if (primaryNav.length && typeof nexus_ai_wp_translator.language_switcher_html !== 'undefined') {
+                primaryNav.append('<li class="menu-item menu-item-language-switcher">' + nexus_ai_wp_translator.language_switcher_html + '</li>');
+            }
+        },
+        
+        /**
          * Store language preference via AJAX
          */
         storeLanguagePreference: function(language) {
@@ -97,6 +127,16 @@
         buildLanguageUrl: function(currentUrl, language) {
             var url = new URL(currentUrl);
             
+            // Remove existing language parameter
+            url.searchParams.delete('lang');
+            
+            // For home page or archives, add language parameter
+            if (url.pathname === '/' || url.pathname.match(/\/(page|category|tag|author)/)) {
+                url.searchParams.set('lang', language);
+                return url.toString();
+            }
+            
+            // For singular content, the redirect will be handled by PHP
             // Add language parameter
             url.searchParams.set('lang', language);
             
@@ -128,6 +168,11 @@
                 return false;
             }
             
+            // Don't redirect if user has manually selected a language in this session
+            if (sessionStorage.getItem('nexus_ai_wp_translator_manual_selection')) {
+                return false;
+            }
+            
             return true;
         },
         
@@ -136,6 +181,9 @@
          */
         redirectToPreferredLanguage: function() {
             var browserLanguage = this.detectBrowserLanguage();
+            var sourceLanguage = nexus_ai_wp_translator.source_language || 'en';
+            
+            // Don't redirect if browser language is the same as source language
             var supportedLanguages = this.getSupportedLanguages();
             
             if (browserLanguage && supportedLanguages.includes(browserLanguage)) {
@@ -143,8 +191,13 @@
                 sessionStorage.setItem('nexus_ai_wp_translator_visited', 'true');
                 
                 // Redirect
-                var newUrl = this.buildLanguageUrl(window.location.href, browserLanguage);
-                window.location.href = newUrl;
+                if (browserLanguage !== sourceLanguage) {
+                    var newUrl = this.buildLanguageUrl(window.location.href, browserLanguage);
+                    if (newUrl !== window.location.href) {
+                        console.log('Auto-redirecting to browser language:', browserLanguage);
+                        window.location.href = newUrl;
+                    }
+                }
             }
         },
         
@@ -153,7 +206,7 @@
          */
         detectBrowserLanguage: function() {
             var language = navigator.language || navigator.userLanguage;
-            
+            console.log('Detected browser language:', language);
             if (language) {
                 // Try full language code first (e.g., en-US)
                 if (this.isLanguageSupported(language)) {
@@ -168,6 +221,8 @@
             }
             
             return null;
+            
+            return null;
         },
         
         /**
@@ -175,6 +230,10 @@
          */
         getSupportedLanguages: function() {
             var languages = [];
+            
+            // Get from global variable if available
+            if (typeof nexus_ai_wp_translator.available_languages !== 'undefined') {
+                return nexus_ai_wp_translator.available_languages;
             
             // Get from dropdown options
             $('.nexus-ai-wp-language-select option').each(function() {
@@ -191,6 +250,7 @@
                     languages.push(lang);
                 }
             });
+            }
             
             return languages;
         },
@@ -206,6 +266,9 @@
          * Detect and redirect if needed
          */
         detectAndRedirect: function() {
+            // Mark as manual selection to prevent auto-redirect
+            sessionStorage.setItem('nexus_ai_wp_translator_manual_selection', 'true');
+            
             if (this.shouldRedirectForLanguage()) {
                 this.redirectToPreferredLanguage();
             }
