@@ -581,7 +581,118 @@ class Nexus_AI_WP_Translator_Manager {
      * AJAX: Manually translate post
      */
     public function ajax_translate_post() {
-        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+        try {
+            check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+            
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(__('Permission denied', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $post_id = intval($_POST['post_id']);
+            $target_languages = isset($_POST['target_languages']) ? (array) $_POST['target_languages'] : null;
+            
+            if (!$post_id) {
+                wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $result = $this->translate_post($post_id, $target_languages);
+            
+            wp_send_json($result);
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: AJAX translate error: ' . $e->getMessage());
+            }
+            wp_send_json_error(__('Translation failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
+        }
+    }
+    
+    /**
+     * AJAX: Unlink translation
+     */
+    public function ajax_unlink_translation() {
+        try {
+            check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+            
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(__('Permission denied', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $post_id = intval($_POST['post_id']);
+            $related_post_id = intval($_POST['related_post_id']);
+            
+            if (!$post_id || !$related_post_id) {
+                wp_send_json_error(__('Invalid post IDs', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            // Remove translation relationship
+            $result = $this->db->delete_translation_relationships($post_id);
+            
+            if ($result) {
+                // Remove meta fields
+                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
+                delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
+                
+                $this->db->log_translation_activity($post_id, 'unlink', 'completed', "Unlinked from post {$related_post_id}");
+                
+                wp_send_json_success(__('Translation unlinked successfully', 'nexus-ai-wp-translator'));
+            } else {
+                wp_send_json_error(__('Failed to unlink translation', 'nexus-ai-wp-translator'));
+            }
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: AJAX unlink error: ' . $e->getMessage());
+            }
+            wp_send_json_error(__('Unlink failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
+        }
+    }
+    
+    /**
+     * AJAX: Get translation status
+     */
+    public function ajax_get_translation_status() {
+        try {
+            check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+            
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(__('Permission denied', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $post_id = intval($_POST['post_id']);
+            if (!$post_id) {
+                wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $translations = $this->db->get_post_translations($post_id);
+            
+            $status = array();
+            foreach ($translations as $translation) {
+                $status[] = array(
+                    'source_post_id' => $translation->source_post_id,
+                    'translated_post_id' => $translation->translated_post_id,
+                    'source_language' => $translation->source_language,
+                    'target_language' => $translation->target_language,
+                    'status' => $translation->status,
+                    'created_at' => $translation->created_at
+                );
+            }
+            
+            wp_send_json_success($status);
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: AJAX get status error: ' . $e->getMessage());
+            }
+            wp_send_json_error(__('Failed to get status: ', 'nexus-ai-wp-translator') . $e->getMessage());
+        }
+    }
         
         if (!current_user_can('edit_posts')) {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));

@@ -33,11 +33,16 @@ class Nexus_AI_WP_Translator_Language_Switcher_Widget extends WP_Widget {
             echo $args['before_title'] . $title . $args['after_title'];
         }
         
-        $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
-        echo $frontend->render_language_switcher(array(
-            'style' => $style,
-            'show_flags' => $show_flags
-        ));
+        // Check if frontend class exists before using it
+        if (class_exists('Nexus_AI_WP_Translator_Frontend')) {
+            $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
+            echo $frontend->render_language_switcher(array(
+                'style' => $style,
+                'show_flags' => $show_flags
+            ));
+        } else {
+            echo '<p>' . __('Language switcher temporarily unavailable.', 'nexus-ai-wp-translator') . '</p>';
+        }
         
         echo $args['after_widget'];
     }

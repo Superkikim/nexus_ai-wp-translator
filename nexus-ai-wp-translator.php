@@ -68,13 +68,18 @@ class Nexus_AI_WP_Translator_Plugin {
      * Load plugin dependencies
      */
     private function load_dependencies() {
+        // Load base classes first
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-database.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-api-handler.php';
+        
+        // Load manager classes that depend on base classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
+        
+        // Load UI classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-admin.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-frontend.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-language-switcher.php';
-        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
     }
     
     /**
@@ -89,34 +94,44 @@ class Nexus_AI_WP_Translator_Plugin {
             }
             return;
         }
-        $initialized = true;
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [INIT] Plugin components initialized (hook: ' . current_action() . ')');
         }
         
-        // Initialize database
-        Nexus_AI_WP_Translator_Database::get_instance();
-        
-        // Initialize admin interface
-        if (is_admin()) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: [INIT] Admin interface loaded');
+        try {
+            // Initialize database
+            Nexus_AI_WP_Translator_Database::get_instance();
+            
+            // Initialize admin interface
+            if (is_admin()) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('Nexus AI WP Translator: [INIT] Admin interface loaded');
+                }
+                Nexus_AI_WP_Translator_Admin::get_instance();
             }
-            Nexus_AI_WP_Translator_Admin::get_instance();
-        }
-        
-        // Initialize frontend
-        Nexus_AI_WP_Translator_Frontend::get_instance();
-        
-        // Initialize translation manager
-        Nexus_AI_WP_Translator_Manager::get_instance();
-        
-        // Initialize language switcher widget
-        add_action('widgets_init', array($this, 'register_widgets'));
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [INIT] All components loaded successfully');
+            
+            // Initialize frontend
+            Nexus_AI_WP_Translator_Frontend::get_instance();
+            
+            // Initialize translation manager
+            Nexus_AI_WP_Translator_Manager::get_instance();
+            
+            // Initialize language switcher widget
+            add_action('widgets_init', array($this, 'register_widgets'));
+            
+            // Mark as initialized only after successful completion
+            $initialized = true;
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] All components loaded successfully');
+            }
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Failed to initialize components: ' . $e->getMessage());
+            }
+            // Don't mark as initialized so it can be retried
         }
     }
     

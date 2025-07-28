@@ -10,6 +10,8 @@ if (!defined('ABSPATH')) {
 class Nexus_AI_WP_Translator_Admin {
     
     private static $instance = null;
+    private static $hooks_initialized = false;
+    private static $script_enqueued = false;
     private $db;
     private $api_handler;
     private $translation_manager;
@@ -22,22 +24,37 @@ class Nexus_AI_WP_Translator_Admin {
     }
     
     private function __construct() {
-        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
-        $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
-        $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
+        $this->init_dependencies();
         
         $this->init_hooks();
     }
     
     /**
+     * Initialize dependencies with error checking
+     */
+    private function init_dependencies() {
+        try {
+            $this->db = Nexus_AI_WP_Translator_Database::get_instance();
+            $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
+            $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Failed to initialize admin dependencies: ' . $e->getMessage());
+            }
+            // Set fallback null values to prevent fatal errors
+            $this->db = null;
+            $this->api_handler = null;
+            $this->translation_manager = null;
+        }
+    }
+    /**
      * Initialize admin hooks
      */
     private function init_hooks() {
-        static $hooks_initialized = false;
-        if ($hooks_initialized) {
+        if (self::$hooks_initialized) {
             return;
         }
-        $hooks_initialized = true;
+        self::$hooks_initialized = true;
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [ADMIN] Registering admin hooks and AJAX handlers');
@@ -176,8 +193,6 @@ class Nexus_AI_WP_Translator_Admin {
      * Enqueue admin scripts
      */
     public function enqueue_admin_scripts($hook) {
-        static $script_enqueued = false;
-        
         // Load on our admin pages AND post edit pages
         $load_on_hooks = array('post.php', 'post-new.php');
         $is_our_page = strpos($hook, 'nexus-ai-wp-translator') !== false;
@@ -188,10 +203,10 @@ class Nexus_AI_WP_Translator_Admin {
         }
         
         // Prevent multiple enqueues
-        if ($script_enqueued) {
+        if (self::$script_enqueued) {
             return;
         }
-        $script_enqueued = true;
+        self::$script_enqueued = true;
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] Loading admin scripts for hook: ' . $hook . ' (our_page: ' . ($is_our_page ? 'Y' : 'N') . ', post_page: ' . ($is_post_page ? 'Y' : 'N') . ')');
