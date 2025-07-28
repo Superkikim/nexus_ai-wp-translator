@@ -79,9 +79,11 @@
             var targetUrl = $('.nexus-ai-wp-language-select option[value="' + language + '"]').data('url');
             
             if (targetUrl && targetUrl !== '') {
+                console.log('Using URL from dropdown option:', targetUrl);
                 window.location.href = targetUrl;
                 return;
             }
+            
             // Show loading state
             this.showLoadingState();
             
@@ -91,6 +93,8 @@
             // Redirect to language-specific URL
             var currentUrl = window.location.href;
             var newUrl = this.buildLanguageUrl(currentUrl, language);
+            
+            console.log('Redirecting from', currentUrl, 'to', newUrl);
             
             // Add fade effect
             $('body').addClass('nexus-ai-wp-content-fade switching');
@@ -183,8 +187,12 @@
             var browserLanguage = this.detectBrowserLanguage();
             var sourceLanguage = nexus_ai_wp_translator.source_language || 'en';
             
+            console.log('Browser language detected:', browserLanguage);
+            console.log('Source language:', sourceLanguage);
+            
             // Don't redirect if browser language is the same as source language
             var supportedLanguages = this.getSupportedLanguages();
+            console.log('Supported languages:', supportedLanguages);
             
             if (browserLanguage && supportedLanguages.includes(browserLanguage)) {
                 // Mark as visited
@@ -195,9 +203,12 @@
                     var newUrl = this.buildLanguageUrl(window.location.href, browserLanguage);
                     if (newUrl !== window.location.href) {
                         console.log('Auto-redirecting to browser language:', browserLanguage);
+                        console.log('New URL:', newUrl);
                         window.location.href = newUrl;
                     }
                 }
+            } else {
+                console.log('Browser language not supported or same as source');
             }
         },
         
