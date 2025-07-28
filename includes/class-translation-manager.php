@@ -706,62 +706,7 @@ class Nexus_AI_WP_Translator_Manager {
         wp_send_json($result);
     }
     
-    /**
-     * AJAX: Unlink translation
      */
-    public function ajax_unlink_translation() {
-        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
-        if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
-        }
-        
-        $post_id = intval($_POST['post_id']);
-        $related_post_id = intval($_POST['related_post_id']);
-        
-        // Remove translation relationship
-        $result = $this->db->delete_translation_relationships($post_id);
-        
-        if ($result) {
-            // Remove meta fields
-            delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
-            delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
-            
-            $this->db->log_translation_activity($post_id, 'unlink', 'completed', "Unlinked from post {$related_post_id}");
-            
-            wp_send_json_success(__('Translation unlinked successfully', 'nexus-ai-wp-translator'));
-        } else {
-            wp_send_json_error(__('Failed to unlink translation', 'nexus-ai-wp-translator'));
-        }
-    }
-    
-    /**
-     * AJAX: Get translation status
-     */
-    public function ajax_get_translation_status() {
-        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
-        if (!current_user_can('edit_posts')) {
-            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
-        }
-        
-        $post_id = intval($_POST['post_id']);
-        $translations = $this->db->get_post_translations($post_id);
-        
-        $status = array();
-        foreach ($translations as $translation) {
-            $status[] = array(
-                'source_post_id' => $translation->source_post_id,
-                'translated_post_id' => $translation->translated_post_id,
-                'source_language' => $translation->source_language,
-                'target_language' => $translation->target_language,
-                'status' => $translation->status,
-                'created_at' => $translation->created_at
-            );
-        }
-        
-        wp_send_json_success($status);
-    }
     
     /**
      * AJAX: Get linked posts
