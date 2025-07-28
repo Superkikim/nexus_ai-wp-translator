@@ -159,23 +159,89 @@ class Nexus_AI_WP_Translator_Frontend {
      * Setup language switching for posts
      */
     public function setup_language_switching() {
-        if (!is_singular()) {
+        if (!is_singular() && !is_home() && !is_archive()) {
             return;
         }
         
+        // Handle different contexts
+        if (is_singular()) {
+            $this->handle_singular_content();
+        } elseif (is_home() || is_archive()) {
+            $this->handle_archive_content();
+        }
+    }
+    
+    /**
+     * Handle singular content (posts, pages)
+     */
+    private function handle_singular_content() {
         global $post;
+        if (!$post) return;
+        
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: $source_language;
+        
+        // If user wants a different language than the current post
+        if ($this->current_language !== $post_language) {
+            $translated_post = null;
+            
+            // If current post is a translation, get the source first
+            $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
+            if ($source_post_id) {
+                // This is a translation, use source as base
+                $translated_post = $this->get_translated_post($source_post_id, $this->current_language);
+            } else {
+                // This is the source, find translation
+                $translated_post = $this->get_translated_post($post->ID, $this->current_language);
+            }
+            
+            if ($translated_post && $translated_post->ID !== $post->ID) {
+                // Redirect to the translated version
+                $translated_url = get_permalink($translated_post->ID);
+                if ($translated_url && $translated_url !== get_permalink($post->ID)) {
+                    wp_redirect($translated_url);
+                    exit;
+                }
+            }
+            // If no translation found, stay on current post (fallback)
+        }
+    }
+    
+    /**
+     * Handle archive content
+     */
+    private function handle_archive_content() {
+        // For archives, we'll modify the query to show content in the preferred language
+        add_action('pre_get_posts', array($this, 'filter_posts_by_language'));
+    }
+    
+    /**
+     * Filter posts by language in archives
+     */
+    public function filter_posts_by_language($query) {
+        if (!$query->is_main_query() || is_admin()) {
+            return;
+        }
+        
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         
-        // If current language is not the source language, try to find translation
-        if ($this->current_language !== $source_language) {
-            $translated_post = $this->get_translated_post($post->ID, $this->current_language);
-            
-            if ($translated_post) {
-                // Replace current post with translated version
-                $GLOBALS['post'] = $translated_post;
-                setup_postdata($translated_post);
-            }
-        }
+        // Add meta query to filter by language
+        $meta_query = $query->get('meta_query') ?: array();
+        
+        $meta_query[] = array(
+            'relation' => 'OR',
+            array(
+                'key' => '_nexus_ai_wp_translator_language',
+                'value' => $this->current_language,
+                'compare' => '='
+            ),
+            array(
+                'key' => '_nexus_ai_wp_translator_language',
+                'compare' => 'NOT EXISTS'
+            )
+        );
+        
+        $query->set('meta_query', $meta_query);
     }
     
     /**
@@ -370,6 +436,146 @@ class Nexus_AI_WP_Translator_Frontend {
      */
     public function get_current_language() {
         return $this->current_language;
+    }
+    
+    /**
+     * Add language selector to navigation menus
+     */
+    public function add_language_selector_to_nav($items, $args) {
+        // Only add to primary menu (you can customize this)
+        if ($args->theme_location === 'primary' || $args->theme_location === 'main') {
+            $language_switcher = $this->render_language_switcher(array(
+                'style' => 'list',
+                'show_current' => true,
+                'container_class' => 'menu-item-language-switcher'
+            ));
+            
+            $items .= '<li class="menu-item menu-item-language-switcher">' . $language_switcher . '</li>';
+        }
+        
+        return $items;
+    }
+    
+    /**
+     * Enhanced language switcher rendering
+     */
+    public function render_language_switcher($args = array()) {
+        $defaults = array(
+            'style' => 'dropdown',
+            'show_current' => true,
+            'show_flags' => false,
+            'container_class' => ''
+        );
+        
+        $args = wp_parse_args($args, $defaults);
+        
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
+        $available_languages = array_merge(array($source_language), $target_languages);
+        
+        $language_names = array(
+            'en' => __('English', 'nexus-ai-wp-translator'),
+            'es' => __('Español', 'nexus-ai-wp-translator'),
+            'fr' => __('Français', 'nexus-ai-wp-translator'),
+            'de' => __('Deutsch', 'nexus-ai-wp-translator'),
+            'it' => __('Italiano', 'nexus-ai-wp-translator'),
+            'pt' => __('Português', 'nexus-ai-wp-translator'),
+            'ru' => __('Русский', 'nexus-ai-wp-translator'),
+            'ja' => __('日本語', 'nexus-ai-wp-translator'),
+            'ko' => __('한국어', 'nexus-ai-wp-translator'),
+            'zh' => __('中文', 'nexus-ai-wp-translator'),
+            'ar' => __('العربية', 'nexus-ai-wp-translator'),
+            'hi' => __('हिन्दी', 'nexus-ai-wp-translator'),
+            'nl' => __('Nederlands', 'nexus-ai-wp-translator'),
+            'sv' => __('Svenska', 'nexus-ai-wp-translator'),
+            'da' => __('Dansk', 'nexus-ai-wp-translator'),
+            'no' => __('Norsk', 'nexus-ai-wp-translator'),
+            'fi' => __('Suomi', 'nexus-ai-wp-translator'),
+            'pl' => __('Polski', 'nexus-ai-wp-translator'),
+            'cs' => __('Čeština', 'nexus-ai-wp-translator'),
+            'hu' => __('Magyar', 'nexus-ai-wp-translator')
+        );
+        
+        // Get current post/page translations if on singular
+        $available_translations = array();
+        if (is_singular()) {
+            global $post;
+            if ($post) {
+                $available_translations = $this->get_post_languages($post->ID);
+            }
+        }
+        
+        ob_start();
+        
+        $container_class = 'nexus-ai-wp-language-switcher nexus-ai-wp-' . $args['style'];
+        if ($args['container_class']) {
+            $container_class .= ' ' . $args['container_class'];
+        }
+        
+        if ($args['style'] === 'dropdown') {
+            echo '<div class="' . esc_attr($container_class) . '">';
+            echo '<select id="nexus-ai-wp-language-select" class="nexus-ai-wp-language-select" data-current-url="' . esc_url(get_permalink()) . '">';
+            
+            foreach ($available_languages as $lang) {
+                $selected = ($lang === $this->current_language) ? 'selected' : '';
+                $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
+                
+                // Check if translation is available for current content
+                $is_available = true;
+                $url = '';
+                
+                if (is_singular() && !empty($available_translations)) {
+                    $is_available = isset($available_translations[$lang]);
+                    $url = $is_available ? get_permalink($available_translations[$lang]) : '';
+                } else {
+                    $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
+                }
+                
+                $disabled = !$is_available ? 'disabled' : '';
+                $display_name = $name . (!$is_available ? ' (' . __('Not available', 'nexus-ai-wp-translator') . ')' : '');
+                
+                echo '<option value="' . esc_attr($lang) . '" data-url="' . esc_url($url) . '" ' . $selected . ' ' . $disabled . '>' . esc_html($display_name) . '</option>';
+            }
+            
+            echo '</select>';
+            echo '</div>';
+        } else {
+            echo '<div class="' . esc_attr($container_class) . '">';
+            echo '<ul class="nexus-ai-wp-language-list">';
+            
+            foreach ($available_languages as $lang) {
+                $class = ($lang === $this->current_language) ? 'current' : '';
+                $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
+                
+                // Check if translation is available for current content
+                $is_available = true;
+                $url = '';
+                
+                if (is_singular() && !empty($available_translations)) {
+                    $is_available = isset($available_translations[$lang]);
+                    $url = $is_available ? get_permalink($available_translations[$lang]) : '';
+                } else {
+                    $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
+                }
+                
+                if (!$is_available) {
+                    $class .= ' unavailable';
+                }
+                
+                echo '<li class="' . esc_attr($class) . '">';
+                if ($is_available) {
+                    echo '<a href="' . esc_url($url) . '" data-lang="' . esc_attr($lang) . '">' . esc_html($name) . '</a>';
+                } else {
+                    echo '<span class="unavailable-lang" data-lang="' . esc_attr($lang) . '">' . esc_html($name) . '</span>';
+                }
+                echo '</li>';
+            }
+            
+            echo '</ul>';
+            echo '</div>';
+        }
+        
+        return ob_get_clean();
     }
     
     /**
