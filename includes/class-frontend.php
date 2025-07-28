@@ -698,4 +698,5 @@ class Nexus_AI_WP_Translator_Frontend {
     public function get_current_language() {
         return $this->current_language ?: get_option('nexus_ai_wp_translator_source_language', 'en');
     }
+    }
 }
