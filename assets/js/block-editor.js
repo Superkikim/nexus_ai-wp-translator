@@ -5,7 +5,9 @@
 (function() {
     'use strict';
     
-    console.log('Nexus AI WP Translator: Block editor script loading...');
+    console.log('*** Nexus AI WP Translator: Block editor script STARTING ***');
+    console.log('Nexus AI WP Translator: Current URL:', window.location.href);
+    console.log('Nexus AI WP Translator: Document ready state:', document.readyState);
     
     // Check if required WordPress objects are available
     if (typeof wp === 'undefined') {
@@ -13,12 +15,14 @@
         return;
     }
     
+    console.log('Nexus AI WP Translator: wp object available:', Object.keys(wp));
+    
     if (!wp.blocks) {
         console.error('Nexus AI WP Translator: wp.blocks not available');
         return;
     }
     
-    console.log('Nexus AI WP Translator: WordPress objects available, registering block...');
+    console.log('Nexus AI WP Translator: wp.blocks available, version:', wp.blocks.registerBlockType ? 'NEW' : 'OLD');
     
     const { registerBlockType } = wp.blocks;
     const { InspectorControls, BlockControls, AlignmentToolbar } = wp.blockEditor;
@@ -26,20 +30,29 @@
     const { __ } = wp.i18n;
     const { createElement: el, Fragment } = wp.element;
     
+    console.log('Nexus AI WP Translator: All WP components loaded successfully');
+    
     // Check if our localized data is available
     if (typeof nexusAiWpTranslatorBlock === 'undefined') {
         console.error('Nexus AI WP Translator: nexusAiWpTranslatorBlock not available');
+        console.log('Nexus AI WP Translator: Available global variables:', Object.keys(window));
         return;
     }
     
     console.log('Nexus AI WP Translator: Localized data available:', nexusAiWpTranslatorBlock);
     
-    registerBlockType('nexus-ai-wp-translator/language-switcher', {
+    console.log('Nexus AI WP Translator: About to register block type...');
+    
+    const blockRegistration = {
         title: nexusAiWpTranslatorBlock.title,
         description: nexusAiWpTranslatorBlock.description,
         category: nexusAiWpTranslatorBlock.category,
         icon: 'translation',
         keywords: nexusAiWpTranslatorBlock.keywords,
+        supports: {
+            align: true,
+            html: false
+        },
         
         attributes: {
             style: {
@@ -60,6 +73,8 @@
             const { attributes, setAttributes } = props;
             const { style, showFlags, alignment } = attributes;
             
+            console.log('Nexus AI WP Translator: Block edit function called with attributes:', attributes);
+            
             function onChangeStyle(newStyle) {
                 setAttributes({ style: newStyle });
             }
@@ -72,6 +87,10 @@
                 setAttributes({ alignment: newAlignment });
             }
             
+            // Add some debug info to the preview
+            const debugInfo = 'Debug: style=' + style + ', showFlags=' + showFlags + ', alignment=' + alignment;
+            console.log('Nexus AI WP Translator: Block preview -', debugInfo);
+            
             // Preview component
             const preview = el('div', {
                 className: 'nexus-ai-wp-block-language-switcher-preview has-text-align-' + alignment,
@@ -79,7 +98,8 @@
                     padding: '10px',
                     border: '1px dashed #ccc',
                     borderRadius: '4px',
-                    textAlign: alignment
+                    textAlign: alignment,
+                    minHeight: '60px'
                 }
             }, [
                 el('div', {
@@ -101,7 +121,12 @@
                     style: {
                         fontSize: '12px',
                         color: '#999',
-                        marginTop: '4px'
+                        marginTop: '4px',
+                        fontFamily: 'monospace'
+                    }
+                }, debugInfo),
+                el('div', {
+                    key: 'status'
                     }
                 }, __('Style: ', 'nexus-ai-wp-translator') + style)
             ]);
@@ -148,7 +173,15 @@
             // Return null since this is a dynamic block rendered by PHP
             return null;
         }
-    });
+    };
     
-    console.log('Nexus AI WP Translator: Block registered successfully!');
+    console.log('Nexus AI WP Translator: Block registration object:', blockRegistration);
+    
+    try {
+        const result = registerBlockType('nexus-ai-wp-translator/language-switcher', blockRegistration);
+        console.log('*** Nexus AI WP Translator: Block registered successfully! ***', result);
+    } catch (error) {
+        console.error('*** Nexus AI WP Translator: Block registration FAILED ***', error);
+    }
+    
 })();

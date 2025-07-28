@@ -28,7 +28,7 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
      */
     public function register_block() {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [BLOCK] Registering Gutenberg block');
+            error_log('Nexus AI WP Translator: [BLOCK] Starting block registration');
         }
         
         if (!function_exists('register_block_type')) {
@@ -38,11 +38,19 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
             return;
         }
         
+        // Check if scripts and styles are properly enqueued
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $js_file = NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/block-editor.js';
+            $css_file = NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/css/block-editor.css';
+            error_log('Nexus AI WP Translator: [BLOCK] JS file exists: ' . (file_exists($js_file) ? 'YES' : 'NO') . ' - ' . $js_file);
+            error_log('Nexus AI WP Translator: [BLOCK] CSS file exists: ' . (file_exists($css_file) ? 'YES' : 'NO') . ' - ' . $css_file);
+        }
+        
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [BLOCK] About to register block type');
         }
         
-        register_block_type('nexus-ai-wp-translator/language-switcher', array(
+        $block_registered = register_block_type('nexus-ai-wp-translator/language-switcher', array(
             'attributes' => array(
                 'style' => array(
                     'type' => 'string',
@@ -59,12 +67,18 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
             ),
             'render_callback' => array($this, 'render_block'),
             'editor_script' => 'nexus-ai-wp-translator-block-editor',
+            'script' => 'nexus-ai-wp-translator-frontend',
             'editor_style' => 'nexus-ai-wp-translator-block-editor-style',
             'style' => 'nexus-ai-wp-translator-frontend'
         ));
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [BLOCK] Block registered successfully');
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [BLOCK] Block registration result: ' . ($block_registered ? 'SUCCESS' : 'FAILED'));
+            error_log('Nexus AI WP Translator: [BLOCK] Registered block type: nexus-ai-wp-translator/language-switcher');
         }
     }
     
@@ -73,10 +87,12 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
      */
     public function enqueue_block_editor_assets() {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [BLOCK] Enqueuing block editor assets');
+            error_log('Nexus AI WP Translator: [BLOCK] Starting to enqueue block editor assets');
+            error_log('Nexus AI WP Translator: [BLOCK] Current screen: ' . (function_exists('get_current_screen') ? get_current_screen()->id ?? 'unknown' : 'no screen function'));
         }
         
-        wp_enqueue_script(
+        // Enqueue the block editor script
+        $script_enqueued = wp_enqueue_script(
             'nexus-ai-wp-translator-block-editor',
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/block-editor.js',
             array('wp-blocks', 'wp-element', 'wp-editor', 'wp-components', 'wp-i18n'),
@@ -84,7 +100,7 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
             true
         );
         
-        wp_enqueue_style(
+        $style_enqueued = wp_enqueue_style(
             'nexus-ai-wp-translator-block-editor-style',
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/css/block-editor.css',
             array('wp-edit-blocks'),
@@ -92,12 +108,20 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
         );
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            $js_file = NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/block-editor.js';
-            $css_file = NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/css/block-editor.css';
-            error_log('Nexus AI WP Translator: [BLOCK] JS file exists: ' . (file_exists($js_file) ? 'YES' : 'NO'));
-            error_log('Nexus AI WP Translator: [BLOCK] CSS file exists: ' . (file_exists($css_file) ? 'YES' : 'NO'));
-            error_log('Nexus AI WP Translator: [BLOCK] Plugin URL: ' . NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL);
+            error_log('Nexus AI WP Translator: [BLOCK] Script enqueued: ' . ($script_enqueued ? 'SUCCESS' : 'FAILED'));
+            error_log('Nexus AI WP Translator: [BLOCK] Style enqueued: ' . ($style_enqueued ? 'SUCCESS' : 'FAILED'));
+            error_log('Nexus AI WP Translator: [BLOCK] Script URL: ' . NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/block-editor.js');
+            error_log('Nexus AI WP Translator: [BLOCK] Style URL: ' . NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/css/block-editor.css');
         }
+        
+        // Also enqueue frontend script for the block
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-frontend',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/frontend.js',
+            array('jquery'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            true
+        );
         
         // Localize script for the block editor
         wp_localize_script('nexus-ai-wp-translator-block-editor', 'nexusAiWpTranslatorBlock', array(
@@ -121,7 +145,10 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
      */
     public function render_block($attributes) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [BLOCK] Rendering block with attributes: ' . print_r($attributes, true));
+            error_log('Nexus AI WP Translator: [BLOCK] *** RENDER_BLOCK CALLED ***');
+            error_log('Nexus AI WP Translator: [BLOCK] Attributes received: ' . print_r($attributes, true));
+            error_log('Nexus AI WP Translator: [BLOCK] Is admin: ' . (is_admin() ? 'YES' : 'NO'));
+            error_log('Nexus AI WP Translator: [BLOCK] Current URL: ' . $_SERVER['REQUEST_URI'] ?? 'unknown');
         }
         
         if (!class_exists('Nexus_AI_WP_Translator_Frontend')) {
@@ -134,6 +161,7 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [BLOCK] Frontend class available, getting instance');
         }
+        
         $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
         
         $args = array(
@@ -154,15 +182,23 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
         $switcher_html = $frontend->render_language_switcher($args);
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [BLOCK] Switcher HTML length: ' . strlen($switcher_html));
-            error_log('Nexus AI WP Translator: [BLOCK] Switcher HTML: ' . substr($switcher_html, 0, 200) . '...');
+            error_log('Nexus AI WP Translator: [BLOCK] Switcher HTML generated, length: ' . strlen($switcher_html));
+            if (strlen($switcher_html) > 0) {
+                error_log('Nexus AI WP Translator: [BLOCK] Switcher HTML preview: ' . substr($switcher_html, 0, 300) . '...');
+            } else {
+                error_log('Nexus AI WP Translator: [BLOCK] *** WARNING: Empty HTML generated ***');
+            }
         }
         
         if (empty($switcher_html)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: [BLOCK] No switcher HTML generated');
             }
-            return '<p>' . __('No languages available.', 'nexus-ai-wp-translator') . '</p>';
+            return '<div class="nexus-ai-wp-block-language-switcher-error"><p style="color: red; border: 1px solid red; padding: 10px;">' . __('Language switcher: No languages available or error occurred.', 'nexus-ai-wp-translator') . '</p></div>';
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [BLOCK] *** RETURNING HTML SUCCESSFULLY ***');
         }
         
         return $switcher_html;

@@ -539,7 +539,9 @@ class Nexus_AI_WP_Translator_Frontend {
      */
     public function render_language_switcher($args = array()) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [FRONTEND] render_language_switcher called with args: ' . print_r($args, true));
+            error_log('Nexus AI WP Translator: [FRONTEND] *** RENDER_LANGUAGE_SWITCHER CALLED ***');
+            error_log('Nexus AI WP Translator: [FRONTEND] Args: ' . print_r($args, true));
+            error_log('Nexus AI WP Translator: [FRONTEND] Current language: ' . ($this->current_language ?: 'EMPTY'));
         }
         
         $defaults = array(
@@ -553,6 +555,10 @@ class Nexus_AI_WP_Translator_Frontend {
         
         // Get all available languages from actual content
         $available_languages = $this->get_available_content_languages();
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [FRONTEND] Available languages count: ' . count($available_languages));
+        }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [FRONTEND] Available languages: ' . print_r($available_languages, true));
@@ -584,6 +590,9 @@ class Nexus_AI_WP_Translator_Frontend {
         if (empty($available_languages)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: [FRONTEND] No available languages found');
+                error_log('Nexus AI WP Translator: [FRONTEND] Returning empty string');
+            }
+            return '<div class="nexus-ai-wp-language-switcher-debug" style="color: red; border: 1px solid red; padding: 5px;">DEBUG: No languages found</div>';
             }
             return ''; // No languages available
         }
@@ -597,6 +606,8 @@ class Nexus_AI_WP_Translator_Frontend {
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [FRONTEND] Rendering ' . $args['style'] . ' style switcher');
+            error_log('Nexus AI WP Translator: [FRONTEND] Container class: ' . $container_class);
+            error_log('Nexus AI WP Translator: [FRONTEND] Current language for selection: ' . ($this->current_language ?: 'NONE'));
         }
         
         if ($args['style'] === 'dropdown') {
@@ -606,6 +617,10 @@ class Nexus_AI_WP_Translator_Frontend {
             foreach ($available_languages as $lang) {
                 $selected = ($lang === $this->current_language) ? 'selected' : '';
                 $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
+                
+                if (defined('WP_DEBUG') && WP_DEBUG && $selected) {
+                    error_log('Nexus AI WP Translator: [FRONTEND] Selected language in dropdown: ' . $lang);
+                }
                 
                 // Build URL for language switch
                 $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
@@ -623,6 +638,10 @@ class Nexus_AI_WP_Translator_Frontend {
                 $class = ($lang === $this->current_language) ? 'current' : '';
                 $name = isset($language_names[$lang]) ? $language_names[$lang] : $lang;
                 
+                if (defined('WP_DEBUG') && WP_DEBUG && $class === 'current') {
+                    error_log('Nexus AI WP Translator: [FRONTEND] Current language in list: ' . $lang);
+                }
+                
                 // Build URL for language switch
                 $url = add_query_arg('lang', $lang, home_url($_SERVER['REQUEST_URI']));
                 
@@ -638,7 +657,11 @@ class Nexus_AI_WP_Translator_Frontend {
         $output = ob_get_clean();
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [FRONTEND] Generated output length: ' . strlen($output));
+            error_log('Nexus AI WP Translator: [FRONTEND] *** OUTPUT GENERATED ***');
+            error_log('Nexus AI WP Translator: [FRONTEND] Output length: ' . strlen($output));
+            if (strlen($output) > 0) {
+                error_log('Nexus AI WP Translator: [FRONTEND] Output preview: ' . substr($output, 0, 200) . '...');
+            }
         }
         
         return $output;
