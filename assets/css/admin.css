@@ -1,5 +1,53 @@
 /* Nexus AI WP Translator Admin Styles */
 
+/* Content Management Tabs */
+.nexus-ai-wp-content-tabs {
+    margin: 20px 0;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-content-tabs .nav-tab-wrapper {
+    border-bottom: 1px solid #ccd0d4;
+    margin: 0;
+    padding: 0 20px;
+    background: #f9f9f9;
+}
+
+.nexus-ai-wp-content-tabs .tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.nexus-ai-wp-content-tabs .tab-content.active {
+    display: block;
+}
+
+.nexus-ai-wp-content-tabs .tab-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+/* Posts List in Tabs */
+.nexus-ai-wp-content-tabs .wp-list-table {
+    margin-top: 10px;
+}
+
+.nexus-ai-wp-content-tabs .wp-list-table th,
+.nexus-ai-wp-content-tabs .wp-list-table td {
+    padding: 12px;
+}
+
+.translate-post-btn {
+    margin-right: 5px;
+}
+
+.translate-post-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .nexus-ai-wp-translator-dashboard {
     margin-top: 20px;
 }

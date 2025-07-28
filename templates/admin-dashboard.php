@@ -11,6 +11,39 @@ if (!defined('ABSPATH')) {
 <div class="wrap">
     <h1><?php _e('Nexus AI WP Translator Dashboard', 'nexus-ai-wp-translator'); ?></h1>
     
+    <!-- Content Management Tabs -->
+    <div class="nexus-ai-wp-content-tabs">
+        <nav class="nav-tab-wrapper">
+            <a href="#articles-tab" class="nav-tab nav-tab-active"><?php _e('Articles', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#pages-tab" class="nav-tab"><?php _e('Pages', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#events-tab" class="nav-tab"><?php _e('Events', 'nexus-ai-wp-translator'); ?></a>
+        </nav>
+        
+        <!-- Articles Tab -->
+        <div id="articles-tab" class="tab-content active">
+            <h2><?php _e('Articles to Translate', 'nexus-ai-wp-translator'); ?></h2>
+            <div id="articles-list">
+                <?php echo $this->render_posts_list('post'); ?>
+            </div>
+        </div>
+        
+        <!-- Pages Tab -->
+        <div id="pages-tab" class="tab-content">
+            <h2><?php _e('Pages to Translate', 'nexus-ai-wp-translator'); ?></h2>
+            <div id="pages-list">
+                <?php echo $this->render_posts_list('page'); ?>
+            </div>
+        </div>
+        
+        <!-- Events Tab -->
+        <div id="events-tab" class="tab-content">
+            <h2><?php _e('Events to Translate', 'nexus-ai-wp-translator'); ?></h2>
+            <div id="events-list">
+                <?php echo $this->render_posts_list('event'); ?>
+            </div>
+        </div>
+    </div>
+    
     <div class="nexus-ai-wp-translator-dashboard">
         <!-- Statistics Cards -->
         <div class="nexus-ai-wp-stats-cards">
@@ -153,6 +186,64 @@ if (!defined('ABSPATH')) {
 
 <script>
 jQuery(document).ready(function($) {
+    // Tab switching for content tabs
+    $('.nexus-ai-wp-content-tabs .nav-tab').on('click', function(e) {
+        e.preventDefault();
+        
+        var target = $(this).attr('href');
+        
+        // Update nav tabs
+        $('.nexus-ai-wp-content-tabs .nav-tab').removeClass('nav-tab-active');
+        $(this).addClass('nav-tab-active');
+        
+        // Update tab content
+        $('.nexus-ai-wp-content-tabs .tab-content').removeClass('active');
+        $(target).addClass('active');
+        
+        // Save active tab
+        localStorage.setItem('nexus_ai_wp_translator_content_tab', target);
+    });
+    
+    // Restore active tab
+    var activeContentTab = localStorage.getItem('nexus_ai_wp_translator_content_tab');
+    if (activeContentTab && $(activeContentTab).length) {
+        $('.nexus-ai-wp-content-tabs .nav-tab[href="' + activeContentTab + '"]').click();
+    }
+    
+    // Translate individual post
+    $(document).on('click', '.translate-post-btn', function() {
+        var button = $(this);
+        var postId = button.data('post-id');
+        var postTitle = button.data('post-title');
+        
+        if (!confirm('Translate "' + postTitle + '" to all target languages?')) {
+            return;
+        }
+        
+        button.prop('disabled', true).text('Translating...');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_translate_post',
+            post_id: postId,
+            target_languages: [], // Will use all configured target languages
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Translation completed successfully!');
+                location.reload();
+            } else {
+                alert('Translation failed: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred');
+        })
+        .always(function() {
+            button.prop('disabled', false).text('Translate');
+        });
+    });
+    
     $('#nexus-ai-wp-refresh-stats').on('click', function() {
         var button = $(this);
         button.prop('disabled', true).text('<?php _e('Refreshing...', 'nexus-ai-wp-translator'); ?>');

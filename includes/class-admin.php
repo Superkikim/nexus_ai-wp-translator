@@ -266,6 +266,74 @@ class Nexus_AI_WP_Translator_Admin {
     }
     
     /**
+     * Render posts list for a specific post type
+     */
+    public function render_posts_list($post_type) {
+        $posts = get_posts(array(
+            'post_type' => $post_type,
+            'post_status' => 'publish',
+            'numberposts' => 20,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ));
+        
+        if (empty($posts)) {
+            return '<p>' . sprintf(__('No %s found.', 'nexus-ai-wp-translator'), $post_type) . '</p>';
+        }
+        
+        $output = '<table class="wp-list-table widefat fixed striped">';
+        $output .= '<thead>';
+        $output .= '<tr>';
+        $output .= '<th>' . __('Title', 'nexus-ai-wp-translator') . '</th>';
+        $output .= '<th>' . __('Language', 'nexus-ai-wp-translator') . '</th>';
+        $output .= '<th>' . __('Translations', 'nexus-ai-wp-translator') . '</th>';
+        $output .= '<th>' . __('Actions', 'nexus-ai-wp-translator') . '</th>';
+        $output .= '</tr>';
+        $output .= '</thead>';
+        $output .= '<tbody>';
+        
+        foreach ($posts as $post) {
+            $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+            $translations = $this->db->get_post_translations($post->ID);
+            $translation_count = count($translations);
+            
+            $output .= '<tr>';
+            $output .= '<td>';
+            $output .= '<strong><a href="' . get_edit_post_link($post->ID) . '">' . esc_html($post->post_title) . '</a></strong>';
+            $output .= '<br><small>ID: ' . $post->ID . ' | ' . get_the_date('Y-m-d H:i', $post->ID) . '</small>';
+            $output .= '</td>';
+            $output .= '<td><code>' . esc_html($post_language) . '</code></td>';
+            $output .= '<td>';
+            if ($translation_count > 0) {
+                $completed = 0;
+                foreach ($translations as $translation) {
+                    if ($translation->status === 'completed') {
+                        $completed++;
+                    }
+                }
+                $output .= sprintf(__('%d/%d completed', 'nexus-ai-wp-translator'), $completed, $translation_count);
+            } else {
+                $output .= __('None', 'nexus-ai-wp-translator');
+            }
+            $output .= '</td>';
+            $output .= '<td>';
+            $output .= '<button type="button" class="button button-primary translate-post-btn" ';
+            $output .= 'data-post-id="' . $post->ID . '" ';
+            $output .= 'data-post-title="' . esc_attr($post->post_title) . '">';
+            $output .= __('Translate', 'nexus-ai-wp-translator');
+            $output .= '</button>';
+            $output .= ' <a href="' . get_edit_post_link($post->ID) . '" class="button">' . __('Edit', 'nexus-ai-wp-translator') . '</a>';
+            $output .= '</td>';
+            $output .= '</tr>';
+        }
+        
+        $output .= '</tbody>';
+        $output .= '</table>';
+        
+        return $output;
+    }
+    
+    /**
      * Settings page
      */
     public function admin_page_settings() {

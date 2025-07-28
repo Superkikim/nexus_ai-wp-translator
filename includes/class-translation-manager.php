@@ -159,78 +159,9 @@ class Nexus_AI_WP_Translator_Manager {
             error_log("Nexus AI WP Translator: handle_post_publish called for post {$post_id}");
         }
         
-        // Prevent processing the same post multiple times
-        if (in_array($post_id, $this->processing_posts)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Skipping post {$post_id} - already processing");
-            }
-            return;
-        }
-        
-        // Check if auto-translation is enabled
-        if (!get_option('nexus_ai_wp_translator_auto_translate', true)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Auto-translation disabled for post {$post_id}");
-            }
-            return;
-        }
-        
-        // Skip if this is already a translation
-        if (get_post_meta($post_id, '_nexus_ai_wp_translator_source_post', true)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Skipping post {$post_id} - already a translation");
-            }
-            return;
-        }
-        
-        // Skip if API key is not configured
-        if (empty(get_option('nexus_ai_wp_translator_api_key'))) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: No API key configured for post {$post_id}");
-            }
-            return;
-        }
-        
+        // Auto-translation is now disabled - posts are translated manually from the dashboard
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Adding post {$post_id} to processing list");
-        }
-        $this->processing_posts[] = $post_id;
-        
-        // Store translation data in session for popup
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
-        
-        // Filter out source language from targets
-        $target_languages = array_filter($target_languages, function($lang) use ($source_lang) {
-            return $lang !== $source_lang;
-        });
-        
-        if (!empty($target_languages)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Setting transient for post {$post_id} with languages: " . implode(', ', $target_languages));
-            }
-            // Store in transient for popup display
-            set_transient('nexus_ai_wp_auto_translation_' . $post_id, array(
-                'post_id' => $post_id,
-                'post_title' => $post->post_title,
-                'target_languages' => $target_languages,
-                'status' => 'starting'
-            ), 300); // 5 minutes
-        }
-        
-        // Start translation process
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Starting translation process for post {$post_id}");
-        }
-        $this->translate_post($post_id);
-        
-        // Remove from processing list
-        $key = array_search($post_id, $this->processing_posts);
-        if ($key !== false) {
-            unset($this->processing_posts[$key]);
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Removed post {$post_id} from processing list");
-            }
+            error_log("Nexus AI WP Translator: Auto-translation disabled - use dashboard to translate manually");
         }
     }
     
