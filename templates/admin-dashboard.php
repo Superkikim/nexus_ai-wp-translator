@@ -218,6 +218,39 @@ jQuery(document).ready(function($) {
 
         NexusAIWPTranslatorDashboard.showLanguageSelectionPopup(postId, postTitle);
     });
+
+    // Reset translation data for a post
+    $(document).on('click', '.reset-translation-btn', function() {
+        var button = $(this);
+        var postId = button.data('post-id');
+        var postTitle = button.data('post-title');
+
+        if (!confirm('<?php _e('Are you sure you want to reset all translation data for', 'nexus-ai-wp-translator'); ?> "' + postTitle + '"?\n\n<?php _e('This will remove all translation relationships and metadata for this post. This action cannot be undone.', 'nexus-ai-wp-translator'); ?>')) {
+            return;
+        }
+
+        button.prop('disabled', true).text('<?php _e('Resetting...', 'nexus-ai-wp-translator'); ?>');
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_reset_translation_data',
+            post_id: postId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('<?php _e('Translation data reset successfully!', 'nexus-ai-wp-translator'); ?>');
+                location.reload();
+            } else {
+                alert('<?php _e('Failed to reset translation data:', 'nexus-ai-wp-translator'); ?> ' + (response.message || '<?php _e('Unknown error', 'nexus-ai-wp-translator'); ?>'));
+            }
+        })
+        .fail(function() {
+            alert('<?php _e('Network error occurred', 'nexus-ai-wp-translator'); ?>');
+        })
+        .always(function() {
+            button.prop('disabled', false).text('<?php _e('Reset', 'nexus-ai-wp-translator'); ?>');
+        });
+    });
     
     $('#nexus-ai-wp-refresh-stats').on('click', function() {
         var button = $(this);

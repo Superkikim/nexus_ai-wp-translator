@@ -54,8 +54,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('admin_init', array($this, 'init_settings'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
         
-        // Add meta box to post edit screen
-        add_action('add_meta_boxes', array($this, 'add_translation_meta_box'));
+        // Meta box removed - all translation management is done via dashboard
         
         // Add columns to posts list
         add_filter('manage_posts_columns', array($this, 'add_posts_columns'));
@@ -69,6 +68,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
+        add_action('wp_ajax_nexus_ai_wp_reset_translation_data', array($this, 'ajax_reset_translation_data'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -82,36 +82,10 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status');
         }
         
-        // Post meta box save
-        add_action('save_post', array($this, 'save_translation_meta_box'));
+        // Meta box save removed - no longer needed
     }
     
-    /**
-     * Save translation meta box data
-     */
-    public function save_translation_meta_box($post_id) {
-        // Check if our nonce is set and verify it
-        if (!isset($_POST['nexus_ai_wp_translator_meta_box_nonce']) || 
-            !wp_verify_nonce($_POST['nexus_ai_wp_translator_meta_box_nonce'], 'nexus_ai_wp_translator_meta_box')) {
-            return;
-        }
-        
-        // Check if user has permission to edit the post
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-        
-        // Don't save during autosave
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
-        }
-        
-        // Save post language
-        if (isset($_POST['nexus_ai_wp_post_language'])) {
-            $post_language = sanitize_text_field($_POST['nexus_ai_wp_post_language']);
-            update_post_meta($post_id, '_nexus_ai_wp_translator_language', $post_language);
-        }
-    }
+
     
     /**
      * Add admin menu
@@ -294,7 +268,39 @@ class Nexus_AI_WP_Translator_Admin {
         foreach ($posts as $post) {
             $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
             $translations = $this->db->get_post_translations($post->ID);
-            $translation_count = count($translations);
+
+            // Skip posts that are translations (not source posts)
+            $is_translation = false;
+            foreach ($translations as $translation) {
+                if ($translation->translated_post_id == $post->ID) {
+                    $is_translation = true;
+                    break;
+                }
+            }
+
+            if ($is_translation) {
+                continue; // Skip translated posts, only show source posts
+            }
+
+            // Filter out translations where the translated post doesn't exist
+            $valid_translations = array();
+            foreach ($translations as $translation) {
+                if ($translation->source_post_id == $post->ID) {
+                    // This post is the source - check if translated post exists
+                    $translated_post = get_post($translation->translated_post_id);
+                    if ($translated_post && $translated_post->post_status === 'publish') {
+                        $valid_translations[] = $translation;
+                    }
+                } elseif ($translation->translated_post_id == $post->ID) {
+                    // This post is a translation - check if source post exists
+                    $source_post = get_post($translation->source_post_id);
+                    if ($source_post && $source_post->post_status === 'publish') {
+                        $valid_translations[] = $translation;
+                    }
+                }
+            }
+
+            $translation_count = count($valid_translations);
             
             $output .= '<tr>';
             $output .= '<td>';
@@ -305,7 +311,7 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= '<td>';
             if ($translation_count > 0) {
                 $completed = 0;
-                foreach ($translations as $translation) {
+                foreach ($valid_translations as $translation) {
                     if ($translation->status === 'completed') {
                         $completed++;
                     }
@@ -320,8 +326,14 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= 'data-post-id="' . $post->ID . '" ';
             $output .= 'data-post-title="' . esc_attr($post->post_title) . '">';
             $output .= __('Translate', 'nexus-ai-wp-translator');
-            $output .= '</button>';
-            $output .= ' <a href="' . get_edit_post_link($post->ID) . '" class="button">' . __('Edit', 'nexus-ai-wp-translator') . '</a>';
+            $output .= '</button> ';
+            $output .= '<button type="button" class="button button-secondary reset-translation-btn" ';
+            $output .= 'data-post-id="' . $post->ID . '" ';
+            $output .= 'data-post-title="' . esc_attr($post->post_title) . '" ';
+            $output .= 'title="' . esc_attr(__('Reset all translation data for this post', 'nexus-ai-wp-translator')) . '">';
+            $output .= __('Reset', 'nexus-ai-wp-translator');
+            $output .= '</button> ';
+            $output .= '<a href="' . get_edit_post_link($post->ID) . '" class="button">' . __('Edit', 'nexus-ai-wp-translator') . '</a>';
             $output .= '</td>';
             $output .= '</tr>';
         }
@@ -397,40 +409,7 @@ class Nexus_AI_WP_Translator_Admin {
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-relationships.php';
     }
     
-    /**
-     * Add translation meta box
-     */
-    public function add_translation_meta_box() {
-        add_meta_box(
-            'nexus-ai-wp-translator-meta-box',
-            __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
-            array($this, 'display_translation_meta_box'),
-            array('post', 'page'),
-            'side',
-            'high'
-        );
-    }
-    
-    /**
-     * Display translation meta box
-     */
-    public function display_translation_meta_box($post) {
-        $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true);
-        $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
-        $translations = $this->db->get_post_translations($post->ID);
-        $languages = $this->translation_manager->get_available_languages();
-        
-        // Get configured settings
-        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        
-        // If post language is not set, default to source language
-        if (empty($post_language)) {
-            $post_language = $source_language;
-        }
-        
-        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
-    }
+
     
     /**
      * Add posts columns
@@ -657,32 +636,170 @@ class Nexus_AI_WP_Translator_Admin {
      */
     public function ajax_cleanup_orphaned() {
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
+
         global $wpdb;
-        
+
+        // Get all orphaned relationships before deleting them
+        $orphaned_source = $wpdb->get_results("
+            SELECT t.* FROM {$this->db->translations_table} t
+            LEFT JOIN {$wpdb->posts} p ON t.source_post_id = p.ID
+            WHERE p.ID IS NULL
+        ");
+
+        $orphaned_translated = $wpdb->get_results("
+            SELECT t.* FROM {$this->db->translations_table} t
+            LEFT JOIN {$wpdb->posts} p ON t.translated_post_id = p.ID
+            WHERE p.ID IS NULL
+        ");
+
+        // Clean up metadata for remaining posts that had orphaned relationships
+        $posts_to_clean = array();
+        foreach ($orphaned_source as $rel) {
+            if ($rel->translated_post_id && get_post($rel->translated_post_id)) {
+                $posts_to_clean[] = $rel->translated_post_id;
+            }
+        }
+        foreach ($orphaned_translated as $rel) {
+            if ($rel->source_post_id && get_post($rel->source_post_id)) {
+                $posts_to_clean[] = $rel->source_post_id;
+            }
+        }
+
         // Delete relationships where source post doesn't exist
         $deleted_source = $wpdb->query("
             DELETE t FROM {$this->db->translations_table} t
             LEFT JOIN {$wpdb->posts} p ON t.source_post_id = p.ID
             WHERE p.ID IS NULL
         ");
-        
+
         // Delete relationships where translated post doesn't exist
         $deleted_translated = $wpdb->query("
             DELETE t FROM {$this->db->translations_table} t
             LEFT JOIN {$wpdb->posts} p ON t.translated_post_id = p.ID
             WHERE p.ID IS NULL
         ");
-        
+
+        // Clean up metadata for posts that no longer have any relationships
+        $cleaned_metadata = 0;
+        foreach (array_unique($posts_to_clean) as $post_id) {
+            $remaining_relations = $this->db->get_post_translations($post_id);
+            if (empty($remaining_relations)) {
+                // Remove translation metadata if no relationships remain
+                delete_post_meta($post_id, '_nexus_ai_wp_translator_language');
+                delete_post_meta($post_id, '_nexus_ai_wp_translator_source_post');
+                $cleaned_metadata++;
+            }
+        }
+
+        // Also clean up any posts that have translation metadata but no relationships
+        $posts_with_meta = $wpdb->get_results("
+            SELECT post_id FROM {$wpdb->postmeta}
+            WHERE meta_key IN ('_nexus_ai_wp_translator_language', '_nexus_ai_wp_translator_source_post')
+        ");
+
+        foreach ($posts_with_meta as $meta) {
+            $post_id = $meta->post_id;
+            if (get_post($post_id)) {
+                $relations = $this->db->get_post_translations($post_id);
+                if (empty($relations)) {
+                    delete_post_meta($post_id, '_nexus_ai_wp_translator_language');
+                    delete_post_meta($post_id, '_nexus_ai_wp_translator_source_post');
+                    $cleaned_metadata++;
+                }
+            }
+        }
+
         $total_deleted = $deleted_source + $deleted_translated;
-        
+
         wp_send_json_success(sprintf(
-            __('Cleaned up %d orphaned relationships', 'nexus-ai-wp-translator'),
-            $total_deleted
+            __('Cleaned up %d orphaned relationships and %d metadata entries', 'nexus-ai-wp-translator'),
+            $total_deleted,
+            $cleaned_metadata
+        ));
+    }
+
+    /**
+     * AJAX: Reset translation data for a specific post
+     */
+    public function ajax_reset_translation_data() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_id = intval($_POST['post_id']);
+
+        if (!$post_id || !get_post($post_id)) {
+            wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+            return;
+        }
+
+        global $wpdb;
+
+        // Get all relationships for this post (as source or translated)
+        $relationships = $this->db->get_post_translations($post_id);
+        $deleted_relationships = 0;
+        $deleted_posts = 0;
+
+        foreach ($relationships as $relationship) {
+            // If this post is the source, delete the translated posts
+            if ($relationship->source_post_id == $post_id) {
+                $translated_post_id = $relationship->translated_post_id;
+
+                // Delete the translated post if it exists
+                if (get_post($translated_post_id)) {
+                    wp_delete_post($translated_post_id, true); // Force delete
+                    $deleted_posts++;
+                }
+
+                // Delete the relationship
+                $wpdb->delete(
+                    $this->db->translations_table,
+                    array('id' => $relationship->id),
+                    array('%d')
+                );
+                $deleted_relationships++;
+            }
+            // If this post is a translation, delete the relationship and reset source metadata
+            elseif ($relationship->translated_post_id == $post_id) {
+                // Delete the relationship
+                $wpdb->delete(
+                    $this->db->translations_table,
+                    array('id' => $relationship->id),
+                    array('%d')
+                );
+                $deleted_relationships++;
+
+                // Reset source post metadata if no other translations exist
+                $source_post_id = $relationship->source_post_id;
+                $remaining_translations = $this->db->get_post_translations($source_post_id);
+                if (empty($remaining_translations)) {
+                    delete_post_meta($source_post_id, '_nexus_ai_wp_translator_language');
+                    delete_post_meta($source_post_id, '_nexus_ai_wp_translator_source_post');
+                }
+            }
+        }
+
+        // Clean up metadata for the current post
+        delete_post_meta($post_id, '_nexus_ai_wp_translator_language');
+        delete_post_meta($post_id, '_nexus_ai_wp_translator_source_post');
+
+        // Clean up any orphaned logs for this post
+        $wpdb->delete(
+            $this->db->logs_table,
+            array('post_id' => $post_id),
+            array('%d')
+        );
+
+        wp_send_json_success(sprintf(
+            __('Reset complete: Deleted %d relationships, %d translated posts, and cleaned metadata', 'nexus-ai-wp-translator'),
+            $deleted_relationships,
+            $deleted_posts
         ));
     }
 }

@@ -196,11 +196,26 @@ class Nexus_AI_WP_Translator_Manager {
                 continue;
             }
 
-            // Check if translation already exists
+            // Check if translation already exists and the translated post still exists
             $existing_translation = $this->db->get_translated_post($post_id, $target_lang);
             if ($existing_translation && $existing_translation->status === 'completed') {
-                $skipped[] = $target_lang . ': ' . __('Translation already exists', 'nexus-ai-wp-translator');
-                continue;
+                // Verify the translated post actually exists
+                $translated_post = get_post($existing_translation->translated_post_id);
+                if ($translated_post && $translated_post->post_status === 'publish') {
+                    $skipped[] = $target_lang . ': ' . __('Translation already exists', 'nexus-ai-wp-translator');
+                    continue;
+                } else {
+                    // Translation record exists but post is missing - clean it up
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Cleaning up orphaned translation record for post {$post_id} -> {$target_lang}");
+                    }
+                    global $wpdb;
+                    $wpdb->delete(
+                        $this->db->translations_table,
+                        array('id' => $existing_translation->id),
+                        array('%d')
+                    );
+                }
             }
 
             // Log translation start
