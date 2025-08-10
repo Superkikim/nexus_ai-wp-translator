@@ -146,7 +146,7 @@ class Nexus_AI_WP_Translator_Admin {
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_model');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_source_language');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_target_languages');
-        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_redirect');
+
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_limit');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_period');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_retry_attempts');
@@ -357,7 +357,7 @@ class Nexus_AI_WP_Translator_Admin {
         $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        $auto_redirect = get_option('nexus_ai_wp_translator_auto_redirect', true);
+
         $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
@@ -566,7 +566,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         $source_language = isset($_POST['nexus_ai_wp_translator_source_language']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_source_language']) : 'en';
         $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
-        $auto_redirect = isset($_POST['nexus_ai_wp_translator_auto_redirect']) ? true : false;
+
         $throttle_limit = isset($_POST['nexus_ai_wp_translator_throttle_limit']) ? intval($_POST['nexus_ai_wp_translator_throttle_limit']) : 10;
         $throttle_period = isset($_POST['nexus_ai_wp_translator_throttle_period']) ? intval($_POST['nexus_ai_wp_translator_throttle_period']) : 3600;
         $retry_attempts = isset($_POST['nexus_ai_wp_translator_retry_attempts']) ? intval($_POST['nexus_ai_wp_translator_retry_attempts']) : 3;
@@ -578,7 +578,7 @@ class Nexus_AI_WP_Translator_Admin {
             'model' => $model,
             'source_language' => $source_language,
             'target_languages' => $target_languages,
-            'auto_redirect' => $auto_redirect,
+
             'throttle_limit' => $throttle_limit,
             'throttle_period' => $throttle_period,
             'retry_attempts' => $retry_attempts,

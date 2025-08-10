@@ -130,24 +130,7 @@ if (!defined('ABSPATH')) {
                 <h2><?php _e('Translation Behavior', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
-                    <tr>
-                        <th scope="row"><?php _e('Auto Redirect to Translated Content', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox"
-                                           id="nexus_ai_wp_translator_auto_redirect"
-                                           name="nexus_ai_wp_translator_auto_redirect"
-                                           value="1"
-                                           <?php checked(get_option('nexus_ai_wp_translator_auto_redirect', true)); ?> />
-                                    <?php _e('Automatically redirect users to translated content based on their language preference', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('When enabled, users will be automatically redirected to the translated version of posts/pages based on their user preference (if logged in) or browser language.', 'nexus-ai-wp-translator'); ?>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
+
                     
                     <tr>
                         <th scope="row"><?php _e('SEO Friendly URLs', 'nexus-ai-wp-translator'); ?></th>

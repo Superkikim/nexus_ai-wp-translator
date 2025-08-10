@@ -181,8 +181,7 @@ class Nexus_AI_WP_Translator_Plugin {
             'throttle_period' => 3600, // 1 hour
             'retry_attempts' => 3,
             'cache_translations' => true,
-            'seo_friendly_urls' => true,
-            'auto_redirect' => true // Auto-redirect to translated content
+            'seo_friendly_urls' => true
         );
         
         foreach ($default_options as $key => $value) {
