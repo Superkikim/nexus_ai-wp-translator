@@ -210,38 +210,13 @@ jQuery(document).ready(function($) {
         $('.nexus-ai-wp-content-tabs .nav-tab[href="' + activeContentTab + '"]').click();
     }
     
-    // Translate individual post
+    // Translate individual post - show language selection popup
     $(document).on('click', '.translate-post-btn', function() {
         var button = $(this);
         var postId = button.data('post-id');
         var postTitle = button.data('post-title');
-        
-        if (!confirm('Translate "' + postTitle + '" to all target languages?')) {
-            return;
-        }
-        
-        button.prop('disabled', true).text('Translating...');
-        
-        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-            action: 'nexus_ai_wp_translate_post',
-            post_id: postId,
-            target_languages: [], // Will use all configured target languages
-            nonce: nexus_ai_wp_translator_ajax.nonce
-        })
-        .done(function(response) {
-            if (response.success) {
-                alert('Translation completed successfully!');
-                location.reload();
-            } else {
-                alert('Translation failed: ' + (response.message || 'Unknown error'));
-            }
-        })
-        .fail(function() {
-            alert('Network error occurred');
-        })
-        .always(function() {
-            button.prop('disabled', false).text('Translate');
-        });
+
+        NexusAIWPTranslatorDashboard.showLanguageSelectionPopup(postId, postTitle);
     });
     
     $('#nexus-ai-wp-refresh-stats').on('click', function() {
@@ -262,5 +237,226 @@ jQuery(document).ready(function($) {
             button.prop('disabled', false).text('<?php _e('Refresh Stats', 'nexus-ai-wp-translator'); ?>');
         });
     });
+
+    // Dashboard-specific translation functions
+    var NexusAIWPTranslatorDashboard = {
+
+        showLanguageSelectionPopup: function(postId, postTitle) {
+            // Get available target languages
+            var targetLanguages = <?php echo json_encode(get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'))); ?>;
+            var languageNames = {
+                'en': 'English',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese',
+                'ru': 'Russian',
+                'ja': 'Japanese',
+                'ko': 'Korean',
+                'zh': 'Chinese',
+                'ar': 'Arabic',
+                'hi': 'Hindi',
+                'nl': 'Dutch',
+                'sv': 'Swedish',
+                'da': 'Danish',
+                'no': 'Norwegian',
+                'fi': 'Finnish',
+                'pl': 'Polish',
+                'cs': 'Czech',
+                'hu': 'Hungarian'
+            };
+
+            // Create popup HTML
+            var popupHtml = '<div id="nexus-ai-wp-translate-popup" class="nexus-ai-wp-popup-overlay">' +
+                '<div class="nexus-ai-wp-popup-content">' +
+                    '<div class="nexus-ai-wp-popup-header">' +
+                        '<h3><?php _e('Select Languages to Translate', 'nexus-ai-wp-translator'); ?></h3>' +
+                        '<button type="button" class="nexus-ai-wp-popup-close">&times;</button>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-popup-body">' +
+                        '<p><strong>' + postTitle + '</strong></p>' +
+                        '<p><?php _e('Choose which languages you want to translate this post to:', 'nexus-ai-wp-translator'); ?></p>' +
+                        '<div class="nexus-ai-wp-language-selection">';
+
+            // Add language checkboxes
+            targetLanguages.forEach(function(langCode) {
+                var langName = languageNames[langCode] || langCode.toUpperCase();
+                popupHtml += '<label class="nexus-ai-wp-language-option">' +
+                    '<input type="checkbox" value="' + langCode + '" class="nexus-ai-wp-target-language"> ' +
+                    langName + ' (' + langCode + ')' +
+                '</label>';
+            });
+
+            popupHtml += '</div>' +
+                        '<div class="nexus-ai-wp-throttle-info">' +
+                            '<p><small><?php _e('Note: Each language requires 2 API calls (title + content). Check your throttle limits in Settings.', 'nexus-ai-wp-translator'); ?></small></p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-popup-footer">' +
+                        '<button type="button" class="button" id="nexus-ai-wp-cancel-translate"><?php _e('Cancel', 'nexus-ai-wp-translator'); ?></button>' +
+                        '<button type="button" class="button button-primary" id="nexus-ai-wp-start-translate"><?php _e('Start Translation', 'nexus-ai-wp-translator'); ?></button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+            // Add popup to page
+            $('body').append(popupHtml);
+            $('#nexus-ai-wp-translate-popup').fadeIn(200);
+
+            // Handle popup events
+            $('#nexus-ai-wp-cancel-translate, .nexus-ai-wp-popup-close').on('click', function() {
+                NexusAIWPTranslatorDashboard.closeTranslatePopup();
+            });
+
+            $('#nexus-ai-wp-start-translate').on('click', function() {
+                NexusAIWPTranslatorDashboard.startTranslation(postId, postTitle);
+            });
+
+            // Close on background click
+            $('#nexus-ai-wp-translate-popup').on('click', function(e) {
+                if (e.target === this) {
+                    NexusAIWPTranslatorDashboard.closeTranslatePopup();
+                }
+            });
+        },
+
+        closeTranslatePopup: function() {
+            $('#nexus-ai-wp-translate-popup').fadeOut(200, function() {
+                $(this).remove();
+            });
+        },
+
+        startTranslation: function(postId, postTitle) {
+            var selectedLanguages = [];
+            $('.nexus-ai-wp-target-language:checked').each(function() {
+                selectedLanguages.push($(this).val());
+            });
+
+            if (selectedLanguages.length === 0) {
+                alert('<?php _e('Please select at least one language.', 'nexus-ai-wp-translator'); ?>');
+                return;
+            }
+
+            // Show progress
+            $('#nexus-ai-wp-start-translate').prop('disabled', true).text('<?php _e('Translating...', 'nexus-ai-wp-translator'); ?>');
+
+            // Start translation
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_translate_post',
+                post_id: postId,
+                target_languages: selectedLanguages,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success) {
+                    alert('<?php _e('Translation completed successfully!', 'nexus-ai-wp-translator'); ?>');
+                    location.reload();
+                } else {
+                    alert('<?php _e('Translation failed:', 'nexus-ai-wp-translator'); ?> ' + (response.message || '<?php _e('Unknown error', 'nexus-ai-wp-translator'); ?>'));
+                }
+            })
+            .fail(function() {
+                alert('<?php _e('Network error occurred', 'nexus-ai-wp-translator'); ?>');
+            })
+            .always(function() {
+                NexusAIWPTranslatorDashboard.closeTranslatePopup();
+            });
+        }
+    };
 });
 </script>
+
+<style>
+.nexus-ai-wp-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+    display: none;
+}
+
+.nexus-ai-wp-popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.nexus-ai-wp-popup-header {
+    padding: 20px 20px 0;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+}
+
+.nexus-ai-wp-popup-header h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+}
+
+.nexus-ai-wp-popup-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.nexus-ai-wp-popup-close:hover {
+    color: #000;
+}
+
+.nexus-ai-wp-popup-body {
+    padding: 20px;
+}
+
+.nexus-ai-wp-language-selection {
+    margin: 15px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-language-option {
+    display: block;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.nexus-ai-wp-language-option input {
+    margin-right: 8px;
+}
+
+.nexus-ai-wp-throttle-info {
+    background: #f0f8ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.nexus-ai-wp-popup-footer {
+    padding: 15px 20px 20px;
+    text-align: right;
+    border-top: 1px solid #ddd;
+}
+
+.nexus-ai-wp-popup-footer .button {
+    margin-left: 10px;
+}
+</style>

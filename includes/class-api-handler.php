@@ -271,11 +271,12 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
         
         // Check throttle limits
-        if (!$this->check_throttle_limits()) {
+        $throttle_check = $this->check_throttle_limits_detailed();
+        if (!$throttle_check['allowed']) {
             error_log('Nexus AI WP Translator: API call limit reached');
             return array(
                 'success' => false,
-                'message' => __('API call limit reached. Please try again later.', 'nexus-ai-wp-translator')
+                'message' => $throttle_check['message']
             );
         }
         
@@ -390,11 +391,30 @@ class Nexus_AI_WP_Translator_API_Handler {
         $target_lang_name = $this->get_language_name($target_lang);
         
         $prompt = sprintf(
-            "Please translate the following %s content to %s. " .
-            "Maintain the original formatting, HTML tags, and structure. " .
-            "Preserve any URLs, email addresses, and proper nouns. " .
-            "Only return the translated content without any additional commentary.\n\n" .
+            "You are a professional translator specializing in %s to %s translation. " .
+            "Translate the following content with absolute precision and cultural adaptation.\n\n" .
+            
+            "CRITICAL REQUIREMENTS:\n" .
+            "1. DATES & TIMES: Preserve exact format and adapt to target language conventions\n" .
+            "   - Example: 'Le 22 août 2022 à 11 heures' → 'August 22, 2022 at 11 AM' (not 'at 11 o'clock')\n" .
+            "   - Keep numerical precision: times, percentages, measurements\n" .
+            "2. FORMATTING: Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
+            "3. TECHNICAL TERMS: Preserve URLs, email addresses, code snippets, and technical identifiers\n" .
+            "4. PROPER NOUNS: Keep brand names, person names, and place names in original form\n" .
+            "5. TONE & STYLE: Match the original tone (formal/informal) and adapt idioms culturally\n" .
+            "6. BLOCK CONTENT: This is WordPress block content - preserve all block structures\n\n" .
+            
+            "FORBIDDEN:\n" .
+            "- Do not add explanations, comments, or meta-text\n" .
+            "- Do not approximate times/dates (no 'around', 'about', 'o'clock' for specific times)\n" .
+            "- Do not modify HTML attributes or CSS classes\n" .
+            "- Do not translate content inside code blocks or technical attributes\n\n" .
+            
+            "Source language: %s\n" .
+            "Target language: %s\n\n" .
             "Content to translate:\n%s",
+            $source_lang_name,
+            $target_lang_name,
             $source_lang_name,
             $target_lang_name,
             $content
@@ -437,13 +457,44 @@ class Nexus_AI_WP_Translator_API_Handler {
      * Check throttle limits
      */
     private function check_throttle_limits() {
+        $result = $this->check_throttle_limits_detailed();
+        return $result['allowed'];
+    }
+
+    /**
+     * Check throttle limits with detailed information
+     */
+    private function check_throttle_limits_detailed() {
         $db = Nexus_AI_WP_Translator_Database::get_instance();
-        $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
+        $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 100);
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600) / 60; // Convert to minutes
-        
+
         $current_calls = $db->get_throttle_status($throttle_period);
-        
-        return $current_calls < $throttle_limit;
+        $allowed = $current_calls < $throttle_limit;
+
+        if (!$allowed) {
+            $period_hours = round($throttle_period / 60, 1);
+            $message = sprintf(
+                __('API call limit reached: %d/%d calls used in the last %s hours. Please wait or increase the limit in Settings → Performance & Rate Limiting.', 'nexus-ai-wp-translator'),
+                $current_calls,
+                $throttle_limit,
+                $period_hours
+            );
+        } else {
+            $message = sprintf(
+                __('Throttle status: %d/%d calls used', 'nexus-ai-wp-translator'),
+                $current_calls,
+                $throttle_limit
+            );
+        }
+
+        return array(
+            'allowed' => $allowed,
+            'current_calls' => $current_calls,
+            'limit' => $throttle_limit,
+            'period_minutes' => $throttle_period,
+            'message' => $message
+        );
     }
     
     /**

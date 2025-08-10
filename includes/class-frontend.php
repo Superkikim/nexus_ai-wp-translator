@@ -44,6 +44,9 @@ class Nexus_AI_WP_Translator_Frontend {
             add_filter('query_vars', array($this, 'add_query_vars'));
             add_action('template_redirect', array($this, 'handle_language_redirect'), 5);
         }
+
+        // Auto-redirect to translated content based on user/browser locale
+        add_action('template_redirect', array($this, 'auto_redirect_to_translated_content'), 10);
         
         // Shortcodes
         add_shortcode('nexus_ai_wp_language_switcher', array($this, 'language_switcher_shortcode'));
@@ -496,6 +499,117 @@ class Nexus_AI_WP_Translator_Frontend {
             $this->current_language = $lang;
             $this->store_language_preference($lang);
         }
+    }
+
+    /**
+     * Auto-redirect to translated content based on user/browser locale
+     */
+    public function auto_redirect_to_translated_content() {
+        // Check if auto-redirect is enabled
+        if (!get_option('nexus_ai_wp_translator_auto_redirect', true)) {
+            return;
+        }
+
+        // Only redirect on single posts/pages
+        if (!is_single() && !is_page()) {
+            return;
+        }
+
+        // Don't redirect if language is already specified in URL
+        if (isset($_GET['lang']) || get_query_var('nexus_ai_wp_lang')) {
+            return;
+        }
+
+        // Don't redirect if this is already a translated post
+        $current_post_id = get_the_ID();
+        $current_post_lang = get_post_meta($current_post_id, '_nexus_ai_wp_translator_language', true);
+
+        // Get user's preferred language
+        $preferred_language = $this->detect_current_language();
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Auto-redirect check - Post: {$current_post_id}, Current lang: {$current_post_lang}, Preferred: {$preferred_language}, Source: {$source_language}");
+        }
+
+        // If current post language matches preferred language, no redirect needed
+        if ($current_post_lang === $preferred_language) {
+            return;
+        }
+
+        // If no current post language set, assume it's source language
+        if (empty($current_post_lang)) {
+            $current_post_lang = $source_language;
+            // Update post meta for future reference
+            update_post_meta($current_post_id, '_nexus_ai_wp_translator_language', $source_language);
+        }
+
+        // If preferred language is same as current, no redirect needed
+        if ($current_post_lang === $preferred_language) {
+            return;
+        }
+
+        // Look for translated version in preferred language
+        $translated_post = $this->find_translated_post($current_post_id, $preferred_language);
+
+        if ($translated_post) {
+            $redirect_url = get_permalink($translated_post);
+            if ($redirect_url) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("Nexus AI WP Translator: Auto-redirecting from post {$current_post_id} to translated post {$translated_post} ({$preferred_language})");
+                }
+
+                // Add language parameter to URL for clarity
+                $redirect_url = add_query_arg('lang', $preferred_language, $redirect_url);
+
+                // Use 302 redirect (temporary) to avoid caching issues
+                wp_redirect($redirect_url, 302);
+                exit;
+            }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: No translation found for post {$current_post_id} in language {$preferred_language}");
+        }
+    }
+
+    /**
+     * Find translated post for given post ID and target language
+     */
+    private function find_translated_post($post_id, $target_language) {
+        // Check if this post has translations
+        $translations = $this->db->get_post_translations($post_id);
+
+        foreach ($translations as $translation) {
+            // If this is the source post, look for target language translation
+            if ($translation->source_post_id == $post_id && $translation->target_language === $target_language) {
+                if ($translation->status === 'completed' && get_post_status($translation->translated_post_id) === 'publish') {
+                    return $translation->translated_post_id;
+                }
+            }
+            // If this is a translated post, check if we need the source or another translation
+            elseif ($translation->translated_post_id == $post_id) {
+                // If we want the source language
+                if ($translation->source_language === $target_language) {
+                    if (get_post_status($translation->source_post_id) === 'publish') {
+                        return $translation->source_post_id;
+                    }
+                }
+                // Look for other translations of the same source
+                else {
+                    $other_translations = $this->db->get_post_translations($translation->source_post_id);
+                    foreach ($other_translations as $other_translation) {
+                        if ($other_translation->target_language === $target_language && $other_translation->status === 'completed') {
+                            if (get_post_status($other_translation->translated_post_id) === 'publish') {
+                                return $other_translation->translated_post_id;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
     
     /**

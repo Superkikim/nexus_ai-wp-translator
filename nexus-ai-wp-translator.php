@@ -177,12 +177,12 @@ class Nexus_AI_WP_Translator_Plugin {
             'api_key' => '',
             'source_language' => 'en',
             'target_languages' => array('es', 'fr', 'de'),
-            'auto_translate' => true,
-            'throttle_limit' => 10,
+            'throttle_limit' => 100, // Increased default limit
             'throttle_period' => 3600, // 1 hour
             'retry_attempts' => 3,
             'cache_translations' => true,
-            'seo_friendly_urls' => true
+            'seo_friendly_urls' => true,
+            'auto_redirect' => true // Auto-redirect to translated content
         );
         
         foreach ($default_options as $key => $value) {

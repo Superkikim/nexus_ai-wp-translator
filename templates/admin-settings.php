@@ -131,19 +131,19 @@ if (!defined('ABSPATH')) {
                 
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php _e('Auto Translation', 'nexus-ai-wp-translator'); ?></th>
+                        <th scope="row"><?php _e('Auto Redirect to Translated Content', 'nexus-ai-wp-translator'); ?></th>
                         <td>
                             <fieldset>
                                 <label>
-                                    <input type="checkbox" 
-                                           id="nexus_ai_wp_translator_auto_translate" 
-                                           name="nexus_ai_wp_translator_auto_translate" 
-                                           value="1" 
-                                           <?php checked($auto_translate); ?> />
-                                    <?php _e('Automatically translate posts when published', 'nexus-ai-wp-translator'); ?>
+                                    <input type="checkbox"
+                                           id="nexus_ai_wp_translator_auto_redirect"
+                                           name="nexus_ai_wp_translator_auto_redirect"
+                                           value="1"
+                                           <?php checked(get_option('nexus_ai_wp_translator_auto_redirect', true)); ?> />
+                                    <?php _e('Automatically redirect users to translated content based on their language preference', 'nexus-ai-wp-translator'); ?>
                                 </label>
                                 <p class="description">
-                                    <?php _e('When enabled, posts will be automatically translated to all target languages upon publication.', 'nexus-ai-wp-translator'); ?>
+                                    <?php _e('When enabled, users will be automatically redirected to the translated version of posts/pages based on their user preference (if logged in) or browser language.', 'nexus-ai-wp-translator'); ?>
                                 </p>
                             </fieldset>
                         </td>

@@ -666,36 +666,7 @@ var NexusAIWPTranslatorAdmin = {
         return postId;
     },
     
-    /**
-     * Check for auto translation and show popup
-     */
-    checkAutoTranslation: function() {
-        console.log('NexusAI Debug: Checking for auto translation');
-        
-        var postId = this.getPostId();
-        if (!postId) {
-            console.log('NexusAI Debug: No post ID found for auto translation check');
-            return;
-        }
-        
-        console.log('NexusAI Debug: Checking auto translation for post:', postId);
-        
-        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-            action: 'nexus_ai_wp_get_auto_translation_status',
-            post_id: postId,
-            nonce: nexus_ai_wp_translator_ajax.nonce
-        })
-        .done(function(response) {
-            console.log('NexusAI Debug: Auto translation status response:', response);
-            
-            if (response.success && response.data) {
-                NexusAIWPTranslatorAdmin.showAutoTranslationProgress(response.data);
-            }
-        })
-        .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Auto translation check failed:', error);
-        });
-    },
+
     
     /**
      * Show auto translation progress popup

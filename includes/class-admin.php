@@ -75,12 +75,11 @@ class Nexus_AI_WP_Translator_Admin {
             add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
             add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this->translation_manager, 'ajax_unlink_translation'));
             add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
-            add_action('wp_ajax_nexus_ai_wp_get_auto_translation_status', array($this->translation_manager, 'ajax_get_auto_translation_status'));
-            add_action('wp_ajax_nexus_ai_wp_dismiss_auto_translation', array($this->translation_manager, 'ajax_dismiss_auto_translation'));
+
         }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status, get_auto_translation_status, dismiss_auto_translation');
+            error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status');
         }
         
         // Post meta box save
@@ -173,7 +172,7 @@ class Nexus_AI_WP_Translator_Admin {
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_model');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_source_language');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_target_languages');
-        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_translate');
+        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_redirect');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_limit');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_throttle_period');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_retry_attempts');
@@ -346,7 +345,7 @@ class Nexus_AI_WP_Translator_Admin {
         $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        $auto_translate = get_option('nexus_ai_wp_translator_auto_translate', true);
+        $auto_redirect = get_option('nexus_ai_wp_translator_auto_redirect', true);
         $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
@@ -588,7 +587,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         $source_language = isset($_POST['nexus_ai_wp_translator_source_language']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_source_language']) : 'en';
         $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
-        $auto_translate = isset($_POST['nexus_ai_wp_translator_auto_translate']) ? true : false;
+        $auto_redirect = isset($_POST['nexus_ai_wp_translator_auto_redirect']) ? true : false;
         $throttle_limit = isset($_POST['nexus_ai_wp_translator_throttle_limit']) ? intval($_POST['nexus_ai_wp_translator_throttle_limit']) : 10;
         $throttle_period = isset($_POST['nexus_ai_wp_translator_throttle_period']) ? intval($_POST['nexus_ai_wp_translator_throttle_period']) : 3600;
         $retry_attempts = isset($_POST['nexus_ai_wp_translator_retry_attempts']) ? intval($_POST['nexus_ai_wp_translator_retry_attempts']) : 3;
@@ -600,7 +599,7 @@ class Nexus_AI_WP_Translator_Admin {
             'model' => $model,
             'source_language' => $source_language,
             'target_languages' => $target_languages,
-            'auto_translate' => $auto_translate,
+            'auto_redirect' => $auto_redirect,
             'throttle_limit' => $throttle_limit,
             'throttle_period' => $throttle_period,
             'retry_attempts' => $retry_attempts,

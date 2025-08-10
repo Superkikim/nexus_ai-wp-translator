@@ -77,53 +77,14 @@ if (!defined('ABSPATH')) {
     
     <!-- Translation Actions -->
     <div class="nexus-ai-wp-meta-field">
-        <label><strong><?php _e('Translation Actions:', 'nexus-ai-wp-translator'); ?></strong></label>
-        
-        <?php if (get_option('nexus_ai_wp_translator_api_key')): ?>
-            <div class="nexus-ai-wp-translation-actions">
-                <div class="target-languages">
-                    <label><?php _e('Translate to:', 'nexus-ai-wp-translator'); ?></label>
-                    <?php if (!empty($target_languages)): ?>
-                        <?php foreach ($target_languages as $lang_code): ?>
-                            <?php if ($lang_code !== $post_language): ?>
-                                <label>
-                                    <input type="checkbox" 
-                                           name="nexus_ai_wp_translate_to[]" 
-                                           value="<?php echo esc_attr($lang_code); ?>" 
-                                           class="nexus-ai-wp-target-language" />
-                                    <?php echo esc_html($languages[$lang_code] ?? $lang_code); ?>
-                                </label><br>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="description">
-                            <?php printf(
-                                __('No target languages configured. Please <a href="%s">configure target languages</a> in settings.', 'nexus-ai-wp-translator'),
-                                admin_url('admin.php?page=nexus-ai-wp-translator-settings')
-                            ); ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-                
-                <p>
-                    <button type="button" id="nexus-ai-wp-translate-post" class="button button-primary">
-                        <?php _e('Translate Now', 'nexus-ai-wp-translator'); ?>
-                    </button>
-                    <button type="button" id="nexus-ai-wp-get-translation-status" class="button">
-                        <?php _e('Check Status', 'nexus-ai-wp-translator'); ?>
-                    </button>
-                </p>
-                
-                <div id="nexus-ai-wp-translation-status"></div>
-            </div>
-        <?php else: ?>
-            <p class="description">
-                <?php printf(
-                    __('Please configure your Nexus AI API key in the <a href="%s">settings</a> to enable translation.', 'nexus-ai-wp-translator'),
-                    admin_url('admin.php?page=nexus-ai-wp-translator-settings')
-                ); ?>
-            </p>
-        <?php endif; ?>
+        <label><strong><?php _e('Translation Management:', 'nexus-ai-wp-translator'); ?></strong></label>
+
+        <p class="description">
+            <?php printf(
+                __('To translate this post, go to <a href="%s">Nexus AI WP Translator Dashboard</a> and use the translation interface.', 'nexus-ai-wp-translator'),
+                admin_url('admin.php?page=nexus-ai-wp-translator-dashboard')
+            ); ?>
+        </p>
     </div>
     
     <!-- Translation History -->
