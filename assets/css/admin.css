@@ -667,84 +667,7 @@
     margin: 0 5px;
 }
 
-/* Language Tools */
-.nexus-ai-wp-language-tools {
-    max-width: 1000px;
-}
 
-.nexus-ai-wp-tool-section {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-.nexus-ai-wp-tool-section h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #23282d;
-    font-size: 16px;
-}
-
-.nexus-ai-wp-tool-section .description {
-    margin-bottom: 15px;
-    color: #666;
-}
-
-.tool-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
-}
-
-.tool-controls label {
-    font-weight: 600;
-    color: #23282d;
-}
-
-.tool-controls select {
-    min-width: 200px;
-}
-
-.tool-results {
-    margin-top: 15px;
-    padding: 15px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.nexus-ai-wp-language-stats-table table {
-    margin-top: 10px;
-}
-
-.nexus-ai-wp-bulk-preview {
-    background: #fff;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.nexus-ai-wp-bulk-preview h4 {
-    margin-top: 0;
-    color: #0073aa;
-}
-
-.nexus-ai-wp-bulk-preview h5 {
-    margin-bottom: 5px;
-    color: #23282d;
-}
-
-.nexus-ai-wp-bulk-preview ul {
-    margin: 5px 0 15px 20px;
-}
-
-.nexus-ai-wp-bulk-preview li {
-    margin-bottom: 3px;
-}
 
 /* Log Status Styles */
 .status-throttle {
@@ -783,15 +706,3 @@
     font-weight: bold;
 }
 
-/* Source language styling */
-.nexus-ai-wp-language-option.source-language {
-    background: #f0f8ff;
-    border: 1px solid #0073aa;
-    border-radius: 4px;
-    padding: 8px;
-    margin: 2px 0;
-}
-
-.nexus-ai-wp-language-option.source-language input[type="checkbox"] {
-    margin-right: 8px;
-}

@@ -76,8 +76,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_fix_undefined_languages', array($this, 'ajax_fix_undefined_languages'));
         add_action('wp_ajax_nexus_ai_wp_get_language_stats', array($this, 'ajax_get_language_stats'));
         add_action('wp_ajax_nexus_ai_wp_bulk_change_language', array($this, 'ajax_bulk_change_language'));
-        add_action('wp_ajax_nexus_ai_wp_get_post_language', array($this, 'ajax_get_post_language'));
-        
+
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
             add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
@@ -125,6 +124,15 @@ class Nexus_AI_WP_Translator_Admin {
             'manage_options',
             'nexus-ai-wp-translator-settings',
             array($this, 'admin_page_settings')
+        );
+
+        add_submenu_page(
+            'nexus-ai-wp-translator',
+            __('Language Tools', 'nexus-ai-wp-translator'),
+            __('Language Tools', 'nexus-ai-wp-translator'),
+            'manage_options',
+            'nexus-ai-wp-translator-language-tools',
+            array($this, 'admin_page_language_tools')
         );
         
         add_submenu_page(
@@ -404,7 +412,19 @@ class Nexus_AI_WP_Translator_Admin {
 
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
     }
-    
+
+    /**
+     * Language Tools page
+     */
+    public function admin_page_language_tools() {
+        if (!$this->translation_manager) {
+            echo '<div class="notice notice-error"><p>' . __('Translation manager error', 'nexus-ai-wp-translator') . '</p></div>';
+            return;
+        }
+
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-language-tools.php';
+    }
+
     /**
      * Logs page
      */
@@ -1085,7 +1105,7 @@ class Nexus_AI_WP_Translator_Admin {
             ORDER BY count DESC
         ");
 
-        // Get posts without language defined
+        // Count undefined languages
         $undefined_count = $wpdb->get_var("
             SELECT COUNT(*)
             FROM {$wpdb->posts} p
@@ -1095,23 +1115,15 @@ class Nexus_AI_WP_Translator_Admin {
             AND pm.meta_value IS NULL
         ");
 
-        // Format results
-        $formatted_stats = array();
-        foreach ($language_stats as $stat) {
-            $language_name = isset($available_languages[$stat->language]) ? $available_languages[$stat->language] : $stat->language;
-            $formatted_stats[] = array(
-                'language' => $stat->language,
-                'language_name' => $language_name,
-                'count' => intval($stat->count),
-                'post_type' => $stat->post_type,
-                'is_default' => $stat->language === $default_language
-            );
+        // Add language names
+        foreach ($language_stats as &$stat) {
+            $stat->language_name = isset($available_languages[$stat->language]) ? $available_languages[$stat->language] : $stat->language;
+            $stat->is_default = ($stat->language === $default_language);
         }
 
         wp_send_json_success(array(
-            'stats' => $formatted_stats,
-            'undefined_count' => intval($undefined_count),
-            'default_language' => $default_language,
+            'stats' => $language_stats,
+            'undefined_count' => (int) $undefined_count,
             'default_language_name' => isset($available_languages[$default_language]) ? $available_languages[$default_language] : $default_language
         ));
     }
@@ -1148,78 +1160,53 @@ class Nexus_AI_WP_Translator_Admin {
                 WHERE p.post_status = 'publish'
                 AND p.post_type IN ('post', 'page')
                 AND pm.meta_value IS NULL
+                LIMIT 50
             ";
+            $posts = $wpdb->get_results($posts_query);
         } else {
-            // Find posts with specific language
             if (!array_key_exists($from_language, $available_languages)) {
                 wp_send_json_error(__('Invalid source language code', 'nexus-ai-wp-translator'));
             }
-            $posts_query = $wpdb->prepare("
+
+            // Find posts with the source language
+            $posts_query = "
                 SELECT p.ID, p.post_title, p.post_type
                 FROM {$wpdb->posts} p
-                INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_nexus_ai_wp_translator_language'
-                WHERE p.post_status = 'publish'
-                AND p.post_type IN ('post', 'page')
+                INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                WHERE pm.meta_key = '_nexus_ai_wp_translator_language'
                 AND pm.meta_value = %s
-            ", $from_language);
+                AND p.post_status = 'publish'
+                AND p.post_type IN ('post', 'page')
+                LIMIT 50
+            ";
+            $posts = $wpdb->get_results($wpdb->prepare($posts_query, $from_language));
         }
 
-        $posts_to_change = $wpdb->get_results($posts_query);
-
         if ($action_type === 'preview') {
-            // Just return the preview
+            $from_name = empty($from_language) ? 'Undefined' : $available_languages[$from_language];
             wp_send_json_success(array(
-                'action' => 'preview',
-                'posts_count' => count($posts_to_change),
-                'posts' => array_slice($posts_to_change, 0, 10), // Show first 10 for preview
-                'from_language_name' => empty($from_language) ? __('Undefined', 'nexus-ai-wp-translator') : ($available_languages[$from_language] ?? $from_language),
-                'to_language_name' => $available_languages[$to_language] ?? $to_language
+                'posts_count' => count($posts),
+                'posts' => $posts,
+                'from_language_name' => $from_name,
+                'to_language_name' => $available_languages[$to_language]
             ));
-        } else {
-            // Execute the change
+        } elseif ($action_type === 'execute') {
             $updated_count = 0;
-            foreach ($posts_to_change as $post) {
+
+            foreach ($posts as $post) {
                 update_post_meta($post->ID, '_nexus_ai_wp_translator_language', $to_language);
                 $updated_count++;
             }
 
+            $from_name = empty($from_language) ? 'Undefined' : $available_languages[$from_language];
             wp_send_json_success(array(
-                'action' => 'execute',
-                'updated_count' => $updated_count,
-                'message' => sprintf(__('Successfully updated %d posts from %s to %s', 'nexus-ai-wp-translator'),
+                'message' => sprintf(__('Updated %d posts from %s to %s', 'nexus-ai-wp-translator'),
                     $updated_count,
-                    empty($from_language) ? __('Undefined', 'nexus-ai-wp-translator') : ($available_languages[$from_language] ?? $from_language),
-                    $available_languages[$to_language] ?? $to_language
-                )
+                    $from_name,
+                    $available_languages[$to_language]
+                ),
+                'updated_count' => $updated_count
             ));
         }
-    }
-
-    /**
-     * AJAX: Get post language
-     */
-    public function ajax_get_post_language() {
-        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-
-        if (!current_user_can('edit_posts')) {
-            wp_send_json_error(__('Insufficient permissions', 'nexus-ai-wp-translator'));
-        }
-
-        $post_id = intval($_POST['post_id']);
-        if (!$post_id) {
-            wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
-        }
-
-        $language = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
-        $default_language = get_option('nexus_ai_wp_translator_source_language', 'en');
-
-        if (empty($language)) {
-            $language = $default_language;
-        }
-
-        wp_send_json_success(array(
-            'language' => $language,
-            'is_default' => $language === $default_language
-        ));
     }
 }
