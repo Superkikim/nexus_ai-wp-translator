@@ -453,3 +453,345 @@
     border-color: #1e7e34;
     color: #fff;
 }
+
+/* Translation Progress Popup */
+.nexus-ai-wp-progress-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-progress-popup.show {
+    display: flex;
+}
+
+.nexus-ai-wp-progress-content {
+    background: #fff;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.nexus-ai-wp-progress-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.nexus-ai-wp-progress-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.nexus-ai-wp-progress-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-right: 30px;
+}
+
+.nexus-ai-wp-progress-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    color: #23282d;
+}
+
+.nexus-ai-wp-progress-header p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.nexus-ai-wp-progress-languages {
+    margin-bottom: 20px;
+}
+
+.nexus-ai-wp-progress-language {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f9f9f9;
+    transition: all 0.3s ease;
+}
+
+.nexus-ai-wp-progress-language.processing {
+    border-color: #0073aa;
+    background: #e7f3ff;
+}
+
+.nexus-ai-wp-progress-language.completed {
+    border-color: #46b450;
+    background: #ecf7ed;
+}
+
+.nexus-ai-wp-progress-language.error {
+    border-color: #dc3232;
+    background: #ffeaea;
+}
+
+.nexus-ai-wp-progress-language-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nexus-ai-wp-progress-language-name {
+    font-weight: 600;
+    color: #23282d;
+    font-size: 14px;
+}
+
+.nexus-ai-wp-progress-language-code {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.nexus-ai-wp-progress-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nexus-ai-wp-progress-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-progress-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ddd;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: nexus-ai-wp-progress-spin 1s linear infinite;
+}
+
+.nexus-ai-wp-progress-check {
+    width: 16px;
+    height: 16px;
+    background: #46b450;
+    border-radius: 50%;
+    position: relative;
+}
+
+.nexus-ai-wp-progress-check::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.nexus-ai-wp-progress-error {
+    width: 16px;
+    height: 16px;
+    background: #dc3232;
+    border-radius: 50%;
+    position: relative;
+}
+
+.nexus-ai-wp-progress-error::after {
+    content: '✕';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+@keyframes nexus-ai-wp-progress-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.nexus-ai-wp-progress-summary {
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.nexus-ai-wp-progress-summary.success {
+    background: #ecf7ed;
+    border: 1px solid #46b450;
+    color: #2e7d32;
+}
+
+.nexus-ai-wp-progress-summary.error {
+    background: #ffeaea;
+    border: 1px solid #dc3232;
+    color: #c62828;
+}
+
+.nexus-ai-wp-progress-buttons {
+    text-align: center;
+}
+
+.nexus-ai-wp-progress-buttons .button {
+    margin: 0 5px;
+}
+
+/* Language Tools */
+.nexus-ai-wp-language-tools {
+    max-width: 1000px;
+}
+
+.nexus-ai-wp-tool-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.nexus-ai-wp-tool-section h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #23282d;
+    font-size: 16px;
+}
+
+.nexus-ai-wp-tool-section .description {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.tool-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.tool-controls label {
+    font-weight: 600;
+    color: #23282d;
+}
+
+.tool-controls select {
+    min-width: 200px;
+}
+
+.tool-results {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-language-stats-table table {
+    margin-top: 10px;
+}
+
+.nexus-ai-wp-bulk-preview {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-bulk-preview h4 {
+    margin-top: 0;
+    color: #0073aa;
+}
+
+.nexus-ai-wp-bulk-preview h5 {
+    margin-bottom: 5px;
+    color: #23282d;
+}
+
+.nexus-ai-wp-bulk-preview ul {
+    margin: 5px 0 15px 20px;
+}
+
+.nexus-ai-wp-bulk-preview li {
+    margin-bottom: 3px;
+}
+
+/* Log Status Styles */
+.status-throttle {
+    background: #ffeaea !important;
+    color: #d63638 !important;
+    border: 1px solid #d63638 !important;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.status-timeout {
+    background: #fff3e0 !important;
+    color: #f56e28 !important;
+    border: 1px solid #f56e28 !important;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.log-message {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.no-message {
+    color: #999;
+    font-style: italic;
+}
+
+.status-warning {
+    color: #f56e28;
+    font-weight: bold;
+}
+
+/* Source language styling */
+.nexus-ai-wp-language-option.source-language {
+    background: #f0f8ff;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 2px 0;
+}
+
+.nexus-ai-wp-language-option.source-language input[type="checkbox"] {
+    margin-right: 8px;
+}

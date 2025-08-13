@@ -10,9 +10,11 @@ if (!defined('ABSPATH')) {
 
 <div class="wrap">
     <h1><?php _e('Nexus AI WP Translator Settings', 'nexus-ai-wp-translator'); ?></h1>
-    
-    <form id="nexus-ai-wp-translator-settings-form" method="post" action="options.php">
-        <?php settings_fields('nexus_ai_wp_translator_settings'); ?>
+
+    <?php if (isset($message)) echo $message; ?>
+
+    <form id="nexus-ai-wp-translator-settings-form" method="post" action="">
+        <?php wp_nonce_field('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_nonce'); ?>
         
         <div class="nexus-ai-wp-settings-tabs">
             <nav class="nav-tab-wrapper">
@@ -236,9 +238,6 @@ if (!defined('ABSPATH')) {
         
         <p class="submit">
             <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
-            <button type="button" id="nexus-ai-wp-save-settings" class="button button-primary">
-                <?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>
-            </button>
         </p>
     </form>
 </div>

@@ -250,7 +250,7 @@ class Nexus_AI_WP_Translator_Database {
     }
     
     /**
-     * Delete translation relationships
+     * Delete translation relationships (all relationships for a post)
      */
     public function delete_translation_relationships($post_id) {
         return $this->wpdb->delete(
@@ -262,6 +262,34 @@ class Nexus_AI_WP_Translator_Database {
             array('translated_post_id' => $post_id),
             array('%d')
         );
+    }
+
+    /**
+     * Delete specific translation relationship between two posts
+     */
+    public function delete_specific_translation_relationship($post_id_1, $post_id_2) {
+        // Delete relationship where post_id_1 is source and post_id_2 is translated
+        $result1 = $this->wpdb->delete(
+            $this->translations_table,
+            array(
+                'source_post_id' => $post_id_1,
+                'translated_post_id' => $post_id_2
+            ),
+            array('%d', '%d')
+        );
+
+        // Delete relationship where post_id_2 is source and post_id_1 is translated
+        $result2 = $this->wpdb->delete(
+            $this->translations_table,
+            array(
+                'source_post_id' => $post_id_2,
+                'translated_post_id' => $post_id_1
+            ),
+            array('%d', '%d')
+        );
+
+        // Return true if at least one relationship was deleted
+        return ($result1 !== false || $result2 !== false);
     }
     
     /**

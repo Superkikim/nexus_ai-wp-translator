@@ -188,7 +188,13 @@ class Nexus_AI_WP_Translator_Manager {
         $success_count = 0;
         $errors = array();
         $skipped = array();
-        
+        $success_details = array();
+
+        // Log start of translation session
+        $languages_list = implode(', ', $target_languages);
+        $this->db->log_translation_activity($post_id, 'batch_translate_start', 'processing',
+            sprintf(__('Starting translation session: %s → [%s]', 'nexus-ai-wp-translator'), $source_lang, $languages_list));
+
         foreach ($target_languages as $target_lang) {
             // Skip if target language is same as source
             if ($target_lang === $source_lang) {
@@ -218,34 +224,41 @@ class Nexus_AI_WP_Translator_Manager {
                 }
             }
 
-            // Log translation start
-            $this->db->log_translation_activity($post_id, 'translate_start', 'processing', "Starting translation to {$target_lang}");
-
-            // Perform translation
+            // Perform translation (no individual logging to keep logs clean)
             $result = $this->create_translated_post($post_id, $target_lang);
 
             if ($result['success']) {
                 $success_count++;
                 $total_api_calls += isset($result['api_calls']) ? $result['api_calls'] : 0;
 
-                // Log success
-                $this->db->log_translation_activity(
-                    $post_id,
-                    'translate',
-                    'success',
-                    "Translated to {$target_lang} successfully",
+                // Store success details for final summary
+                $success_details[] = sprintf(__('%s (%d API calls, %.1fs)', 'nexus-ai-wp-translator'),
+                    $target_lang,
                     isset($result['api_calls']) ? $result['api_calls'] : 0,
                     isset($result['processing_time']) ? $result['processing_time'] : 0
                 );
             } else {
-                $errors[] = $target_lang . ': ' . $result['message'];
+                // Check if this is a throttling error
+                $is_throttle_error = strpos($result['message'], 'API call limit reached') !== false;
+                $is_timeout_error = strpos($result['message'], 'timeout') !== false || strpos($result['message'], 'timed out') !== false;
 
-                // Log error
+                if ($is_throttle_error) {
+                    $errors[] = $target_lang . ': ' . __('THROTTLE LIMIT REACHED', 'nexus-ai-wp-translator') . ' - ' . $result['message'];
+                    $log_message = "Translation to {$target_lang} BLOCKED by throttle limits: " . $result['message'];
+                } elseif ($is_timeout_error) {
+                    $errors[] = $target_lang . ': ' . __('TIMEOUT ERROR', 'nexus-ai-wp-translator') . ' - ' . $result['message'];
+                    $log_message = "Translation to {$target_lang} TIMEOUT: " . $result['message'];
+                } else {
+                    $errors[] = $target_lang . ': ' . $result['message'];
+                    $log_message = "Translation to {$target_lang} failed: " . $result['message'];
+                }
+
+                // Log error with clear categorization
                 $this->db->log_translation_activity(
                     $post_id,
                     'translate',
                     'error',
-                    "Translation to {$target_lang} failed: " . $result['message']
+                    $log_message
                 );
 
                 // If it's a throttle error, stop trying other languages to avoid wasting attempts
@@ -258,6 +271,21 @@ class Nexus_AI_WP_Translator_Manager {
         
         $total_time = microtime(true) - $start_time;
         
+        // Analyze error types
+        $throttle_errors = 0;
+        $timeout_errors = 0;
+        $other_errors = 0;
+
+        foreach ($errors as $error) {
+            if (strpos($error, 'THROTTLE LIMIT REACHED') !== false) {
+                $throttle_errors++;
+            } elseif (strpos($error, 'TIMEOUT ERROR') !== false) {
+                $timeout_errors++;
+            } else {
+                $other_errors++;
+            }
+        }
+
         // Build detailed message
         $message_parts = array();
 
@@ -270,13 +298,27 @@ class Nexus_AI_WP_Translator_Manager {
         }
 
         if (!empty($errors)) {
-            $message_parts[] = sprintf(__('Failed %d languages', 'nexus-ai-wp-translator'), count($errors));
+            $error_details = array();
+            if ($throttle_errors > 0) {
+                $error_details[] = sprintf(__('%d throttle limit', 'nexus-ai-wp-translator'), $throttle_errors);
+            }
+            if ($timeout_errors > 0) {
+                $error_details[] = sprintf(__('%d timeout', 'nexus-ai-wp-translator'), $timeout_errors);
+            }
+            if ($other_errors > 0) {
+                $error_details[] = sprintf(__('%d other', 'nexus-ai-wp-translator'), $other_errors);
+            }
+
+            $message_parts[] = sprintf(__('Failed %d languages (%s)', 'nexus-ai-wp-translator'), count($errors), implode(', ', $error_details));
         }
 
         $message = implode(', ', $message_parts);
 
-        // Add details for errors and skipped
+        // Add details for successes, errors and skipped
         $details = array();
+        if (!empty($success_details)) {
+            $details[] = 'Completed: ' . implode(', ', $success_details);
+        }
         if (!empty($skipped)) {
             $details[] = 'Skipped: ' . implode(', ', $skipped);
         }
@@ -288,9 +330,18 @@ class Nexus_AI_WP_Translator_Manager {
             $message .= ' | ' . implode(' | ', $details);
         }
 
-        // Log overall completion
+        // Add throttle warning if applicable
+        if ($throttle_errors > 0) {
+            $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 100);
+            $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600) / 3600; // Convert to hours
+            $message .= sprintf(__(' | ⚠️ THROTTLE LIMIT: %d/%d API calls used in %s hours. Increase limit in Settings → Performance & Rate Limiting or wait.', 'nexus-ai-wp-translator'),
+                $throttle_limit, $throttle_limit, round($throttle_period, 1));
+        }
+
+        // Log overall completion with clear action name
         $status = empty($errors) ? 'completed' : ($success_count > 0 ? 'partial' : 'failed');
-        $this->db->log_translation_activity($post_id, 'translate_complete', $status, $message, $total_api_calls, $total_time);
+        $action = 'batch_translate'; // Use a different action name to distinguish from individual translations
+        $this->db->log_translation_activity($post_id, $action, $status, $message, $total_api_calls, $total_time);
 
         return array(
             'success' => $success_count > 0,
@@ -552,16 +603,16 @@ class Nexus_AI_WP_Translator_Manager {
                 return;
             }
             
-            // Remove translation relationship
-            $result = $this->db->delete_translation_relationships($post_id);
-            
+            // Remove specific translation relationship between the two posts
+            $result = $this->db->delete_specific_translation_relationship($post_id, $related_post_id);
+
             if ($result) {
-                // Remove meta fields
+                // Remove meta fields only from the related post
                 delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
                 delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
-                
+
                 $this->db->log_translation_activity($post_id, 'unlink', 'completed', "Unlinked from post {$related_post_id}");
-                
+
                 wp_send_json_success(__('Translation unlinked successfully', 'nexus-ai-wp-translator'));
             } else {
                 wp_send_json_error(__('Failed to unlink translation', 'nexus-ai-wp-translator'));

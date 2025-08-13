@@ -33,13 +33,13 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
     
     /**
-     * Get available models from Claude API
+     * Get available models from Anthropic API
      */
     public function get_available_models() {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Getting available models from API');
         }
-        
+
         if (empty($this->api_key)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: No API key provided for getting models');
@@ -49,22 +49,22 @@ class Nexus_AI_WP_Translator_API_Handler {
                 'message' => __('API key is required', 'nexus-ai-wp-translator')
             );
         }
-        
+
         $headers = array(
             'Content-Type' => 'application/json',
             'x-api-key' => $this->api_key,
             'anthropic-version' => '2023-06-01'
         );
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Making request to models endpoint: ' . $this->models_endpoint);
         }
-        
+
         $response = wp_remote_get($this->models_endpoint, array(
             'headers' => $headers,
             'timeout' => 30
         ));
-        
+
         if (is_wp_error($response)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: WP Error getting models: ' . $response->get_error_message());
@@ -74,51 +74,42 @@ class Nexus_AI_WP_Translator_API_Handler {
                 'message' => $response->get_error_message()
             );
         }
-        
+
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Models API response code: ' . $response_code);
             error_log('Nexus AI WP Translator: Models API response body: ' . substr($response_body, 0, 500) . '...');
         }
-        
+
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
-            $error_message = isset($error_data['error']['message']) 
-                ? $error_data['error']['message'] 
+            $error_message = isset($error_data['error']['message'])
+                ? $error_data['error']['message']
                 : __('Failed to retrieve models', 'nexus-ai-wp-translator');
-            
+
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Models API error: ' . $error_message);
             }
-                
+
             return array(
                 'success' => false,
                 'message' => $error_message
             );
         }
-        
+
         $data = json_decode($response_body, true);
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Decoded models data: ' . print_r($data, true));
         }
-        
-        if (!isset($data['data']) || !is_array($data['data'])) {
+
+        $models = array();
+
+        // Check if we have a 'data' array (standard format)
+        if (isset($data['data']) && is_array($data['data'])) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: No models data in response, using fallback models');
+                error_log('Nexus AI WP Translator: Processing models from API response data array');
             }
-            // Fallback to known models if API doesn't return model list
-            $models = array(
-                'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-                'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
-                'claude-3-haiku-20240307' => 'Claude 3 Haiku',
-                'claude-3-opus-20240229' => 'Claude 3 Opus'
-            );
-        } else {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: Processing models from API response');
-            }
-            $models = array();
             foreach ($data['data'] as $model) {
                 if (isset($model['id'])) {
                     $display_name = $this->format_model_name($model['id']);
@@ -128,25 +119,42 @@ class Nexus_AI_WP_Translator_API_Handler {
                     }
                 }
             }
-            
-            // If no models found, use fallback
-            if (empty($models)) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Nexus AI WP Translator: No models found in API response, using fallback');
+        }
+        // Check if we have a direct array of models
+        elseif (is_array($data)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Processing models from direct array response');
+            }
+            foreach ($data as $model) {
+                if (is_string($model)) {
+                    // Simple string model ID
+                    $display_name = $this->format_model_name($model);
+                    $models[$model] = $display_name;
+                } elseif (isset($model['id'])) {
+                    // Object with ID
+                    $display_name = $this->format_model_name($model['id']);
+                    $models[$model['id']] = $display_name;
                 }
-                $models = array(
-                    'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-                    'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
-                    'claude-3-haiku-20240307' => 'Claude 3 Haiku',
-                    'claude-3-opus-20240229' => 'Claude 3 Opus'
-                );
             }
         }
-        
+
+        // If no models found, use fallback
+        if (empty($models)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: No models found in API response, using fallback');
+            }
+            $models = array(
+                'claude-opus-4-1-20250805' => 'Claude Opus 4.1 (Most Capable)',
+                'claude-sonnet-4-20250514' => 'Claude Sonnet 4 (High Performance)',
+                'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Recommended)',
+                'claude-3-5-haiku-20241022' => 'Claude 3.5 Haiku (Fast & Cost-Effective)'
+            );
+        }
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Final models array: ' . print_r($models, true));
         }
-        
+
         return array(
             'success' => true,
             'models' => $models
@@ -154,18 +162,56 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
     
     /**
-     * Format model name for display
+     * Format model name for display - intelligently parse model IDs
      */
     private function format_model_name($model_id) {
-        $name_map = array(
+        // Handle known specific models for better display names
+        $known_models = array(
+            'claude-opus-4-1-20250805' => 'Claude Opus 4.1 (Latest)',
+            'claude-opus-4-20250514' => 'Claude Opus 4',
+            'claude-sonnet-4-20250514' => 'Claude Sonnet 4',
+            'claude-3-7-sonnet-20250219' => 'Claude 3.7 Sonnet',
             'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
             'claude-3-5-sonnet-20240620' => 'Claude 3.5 Sonnet',
+            'claude-3-5-haiku-20241022' => 'Claude 3.5 Haiku (Latest)',
+            'claude-3-opus-20240229' => 'Claude 3 Opus',
             'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
-            'claude-3-haiku-20240307' => 'Claude 3 Haiku',
-            'claude-3-opus-20240229' => 'Claude 3 Opus'
+            'claude-3-haiku-20240307' => 'Claude 3 Haiku'
         );
-        
-        return isset($name_map[$model_id]) ? $name_map[$model_id] : ucwords(str_replace('-', ' ', $model_id));
+
+        if (isset($known_models[$model_id])) {
+            return $known_models[$model_id];
+        }
+
+        // Intelligent parsing for unknown models
+        $formatted = $model_id;
+
+        // Remove date suffix (e.g., -20241022)
+        $formatted = preg_replace('/-\d{8}$/', '', $formatted);
+
+        // Handle claude-X-Y-Z pattern
+        if (preg_match('/^claude-(.+)$/', $formatted, $matches)) {
+            $parts = explode('-', $matches[1]);
+            $name = 'Claude';
+
+            foreach ($parts as $part) {
+                if (is_numeric($part)) {
+                    // Version number
+                    $name .= ' ' . $part;
+                } elseif (in_array(strtolower($part), ['opus', 'sonnet', 'haiku'])) {
+                    // Model type
+                    $name .= ' ' . ucfirst($part);
+                } else {
+                    // Other parts
+                    $name .= ' ' . ucfirst($part);
+                }
+            }
+
+            return $name;
+        }
+
+        // Fallback: just clean up the name
+        return ucwords(str_replace(['-', '_'], ' ', $model_id));
     }
     
     /**
@@ -317,11 +363,19 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         error_log('Nexus AI WP Translator: Making API request to ' . $this->api_endpoint);
         
+        // Calculate timeout based on content length (minimum 120 seconds, up to 300 seconds for long content)
+        $content_length = strlen($content);
+        $timeout = max(120, min(300, 120 + ($content_length / 1000))); // 120s base + 1s per 1000 chars
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Content length: {$content_length} chars, timeout: {$timeout}s");
+        }
+
         // Make API request
         $response = wp_remote_post($this->api_endpoint, array(
             'headers' => $headers,
             'body' => wp_json_encode($body),
-            'timeout' => 60
+            'timeout' => $timeout
         ));
         
         $processing_time = microtime(true) - $start_time;
@@ -329,9 +383,17 @@ class Nexus_AI_WP_Translator_API_Handler {
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
             error_log('Nexus AI WP Translator: WP Error - ' . $error_message);
+
+            // Special handling for timeout errors
+            if (strpos($error_message, 'timeout') !== false || strpos($error_message, 'timed out') !== false) {
+                $user_message = __('Translation timeout: The content is too large or the API is slow. Try breaking the content into smaller parts or try again later.', 'nexus-ai-wp-translator');
+            } else {
+                $user_message = __('Request failed: ', 'nexus-ai-wp-translator') . $error_message;
+            }
+
             return array(
                 'success' => false,
-                'message' => $error_message,
+                'message' => $user_message,
                 'processing_time' => $processing_time
             );
         }
@@ -389,37 +451,54 @@ class Nexus_AI_WP_Translator_API_Handler {
     private function prepare_translation_prompt($content, $source_lang, $target_lang) {
         $source_lang_name = $this->get_language_name($source_lang);
         $target_lang_name = $this->get_language_name($target_lang);
-        
+
         $prompt = sprintf(
-            "You are a professional translator specializing in %s to %s translation. " .
-            "Translate the following content with absolute precision and cultural adaptation.\n\n" .
-            
+            "You are an expert native %s translator with deep cultural knowledge. " .
+            "Your task is to create a natural, fluent translation that reads as if originally written in %s.\n\n" .
+
+            "TRANSLATION PHILOSOPHY:\n" .
+            "- Prioritize NATURAL FLOW and READABILITY over literal word-for-word translation\n" .
+            "- Adapt expressions, idioms, and cultural references to feel native in %s\n" .
+            "- Use the most appropriate %s terminology and phrasing for the context\n" .
+            "- Maintain the original meaning while making it sound completely natural\n\n" .
+
             "CRITICAL REQUIREMENTS:\n" .
-            "1. DATES & TIMES: Preserve exact format and adapt to target language conventions\n" .
-            "   - Example: 'Le 22 août 2022 à 11 heures' → 'August 22, 2022 at 11 AM' (not 'at 11 o'clock')\n" .
-            "   - Keep numerical precision: times, percentages, measurements\n" .
-            "2. FORMATTING: Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
-            "3. TECHNICAL TERMS: Preserve URLs, email addresses, code snippets, and technical identifiers\n" .
-            "4. PROPER NOUNS: Keep brand names, person names, and place names in original form\n" .
-            "5. TONE & STYLE: Match the original tone (formal/informal) and adapt idioms culturally\n" .
-            "6. BLOCK CONTENT: This is WordPress block content - preserve all block structures\n\n" .
-            
+            "1. NATURALNESS: The translation must sound like it was originally written by a native %s speaker\n" .
+            "2. CULTURAL ADAPTATION: Adapt idioms, expressions, and cultural references appropriately\n" .
+            "3. CONTEXT AWARENESS: Consider the target audience and adjust formality/tone accordingly\n" .
+            "4. DATES & TIMES: Use target language conventions (e.g., 'August 22, 2022 at 11 AM' not 'at 11 o'clock')\n" .
+            "5. FORMATTING: Preserve ALL HTML tags, CSS classes, and structural elements exactly\n" .
+            "6. TECHNICAL PRESERVATION: Keep URLs, emails, code snippets, and technical identifiers unchanged\n" .
+            "7. PROPER NOUNS: Maintain brand names, person names, and place names in original form\n" .
+            "8. WORDPRESS CONTENT: This is WordPress content - preserve all block structures and shortcodes\n\n" .
+
+            "STYLE GUIDELINES:\n" .
+            "- Avoid overly literal translations that sound awkward or unnatural\n" .
+            "- Use active voice when it sounds more natural in %s\n" .
+            "- Choose the most appropriate register (formal/informal) for the content type\n" .
+            "- Ensure smooth transitions and logical flow between sentences\n\n" .
+
             "FORBIDDEN:\n" .
             "- Do not add explanations, comments, or meta-text\n" .
-            "- Do not approximate times/dates (no 'around', 'about', 'o'clock' for specific times)\n" .
-            "- Do not modify HTML attributes or CSS classes\n" .
-            "- Do not translate content inside code blocks or technical attributes\n\n" .
-            
+            "- Do not create word-for-word literal translations that sound unnatural\n" .
+            "- Do not modify HTML attributes, CSS classes, or technical elements\n" .
+            "- Do not translate content inside code blocks, shortcodes, or technical attributes\n" .
+            "- Do not approximate specific times/dates with vague terms\n\n" .
+
             "Source language: %s\n" .
             "Target language: %s\n\n" .
             "Content to translate:\n%s",
-            $source_lang_name,
+            $target_lang_name,
+            $target_lang_name,
+            $target_lang_name,
+            $target_lang_name,
+            $target_lang_name,
             $target_lang_name,
             $source_lang_name,
             $target_lang_name,
             $content
         );
-        
+
         return $prompt;
     }
     
