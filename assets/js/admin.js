@@ -973,19 +973,26 @@ var NexusAIWPTranslatorAdmin = {
 window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
 console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
 
-(function($) {
+// Wait for jQuery to be available
+(function() {
     'use strict';
-    
-    console.log('NexusAI Debug: JavaScript function wrapper started');
-    
-    // Initialize when document is ready
-    $(document).ready(function() {
-        console.log('NexusAI Debug: Document ready, initializing admin interface');
-        if (window.NexusAIWPTranslatorAdmin) {
-            window.NexusAIWPTranslatorAdmin.init();
+
+    function initWhenReady() {
+        if (typeof jQuery !== 'undefined') {
+            console.log('NexusAI Debug: jQuery available, initializing');
+            jQuery(document).ready(function($) {
+                console.log('NexusAI Debug: Document ready, initializing admin interface');
+                if (window.NexusAIWPTranslatorAdmin) {
+                    window.NexusAIWPTranslatorAdmin.init();
+                } else {
+                    console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+                }
+            });
         } else {
-            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+            console.log('NexusAI Debug: jQuery not ready, waiting...');
+            setTimeout(initWhenReady, 100);
         }
-    });
-    
-})(jQuery);
+    }
+
+    initWhenReady();
+})();
