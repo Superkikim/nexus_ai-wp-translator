@@ -191,15 +191,17 @@ if (!defined('ABSPATH')) {
 <script>
 jQuery(document).ready(function($) {
     console.log('Language Tools page loaded');
-    
-    // Initialize language tools if admin object exists
-    if (window.NexusAIWPTranslatorAdmin && window.NexusAIWPTranslatorAdmin.initLanguageTools) {
-        window.NexusAIWPTranslatorAdmin.initLanguageTools();
-    } else {
-        console.log('Admin object not found, initializing language tools directly');
-        initLanguageToolsDirect();
+
+    // Check if AJAX object is available
+    if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+        console.error('AJAX object not available - admin.js not loaded');
+        alert('Error: Language Tools requires admin scripts to be loaded. Please refresh the page.');
+        return;
     }
-    
+
+    console.log('AJAX object available, initializing language tools');
+    initLanguageToolsDirect();
+
     function initLanguageToolsDirect() {
         // Fix undefined languages
         $('#nexus-ai-wp-fix-undefined-languages').on('click', function() {
@@ -209,10 +211,10 @@ jQuery(document).ready(function($) {
             
             button.prop('disabled', true).text('Processing...');
             
-            $.post(ajaxurl, {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_fix_undefined_languages',
                 language: language,
-                nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
+                nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
                 if (response.success) {
@@ -237,9 +239,9 @@ jQuery(document).ready(function($) {
             
             button.prop('disabled', true).text('Loading...');
             
-            $.post(ajaxurl, {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_language_stats',
-                nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
+                nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
                 if (response.success) {
@@ -319,12 +321,12 @@ jQuery(document).ready(function($) {
             
             button.prop('disabled', true).text('Loading Preview...');
             
-            $.post(ajaxurl, {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_bulk_change_language',
                 from_language: fromLanguage,
                 to_language: toLanguage,
                 action_type: 'preview',
-                nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
+                nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
                 if (response.success) {
@@ -358,12 +360,12 @@ jQuery(document).ready(function($) {
                         
                         $(this).prop('disabled', true).text('Executing...');
                         
-                        $.post(ajaxurl, {
+                        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                             action: 'nexus_ai_wp_bulk_change_language',
                             from_language: fromLanguage,
                             to_language: toLanguage,
                             action_type: 'execute',
-                            nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
+                            nonce: nexus_ai_wp_translator_ajax.nonce
                         })
                         .done(function(executeResponse) {
                             if (executeResponse.success) {
