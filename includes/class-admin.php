@@ -178,8 +178,15 @@ class Nexus_AI_WP_Translator_Admin {
         $load_on_hooks = array('post.php', 'post-new.php');
         $is_our_page = strpos($hook, 'nexus-ai-wp-translator') !== false;
         $is_post_page = in_array($hook, $load_on_hooks);
-        
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [SCRIPTS] Hook received: ' . $hook . ' (our_page: ' . ($is_our_page ? 'Y' : 'N') . ', post_page: ' . ($is_post_page ? 'Y' : 'N') . ')');
+        }
+
         if (!$is_our_page && !$is_post_page) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [SCRIPTS] Skipping script load for hook: ' . $hook);
+            }
             return;
         }
         

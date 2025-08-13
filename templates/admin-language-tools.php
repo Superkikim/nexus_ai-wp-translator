@@ -191,12 +191,27 @@ if (!defined('ABSPATH')) {
 <script>
 jQuery(document).ready(function($) {
     console.log('Language Tools page loaded');
+    console.log('Available global objects:', {
+        nexus_ai_wp_translator_ajax: typeof nexus_ai_wp_translator_ajax,
+        ajaxurl: typeof ajaxurl,
+        jQuery: typeof jQuery
+    });
 
     // Check if AJAX object is available
     if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
         console.error('AJAX object not available - admin.js not loaded');
-        alert('Error: Language Tools requires admin scripts to be loaded. Please refresh the page.');
-        return;
+
+        // Try to use WordPress default ajaxurl as fallback
+        if (typeof ajaxurl !== 'undefined') {
+            console.log('Using ajaxurl fallback');
+            window.nexus_ai_wp_translator_ajax = {
+                ajax_url: ajaxurl,
+                nonce: '<?php echo wp_create_nonce('nexus_ai_wp_translator_nonce'); ?>'
+            };
+        } else {
+            alert('Error: Language Tools requires admin scripts to be loaded. Please refresh the page.');
+            return;
+        }
     }
 
     console.log('AJAX object available, initializing language tools');
