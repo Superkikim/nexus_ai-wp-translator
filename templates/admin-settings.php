@@ -22,6 +22,7 @@ if (!defined('ABSPATH')) {
                 <a href="#language-settings" class="nav-tab"><?php _e('Languages', 'nexus-ai-wp-translator'); ?></a>
                 <a href="#behavior-settings" class="nav-tab"><?php _e('Behavior', 'nexus-ai-wp-translator'); ?></a>
                 <a href="#performance-settings" class="nav-tab"><?php _e('Performance', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#language-tools" class="nav-tab"><?php _e('Language Tools', 'nexus-ai-wp-translator'); ?></a>
             </nav>
             
             <!-- API Settings Tab -->
@@ -234,8 +235,115 @@ if (!defined('ABSPATH')) {
                     </tr>
                 </table>
             </div>
+
+            <!-- Language Tools Tab -->
+            <div id="language-tools" class="tab-content">
+                <h2><?php _e('Language Management Tools', 'nexus-ai-wp-translator'); ?></h2>
+
+                <div class="nexus-ai-wp-language-tools">
+                    <!-- Fix Undefined Languages -->
+                    <div class="nexus-ai-wp-tool-section">
+                        <h3><?php _e('Fix Language Detection Issues', 'nexus-ai-wp-translator'); ?></h3>
+                        <p class="description">
+                            <?php _e('Some posts may not have a language defined. Use this tool to assign a default language to all posts without language metadata.', 'nexus-ai-wp-translator'); ?>
+                        </p>
+
+                        <div class="tool-controls">
+                            <label for="nexus-ai-wp-bulk-language-select"><?php _e('Assign Language:', 'nexus-ai-wp-translator'); ?></label>
+                            <select id="nexus-ai-wp-bulk-language-select">
+                                <?php
+                                $available_languages = array(
+                                    'en' => 'English',
+                                    'es' => 'Spanish',
+                                    'fr' => 'French',
+                                    'de' => 'German',
+                                    'it' => 'Italian',
+                                    'pt' => 'Portuguese',
+                                    'ru' => 'Russian',
+                                    'ja' => 'Japanese',
+                                    'ko' => 'Korean',
+                                    'zh' => 'Chinese',
+                                    'ar' => 'Arabic',
+                                    'hi' => 'Hindi',
+                                    'nl' => 'Dutch',
+                                    'sv' => 'Swedish',
+                                    'da' => 'Danish',
+                                    'no' => 'Norwegian',
+                                    'fi' => 'Finnish',
+                                    'pl' => 'Polish',
+                                    'cs' => 'Czech',
+                                    'hu' => 'Hungarian'
+                                );
+                                $default_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+                                foreach ($available_languages as $code => $name) {
+                                    $selected = ($code === $default_language) ? 'selected' : '';
+                                    echo "<option value='{$code}' {$selected}>{$name} ({$code})</option>";
+                                }
+                                ?>
+                            </select>
+                            <button type="button" id="nexus-ai-wp-fix-undefined-languages" class="button button-secondary">
+                                <?php _e('Fix Undefined Languages', 'nexus-ai-wp-translator'); ?>
+                            </button>
+                        </div>
+
+                        <div id="nexus-ai-wp-language-fix-results" class="tool-results" style="display: none;"></div>
+                    </div>
+
+                    <!-- Language Statistics -->
+                    <div class="nexus-ai-wp-tool-section">
+                        <h3><?php _e('Language Distribution Statistics', 'nexus-ai-wp-translator'); ?></h3>
+                        <p class="description">
+                            <?php _e('View the distribution of languages across your posts and pages.', 'nexus-ai-wp-translator'); ?>
+                        </p>
+
+                        <div class="tool-controls">
+                            <button type="button" id="nexus-ai-wp-load-language-stats" class="button button-secondary">
+                                <?php _e('Load Language Statistics', 'nexus-ai-wp-translator'); ?>
+                            </button>
+                        </div>
+
+                        <div id="nexus-ai-wp-language-stats-results" class="tool-results" style="display: none;"></div>
+                    </div>
+
+                    <!-- Bulk Language Change -->
+                    <div class="nexus-ai-wp-tool-section">
+                        <h3><?php _e('Bulk Language Change', 'nexus-ai-wp-translator'); ?></h3>
+                        <p class="description">
+                            <?php _e('Change the language of multiple posts at once. Use with caution!', 'nexus-ai-wp-translator'); ?>
+                        </p>
+
+                        <div class="tool-controls">
+                            <label for="nexus-ai-wp-bulk-from-language"><?php _e('From Language:', 'nexus-ai-wp-translator'); ?></label>
+                            <select id="nexus-ai-wp-bulk-from-language">
+                                <option value=""><?php _e('-- Select Source Language --', 'nexus-ai-wp-translator'); ?></option>
+                                <?php
+                                foreach ($available_languages as $code => $name) {
+                                    echo "<option value='{$code}'>{$name} ({$code})</option>";
+                                }
+                                ?>
+                            </select>
+
+                            <label for="nexus-ai-wp-bulk-to-language"><?php _e('To Language:', 'nexus-ai-wp-translator'); ?></label>
+                            <select id="nexus-ai-wp-bulk-to-language">
+                                <option value=""><?php _e('-- Select Target Language --', 'nexus-ai-wp-translator'); ?></option>
+                                <?php
+                                foreach ($available_languages as $code => $name) {
+                                    echo "<option value='{$code}'>{$name} ({$code})</option>";
+                                }
+                                ?>
+                            </select>
+
+                            <button type="button" id="nexus-ai-wp-bulk-change-language" class="button button-secondary">
+                                <?php _e('Preview Changes', 'nexus-ai-wp-translator'); ?>
+                            </button>
+                        </div>
+
+                        <div id="nexus-ai-wp-bulk-change-results" class="tool-results" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
+
         <p class="submit">
             <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
         </p>

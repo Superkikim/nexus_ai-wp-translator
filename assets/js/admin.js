@@ -970,13 +970,33 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize language tools
      */
     initLanguageTools: function() {
+        console.log('NexusAI Debug: Initializing language tools');
+
+        // Check if elements exist
+        var fixButton = $('#nexus-ai-wp-fix-undefined-languages');
+        var statsButton = $('#nexus-ai-wp-load-language-stats');
+        var bulkButton = $('#nexus-ai-wp-bulk-change-language');
+
+        console.log('NexusAI Debug: Language tools elements found:', {
+            fixButton: fixButton.length,
+            statsButton: statsButton.length,
+            bulkButton: bulkButton.length
+        });
+
         // Fix undefined languages
         $('#nexus-ai-wp-fix-undefined-languages').on('click', function() {
+            console.log('NexusAI Debug: Fix undefined languages button clicked');
             var language = $('#nexus-ai-wp-bulk-language-select').val();
             var button = $(this);
             var resultsDiv = $('#nexus-ai-wp-language-fix-results');
 
             button.prop('disabled', true).text('Processing...');
+
+            console.log('NexusAI Debug: Making AJAX call to fix undefined languages', {
+                ajax_url: nexus_ai_wp_translator_ajax.ajax_url,
+                nonce: nexus_ai_wp_translator_ajax.nonce,
+                language: language
+            });
 
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_fix_undefined_languages',
@@ -1011,6 +1031,7 @@ var NexusAIWPTranslatorAdmin = {
 
         // Load language statistics
         $('#nexus-ai-wp-load-language-stats').on('click', function() {
+            console.log('NexusAI Debug: Load language stats button clicked');
             var button = $(this);
             var resultsDiv = $('#nexus-ai-wp-language-stats-results');
 
@@ -1082,6 +1103,7 @@ var NexusAIWPTranslatorAdmin = {
 
         // Bulk language change
         $('#nexus-ai-wp-bulk-change-language').on('click', function() {
+            console.log('NexusAI Debug: Bulk change language button clicked');
             var fromLanguage = $('#nexus-ai-wp-bulk-from-language').val();
             var toLanguage = $('#nexus-ai-wp-bulk-to-language').val();
             var button = $(this);
