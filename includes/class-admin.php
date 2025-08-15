@@ -245,9 +245,12 @@ class Nexus_AI_WP_Translator_Admin {
             echo '<div class="notice notice-error"><p>' . __('Database connection error', 'nexus-ai-wp-translator') . '</p></div>';
             return;
         }
+
         $stats = $this->db->get_translation_stats();
         $recent_logs = $this->db->get_translation_logs(10);
-        
+        $languages = $this->translation_manager ? $this->translation_manager->get_available_languages() : array();
+        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-dashboard.php';
     }
     
