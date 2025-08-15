@@ -235,6 +235,31 @@ if (!defined('ABSPATH')) {
                 </table>
             </div>
         </div>
+        
+        <!-- Debug Section -->
+        <div class="nexus-ai-wp-debug-section" style="margin-top: 30px; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+            <h2><?php _e('Debug Tools', 'nexus-ai-wp-translator'); ?></h2>
+            <p class="description">
+                <?php _e('Use these tools to diagnose translation issues and verify plugin functionality.', 'nexus-ai-wp-translator'); ?>
+            </p>
+            
+            <div class="debug-tools">
+                <button type="button" id="nexus-ai-wp-debug-plugin" class="button button-secondary">
+                    <?php _e('Run Plugin Debug', 'nexus-ai-wp-translator'); ?>
+                </button>
+                <button type="button" id="nexus-ai-wp-test-translation" class="button button-secondary">
+                    <?php _e('Test Translation System', 'nexus-ai-wp-translator'); ?>
+                </button>
+                <button type="button" id="nexus-ai-wp-check-database" class="button button-secondary">
+                    <?php _e('Check Database', 'nexus-ai-wp-translator'); ?>
+                </button>
+            </div>
+            
+            <div id="nexus-ai-wp-debug-results" style="margin-top: 15px; padding: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; display: none;">
+                <h4><?php _e('Debug Results:', 'nexus-ai-wp-translator'); ?></h4>
+                <div id="nexus-ai-wp-debug-output"></div>
+            </div>
+        </div>
 
         <p class="submit">
             <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
@@ -413,6 +438,91 @@ jQuery(document).ready(function($) {
             }
         }).always(function() {
             button.prop('disabled', false).text('Save Settings (AJAX)');
+        });
+    });
+    
+    // Debug Tools
+    $('#nexus-ai-wp-debug-plugin').on('click', function() {
+        var button = $(this);
+        var resultsDiv = $('#nexus-ai-wp-debug-results');
+        var outputDiv = $('#nexus-ai-wp-debug-output');
+        
+        button.prop('disabled', true).text('Running Debug...');
+        resultsDiv.show();
+        outputDiv.html('<div class="nexus-ai-wp-spinner"></div> Running comprehensive plugin debug...');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_debug_plugin',
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                outputDiv.html('<pre style="background: #f0f0f0; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;">' + response.data + '</pre>');
+            } else {
+                outputDiv.html('<div class="notice notice-error"><p>Debug failed: ' + response.data + '</p></div>');
+            }
+        })
+        .fail(function() {
+            outputDiv.html('<div class="notice notice-error"><p>Debug request failed</p></div>');
+        })
+        .always(function() {
+            button.prop('disabled', false).text('Run Plugin Debug');
+        });
+    });
+    
+    $('#nexus-ai-wp-test-translation').on('click', function() {
+        var button = $(this);
+        var resultsDiv = $('#nexus-ai-wp-debug-results');
+        var outputDiv = $('#nexus-ai-wp-debug-output');
+        
+        button.prop('disabled', true).text('Testing...');
+        resultsDiv.show();
+        outputDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing translation system...');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_test_translation_system',
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                outputDiv.html('<pre style="background: #f0f0f0; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;">' + response.data + '</pre>');
+            } else {
+                outputDiv.html('<div class="notice notice-error"><p>Test failed: ' + response.data + '</p></div>');
+            }
+        })
+        .fail(function() {
+            outputDiv.html('<div class="notice notice-error"><p>Test request failed</p></div>');
+        })
+        .always(function() {
+            button.prop('disabled', false).text('Test Translation System');
+        });
+    });
+    
+    $('#nexus-ai-wp-check-database').on('click', function() {
+        var button = $(this);
+        var resultsDiv = $('#nexus-ai-wp-debug-results');
+        var outputDiv = $('#nexus-ai-wp-debug-output');
+        
+        button.prop('disabled', true).text('Checking...');
+        resultsDiv.show();
+        outputDiv.html('<div class="nexus-ai-wp-spinner"></div> Checking database...');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_check_database',
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                outputDiv.html('<pre style="background: #f0f0f0; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto;">' + response.data + '</pre>');
+            } else {
+                outputDiv.html('<div class="notice notice-error"><p>Database check failed: ' + response.data + '</p></div>');
+            }
+        })
+        .fail(function() {
+            outputDiv.html('<div class="notice notice-error"><p>Database check request failed</p></div>');
+        })
+        .always(function() {
+            button.prop('disabled', false).text('Check Database');
         });
     });
 });
