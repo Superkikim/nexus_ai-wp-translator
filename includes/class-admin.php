@@ -881,9 +881,94 @@ class Nexus_AI_WP_Translator_Admin {
                 'side',
                 'high'
             );
+            
+            // Add translation meta box
+            add_meta_box(
+                'nexus-ai-wp-translator-translation',
+                __('Translation Management', 'nexus-ai-wp-translator'),
+                array($this, 'display_translation_meta_box'),
+                $post_type,
+                'side',
+                'default'
+            );
         }
     }
 
+    /**
+     * Display translation meta box content
+     */
+    public function display_translation_meta_box($post) {
+        // Add nonce for security
+        wp_nonce_field('nexus_ai_wp_translator_translation_meta_box', 'nexus_ai_wp_translator_translation_nonce');
+
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        $available_languages = $this->translation_manager ? $this->translation_manager->get_available_languages() : array();
+        
+        echo '<div class="nexus-ai-wp-translator-meta-box">';
+        
+        // Show existing translations
+        $translations = $this->get_post_translations($post->ID);
+        if (!empty($translations)) {
+            echo '<div class="nexus-ai-wp-meta-field">';
+            echo '<label><strong>' . __('Existing Translations:', 'nexus-ai-wp-translator') . '</strong></label>';
+            echo '<ul class="nexus-ai-wp-translations-list">';
+            foreach ($translations as $lang => $translation_id) {
+                $translation_post = get_post($translation_id);
+                if ($translation_post) {
+                    $edit_url = get_edit_post_link($translation_id);
+                    $lang_name = isset($available_languages[$lang]) ? $available_languages[$lang] : $lang;
+                    echo '<li class="nexus-ai-wp-translation-item">';
+                    echo '<span class="language-code">' . esc_html($lang) . '</span>';
+                    echo '<a href="' . esc_url($edit_url) . '">' . esc_html($translation_post->post_title) . '</a>';
+                    echo '<button type="button" class="button-link nexus-ai-wp-unlink-translation" data-post-id="' . $post->ID . '" data-related-id="' . $translation_id . '">Unlink</button>';
+                    echo '</li>';
+                }
+            }
+            echo '</ul>';
+            echo '</div>';
+        }
+        
+        // Translation controls
+        echo '<div class="nexus-ai-wp-meta-field">';
+        echo '<label><strong>' . __('Translate to Languages:', 'nexus-ai-wp-translator') . '</strong></label>';
+        echo '<div class="target-languages">';
+        
+        foreach ($target_languages as $lang_code) {
+            $lang_name = isset($available_languages[$lang_code]) ? $available_languages[$lang_code] : $lang_code;
+            $already_translated = isset($translations[$lang_code]);
+            
+            echo '<label>';
+            echo '<input type="checkbox" class="nexus-ai-wp-target-language" value="' . esc_attr($lang_code) . '"';
+            if ($already_translated) {
+                echo ' disabled title="Already translated"';
+            }
+            echo '> ';
+            echo esc_html($lang_name);
+            if ($already_translated) {
+                echo ' <em>(already translated)</em>';
+            }
+            echo '</label><br>';
+        }
+        
+        echo '</div>';
+        echo '</div>';
+        
+        // Translation actions
+        echo '<div class="nexus-ai-wp-translation-actions">';
+        echo '<button type="button" id="nexus-ai-wp-translate-post" class="button button-primary">';
+        echo __('Translate Now', 'nexus-ai-wp-translator');
+        echo '</button>';
+        echo '<button type="button" id="nexus-ai-wp-get-translation-status" class="button">';
+        echo __('Check Status', 'nexus-ai-wp-translator');
+        echo '</button>';
+        echo '</div>';
+        
+        // Status display
+        echo '<div id="nexus-ai-wp-translation-status"></div>';
+        
+        echo '</div>';
+    }
+    
     /**
      * Display language meta box content
      */

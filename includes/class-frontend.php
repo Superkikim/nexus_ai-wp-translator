@@ -38,6 +38,10 @@ class Nexus_AI_WP_Translator_Frontend {
         // Add language selector to navigation - higher priority to ensure it runs
         add_filter('wp_nav_menu_items', array($this, 'add_language_selector_to_nav'), 10, 2);
         
+        // Content filtering for language-specific display
+        add_action('pre_get_posts', array($this, 'filter_posts_by_language'), 10);
+        add_action('template_redirect', array($this, 'setup_language_switching'), 5);
+        
         // URL rewriting for SEO-friendly URLs
         if (get_option('nexus_ai_wp_translator_seo_friendly_urls', true)) {
             add_action('init', array($this, 'add_rewrite_rules'));
@@ -45,7 +49,8 @@ class Nexus_AI_WP_Translator_Frontend {
             add_action('template_redirect', array($this, 'handle_language_redirect'), 5);
         }
 
-        // Auto-redirect disabled - was causing issues with unwanted redirections
+        // Browser language detection and auto-redirect
+        add_action('template_redirect', array($this, 'handle_browser_language_detection'), 1);
         
         // Shortcodes
         add_shortcode('nexus_ai_wp_language_switcher', array($this, 'language_switcher_shortcode'));
@@ -57,6 +62,45 @@ class Nexus_AI_WP_Translator_Frontend {
         // Debug: Log when hooks are initialized
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Frontend hooks initialized');
+        }
+    }
+    
+    /**
+     * Handle browser language detection and auto-redirect
+     */
+    public function handle_browser_language_detection() {
+        // Skip if already processed or if admin
+        if (is_admin() || isset($_SESSION['nexus_ai_wp_translator_browser_checked'])) {
+            return;
+        }
+        
+        // Skip if language is already set in URL
+        if (isset($_GET['lang'])) {
+            return;
+        }
+        
+        // Start session if not started
+        if (!isset($_SESSION)) {
+            session_start();
+        }
+        
+        // Mark as checked to prevent loops
+        $_SESSION['nexus_ai_wp_translator_browser_checked'] = true;
+        
+        $browser_lang = $this->detect_browser_language();
+        $source_lang = get_option('nexus_ai_wp_translator_source_language', 'en');
+        
+        if ($browser_lang && $browser_lang !== $source_lang && $this->is_valid_language($browser_lang)) {
+            // Redirect to browser language version
+            $current_url = home_url($_SERVER['REQUEST_URI']);
+            $redirect_url = add_query_arg('lang', $browser_lang, $current_url);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Auto-redirecting to browser language: {$browser_lang}");
+            }
+            
+            wp_redirect($redirect_url);
+            exit;
         }
     }
     

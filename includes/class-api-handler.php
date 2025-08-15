@@ -306,10 +306,11 @@ class Nexus_AI_WP_Translator_API_Handler {
      * Translate content using Claude AI
      */
     public function translate_content($content, $source_lang, $target_lang, $model = null) {
-        error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
+        error_log("Nexus AI WP Translator: [API] Starting translation from {$source_lang} to {$target_lang}");
+        error_log("Nexus AI WP Translator: [API] Content length: " . strlen($content) . " characters");
         
         if (empty($this->api_key)) {
-            error_log('Nexus AI WP Translator: API key not configured');
+            error_log('Nexus AI WP Translator: [API] API key not configured');
             return array(
                 'success' => false,
                 'message' => __('API key not configured', 'nexus-ai-wp-translator')
@@ -319,7 +320,7 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Check throttle limits
         $throttle_check = $this->check_throttle_limits_detailed();
         if (!$throttle_check['allowed']) {
-            error_log('Nexus AI WP Translator: API call limit reached');
+            error_log('Nexus AI WP Translator: [API] API call limit reached');
             return array(
                 'success' => false,
                 'message' => $throttle_check['message']
@@ -331,17 +332,16 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Get model from parameter or settings with detailed debugging
         if (!$model) {
             $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
-            error_log("Nexus AI WP Translator: Retrieved model from settings: '" . $model . "'");
-            error_log("Nexus AI WP Translator: Model length: " . strlen($model));
+            error_log("Nexus AI WP Translator: [API] Retrieved model from settings: '" . $model . "'");
         } else {
-            error_log("Nexus AI WP Translator: Using model from parameter: '" . $model . "'");
+            error_log("Nexus AI WP Translator: [API] Using model from parameter: '" . $model . "'");
         }
         
-        error_log("Nexus AI WP Translator: Final model to use: " . $model);
+        error_log("Nexus AI WP Translator: [API] Final model to use: " . $model);
         
         // Prepare the prompt
         $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang);
-        error_log('Nexus AI WP Translator: Prepared prompt for translation');
+        error_log('Nexus AI WP Translator: [API] Prepared prompt for translation');
         
         // Prepare request
         $headers = array(
@@ -361,14 +361,14 @@ class Nexus_AI_WP_Translator_API_Handler {
             )
         );
         
-        error_log('Nexus AI WP Translator: Making API request to ' . $this->api_endpoint);
+        error_log('Nexus AI WP Translator: [API] Making API request to ' . $this->api_endpoint);
         
         // Calculate timeout based on content length (minimum 120 seconds, up to 300 seconds for long content)
         $content_length = strlen($content);
         $timeout = max(120, min(300, 120 + ($content_length / 1000))); // 120s base + 1s per 1000 chars
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Content length: {$content_length} chars, timeout: {$timeout}s");
+            error_log("Nexus AI WP Translator: [API] Content length: {$content_length} chars, timeout: {$timeout}s");
         }
 
         // Make API request
@@ -379,10 +379,11 @@ class Nexus_AI_WP_Translator_API_Handler {
         ));
         
         $processing_time = microtime(true) - $start_time;
+        error_log("Nexus AI WP Translator: [API] Request completed in {$processing_time}s");
         
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
-            error_log('Nexus AI WP Translator: WP Error - ' . $error_message);
+            error_log('Nexus AI WP Translator: [API] WP Error - ' . $error_message);
 
             // Special handling for timeout errors
             if (strpos($error_message, 'timeout') !== false || strpos($error_message, 'timed out') !== false) {
@@ -401,16 +402,16 @@ class Nexus_AI_WP_Translator_API_Handler {
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
         
-        error_log("Nexus AI WP Translator: API response code: {$response_code}");
+        error_log("Nexus AI WP Translator: [API] Response code: {$response_code}");
         
         if ($response_code !== 200) {
             $error_data = json_decode($response_body, true);
             $error_message = isset($error_data['error']['message']) 
                 ? $error_data['error']['message'] 
-                : __('API request failed', 'claude-translator');
+                : __('API request failed', 'nexus-ai-wp-translator');
             
-            error_log('Nexus AI WP Translator: API Error - ' . $error_message);
-            error_log('Nexus AI WP Translator: Response body - ' . $response_body);
+            error_log('Nexus AI WP Translator: [API] Error - ' . $error_message);
+            error_log('Nexus AI WP Translator: [API] Response body - ' . substr($response_body, 0, 500));
                 
             return array(
                 'success' => false,
@@ -422,8 +423,8 @@ class Nexus_AI_WP_Translator_API_Handler {
         $data = json_decode($response_body, true);
         
         if (!isset($data['content'][0]['text'])) {
-            error_log('Nexus AI WP Translator: Invalid API response format');
-            error_log('Nexus AI WP Translator: Response data - ' . print_r($data, true));
+            error_log('Nexus AI WP Translator: [API] Invalid response format');
+            error_log('Nexus AI WP Translator: [API] Response data - ' . print_r($data, true));
             return array(
                 'success' => false,
                 'message' => __('Invalid API response format', 'nexus-ai-wp-translator'),
@@ -432,7 +433,7 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
         
         $translated_content = $data['content'][0]['text'];
-        error_log('Nexus AI WP Translator: Translation successful');
+        error_log('Nexus AI WP Translator: [API] Translation successful, output length: ' . strlen($translated_content));
         
         // Cache the translation
         $this->cache_translation($content, $source_lang, $target_lang, $translated_content);

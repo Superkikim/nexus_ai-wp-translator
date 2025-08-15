@@ -140,7 +140,9 @@ class Nexus_AI_WP_Translator_Database {
      * Log translation activity
      */
     public function log_translation_activity($post_id, $action, $status, $message = '', $api_calls = 0, $processing_time = 0) {
-        return $this->wpdb->insert(
+        error_log("Nexus AI WP Translator: [DB] Logging activity - Post: {$post_id}, Action: {$action}, Status: {$status}");
+        
+        $result = $this->wpdb->insert(
             $this->logs_table,
             array(
                 'post_id' => $post_id,
@@ -152,6 +154,14 @@ class Nexus_AI_WP_Translator_Database {
             ),
             array('%d', '%s', '%s', '%s', '%d', '%f')
         );
+        
+        if ($result === false) {
+            error_log("Nexus AI WP Translator: [DB] Failed to insert log: " . $this->wpdb->last_error);
+        } else {
+            error_log("Nexus AI WP Translator: [DB] Log inserted successfully with ID: " . $this->wpdb->insert_id);
+        }
+        
+        return $result;
     }
     
     /**

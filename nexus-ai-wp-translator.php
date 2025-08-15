@@ -169,12 +169,34 @@ class Nexus_AI_WP_Translator_Plugin {
      * Plugin activation
      */
     public function activate() {
+        error_log('Nexus AI WP Translator: [ACTIVATION] Plugin activation started');
+        
         // Create database tables
         Nexus_AI_WP_Translator_Database::create_tables();
+        
+        // Verify tables were created
+        global $wpdb;
+        $db_instance = Nexus_AI_WP_Translator_Database::get_instance();
+        
+        $tables_to_check = array(
+            $db_instance->translations_table,
+            $db_instance->logs_table,
+            $db_instance->preferences_table
+        );
+        
+        foreach ($tables_to_check as $table) {
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+            if ($table_exists) {
+                error_log("Nexus AI WP Translator: [ACTIVATION] Table {$table} created successfully");
+            } else {
+                error_log("Nexus AI WP Translator: [ACTIVATION] ERROR: Table {$table} was not created");
+            }
+        }
         
         // Set default options
         $default_options = array(
             'api_key' => '',
+            'model' => 'claude-3-5-sonnet-20241022',
             'source_language' => 'en',
             'target_languages' => array('es', 'fr', 'de'),
             'throttle_limit' => 100, // Increased default limit
@@ -187,11 +209,16 @@ class Nexus_AI_WP_Translator_Plugin {
         foreach ($default_options as $key => $value) {
             if (false === get_option('nexus_ai_wp_translator_' . $key)) {
                 add_option('nexus_ai_wp_translator_' . $key, $value);
+                error_log("Nexus AI WP Translator: [ACTIVATION] Set default option: {$key}");
+            } else {
+                error_log("Nexus AI WP Translator: [ACTIVATION] Option already exists: {$key}");
             }
         }
         
         // Flush rewrite rules
         flush_rewrite_rules();
+        
+        error_log('Nexus AI WP Translator: [ACTIVATION] Plugin activation completed');
     }
     
     /**

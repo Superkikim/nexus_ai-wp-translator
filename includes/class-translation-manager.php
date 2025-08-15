@@ -153,10 +153,13 @@ class Nexus_AI_WP_Translator_Manager {
      */
     public function translate_post($post_id, $target_languages = null) {
         $start_time = microtime(true);
+        
+        error_log("Nexus AI WP Translator: [TRANSLATE] Starting translation for post {$post_id}");
 
         // Validate post exists
         $post = get_post($post_id);
         if (!$post) {
+            error_log("Nexus AI WP Translator: [TRANSLATE] Post {$post_id} not found");
             return array(
                 'success' => false,
                 'message' => __('Post not found.', 'nexus-ai-wp-translator'),
@@ -167,6 +170,9 @@ class Nexus_AI_WP_Translator_Manager {
 
         if (!$target_languages) {
             $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+            error_log("Nexus AI WP Translator: [TRANSLATE] Using default target languages: " . implode(', ', $target_languages));
+        } else {
+            error_log("Nexus AI WP Translator: [TRANSLATE] Using provided target languages: " . implode(', ', $target_languages));
         }
 
         if (!is_array($target_languages)) {
@@ -175,6 +181,7 @@ class Nexus_AI_WP_Translator_Manager {
 
         // Validate we have target languages
         if (empty($target_languages)) {
+            error_log("Nexus AI WP Translator: [TRANSLATE] No target languages specified");
             return array(
                 'success' => false,
                 'message' => __('No target languages specified. Please configure target languages in Settings.', 'nexus-ai-wp-translator'),
@@ -184,6 +191,8 @@ class Nexus_AI_WP_Translator_Manager {
         }
 
         $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        error_log("Nexus AI WP Translator: [TRANSLATE] Source language: {$source_lang}");
+        
         $total_api_calls = 0;
         $success_count = 0;
         $errors = array();
@@ -196,8 +205,11 @@ class Nexus_AI_WP_Translator_Manager {
             sprintf(__('Starting translation session: %s → [%s]', 'nexus-ai-wp-translator'), $source_lang, $languages_list));
 
         foreach ($target_languages as $target_lang) {
+            error_log("Nexus AI WP Translator: [TRANSLATE] Processing language: {$target_lang}");
+            
             // Skip if target language is same as source
             if ($target_lang === $source_lang) {
+                error_log("Nexus AI WP Translator: [TRANSLATE] Skipping {$target_lang} - same as source");
                 $skipped[] = $target_lang . ': ' . __('Same as source language', 'nexus-ai-wp-translator');
                 continue;
             }
@@ -208,6 +220,7 @@ class Nexus_AI_WP_Translator_Manager {
                 // Verify the translated post actually exists
                 $translated_post = get_post($existing_translation->translated_post_id);
                 if ($translated_post && $translated_post->post_status === 'publish') {
+                    error_log("Nexus AI WP Translator: [TRANSLATE] Skipping {$target_lang} - translation already exists");
                     $skipped[] = $target_lang . ': ' . __('Translation already exists', 'nexus-ai-wp-translator');
                     continue;
                 } else {
@@ -225,7 +238,9 @@ class Nexus_AI_WP_Translator_Manager {
             }
 
             // Perform translation (no individual logging to keep logs clean)
+            error_log("Nexus AI WP Translator: [TRANSLATE] Creating translation for {$target_lang}");
             $result = $this->create_translated_post($post_id, $target_lang);
+            error_log("Nexus AI WP Translator: [TRANSLATE] Translation result for {$target_lang}: " . ($result['success'] ? 'SUCCESS' : 'FAILED'));
 
             if ($result['success']) {
                 $success_count++;
@@ -270,6 +285,7 @@ class Nexus_AI_WP_Translator_Manager {
         }
         
         $total_time = microtime(true) - $start_time;
+        error_log("Nexus AI WP Translator: [TRANSLATE] Translation session completed - Success: {$success_count}, Errors: " . count($errors) . ", Time: {$total_time}s");
         
         // Analyze error types
         $throttle_errors = 0;
@@ -343,7 +359,7 @@ class Nexus_AI_WP_Translator_Manager {
         $action = 'batch_translate'; // Use a different action name to distinguish from individual translations
         $this->db->log_translation_activity($post_id, $action, $status, $message, $total_api_calls, $total_time);
 
-        return array(
+        $final_result = array(
             'success' => $success_count > 0,
             'success_count' => $success_count,
             'error_count' => count($errors),
@@ -354,6 +370,10 @@ class Nexus_AI_WP_Translator_Manager {
             'total_api_calls' => $total_api_calls,
             'processing_time' => $total_time
         );
+        
+        error_log("Nexus AI WP Translator: [TRANSLATE] Final result: " . print_r($final_result, true));
+        
+        return $final_result;
     }
     
     /**
@@ -555,10 +575,15 @@ class Nexus_AI_WP_Translator_Manager {
      * AJAX: Manually translate post
      */
     public function ajax_translate_post() {
+        // Add comprehensive error logging
+        error_log('Nexus AI WP Translator: [AJAX] translate_post called');
+        error_log('Nexus AI WP Translator: [AJAX] POST data: ' . print_r($_POST, true));
+        
         try {
             check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
             
             if (!current_user_can('edit_posts')) {
+                error_log('Nexus AI WP Translator: [AJAX] Permission denied for user');
                 wp_send_json_error(__('Permission denied', 'nexus-ai-wp-translator'));
                 return;
             }
@@ -566,19 +591,31 @@ class Nexus_AI_WP_Translator_Manager {
             $post_id = intval($_POST['post_id']);
             $target_languages = isset($_POST['target_languages']) ? (array) $_POST['target_languages'] : null;
             
+            error_log('Nexus AI WP Translator: [AJAX] Processing post_id: ' . $post_id);
+            error_log('Nexus AI WP Translator: [AJAX] Target languages: ' . print_r($target_languages, true));
+            
             if (!$post_id) {
+                error_log('Nexus AI WP Translator: [AJAX] Invalid post ID');
                 wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
                 return;
             }
             
+            // Validate target languages
+            if (empty($target_languages)) {
+                error_log('Nexus AI WP Translator: [AJAX] No target languages provided');
+                wp_send_json_error(__('No target languages specified', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            error_log('Nexus AI WP Translator: [AJAX] Starting translation process');
             $result = $this->translate_post($post_id, $target_languages);
             
+            error_log('Nexus AI WP Translator: [AJAX] Translation result: ' . print_r($result, true));
             wp_send_json($result);
             
         } catch (Exception $e) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: AJAX translate error: ' . $e->getMessage());
-            }
+            error_log('Nexus AI WP Translator: [AJAX] Exception: ' . $e->getMessage());
+            error_log('Nexus AI WP Translator: [AJAX] Exception trace: ' . $e->getTraceAsString());
             wp_send_json_error(__('Translation failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
         }
     }

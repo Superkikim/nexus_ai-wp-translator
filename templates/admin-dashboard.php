@@ -361,6 +361,7 @@ jQuery(document).ready(function($) {
         var postId = button.data('post-id');
         var postTitle = button.data('post-title');
 
+        console.log('NexusAI Debug: Dashboard translate button clicked - Post ID:', postId, 'Title:', postTitle);
         NexusAIWPTranslatorDashboard.showLanguageSelectionPopup(postId, postTitle);
     });
 
@@ -420,8 +421,11 @@ jQuery(document).ready(function($) {
     var NexusAIWPTranslatorDashboard = {
 
         showLanguageSelectionPopup: function(postId, postTitle) {
+            console.log('NexusAI Debug: Showing language selection popup for post:', postId, postTitle);
+            
             // Get all configured target languages - show ALL of them
             var targetLanguages = <?php echo json_encode(get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'))); ?>;
+            console.log('NexusAI Debug: Target languages from PHP:', targetLanguages);
 
             var languageNames = {
                 'en': 'English',
@@ -482,6 +486,7 @@ jQuery(document).ready(function($) {
             // Add popup to page
             $('body').append(popupHtml);
             $('#nexus-ai-wp-translate-popup').fadeIn(200);
+            console.log('NexusAI Debug: Language selection popup displayed');
 
             // Handle popup events
             $('#nexus-ai-wp-cancel-translate, .nexus-ai-wp-popup-close').on('click', function() {
@@ -501,16 +506,21 @@ jQuery(document).ready(function($) {
         },
 
         closeTranslatePopup: function() {
+            console.log('NexusAI Debug: Closing language selection popup');
             $('#nexus-ai-wp-translate-popup').fadeOut(200, function() {
                 $(this).remove();
             });
         },
 
         startTranslation: function(postId, postTitle) {
+            console.log('NexusAI Debug: Starting translation process');
+            
             var selectedLanguages = [];
             $('.nexus-ai-wp-target-language:checked').each(function() {
                 selectedLanguages.push($(this).val());
             });
+            
+            console.log('NexusAI Debug: Selected languages:', selectedLanguages);
 
             if (selectedLanguages.length === 0) {
                 alert('<?php _e('Please select at least one language.', 'nexus-ai-wp-translator'); ?>');
@@ -534,6 +544,15 @@ jQuery(document).ready(function($) {
                 $('head').append('<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>');
             }
 
+            console.log('NexusAI Debug: Making AJAX request for translation');
+            console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
+            console.log('NexusAI Debug: Request data:', {
+                action: 'nexus_ai_wp_translate_post',
+                post_id: postId,
+                target_languages: selectedLanguages,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            });
+            
             // Start translation
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_translate_post',
@@ -543,6 +562,8 @@ jQuery(document).ready(function($) {
             })
             .done(function(response) {
                 console.log('NexusAI Debug: Translation response received:', response);
+                console.log('NexusAI Debug: Response type:', typeof response);
+                console.log('NexusAI Debug: Response success:', response.success);
 
                 // Update progress popup with results
                 if (typeof NexusAIWPTranslatorAdmin !== 'undefined' && NexusAIWPTranslatorAdmin.updateTranslationProgress) {
@@ -571,6 +592,8 @@ jQuery(document).ready(function($) {
             .fail(function(xhr, status, error) {
                 console.log('NexusAI Debug: Translation request failed:', xhr, status, error);
                 console.log('NexusAI Debug: Response text:', xhr.responseText);
+                console.log('NexusAI Debug: XHR status:', xhr.status);
+                console.log('NexusAI Debug: XHR status text:', xhr.statusText);
 
                 // Update progress popup with error
                 if (typeof NexusAIWPTranslatorAdmin !== 'undefined' && NexusAIWPTranslatorAdmin.updateTranslationProgress) {

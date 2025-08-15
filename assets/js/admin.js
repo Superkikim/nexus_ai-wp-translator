@@ -456,6 +456,12 @@ var NexusAIWPTranslatorAdmin = {
             NexusAIWPTranslatorAdmin.showTranslationProgress(postTitle, targetLanguages);
 
             console.log('NexusAI Debug: Making AJAX request for translation');
+            console.log('NexusAI Debug: Request data:', {
+                action: 'nexus_ai_wp_translate_post',
+                post_id: postId,
+                target_languages: targetLanguages,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            });
 
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_translate_post',
@@ -465,6 +471,8 @@ var NexusAIWPTranslatorAdmin = {
             })
             .done(function(response) {
                 console.log('NexusAI Debug: Translation response:', response);
+                console.log('NexusAI Debug: Response type:', typeof response);
+                console.log('NexusAI Debug: Response success:', response.success);
 
                 // Update progress popup with results
                 NexusAIWPTranslatorAdmin.updateTranslationProgress(response, targetLanguages);
@@ -472,6 +480,8 @@ var NexusAIWPTranslatorAdmin = {
             .fail(function(xhr, status, error) {
                 console.log('NexusAI Debug: Translation failed:', error);
                 console.log('NexusAI Debug: XHR response:', xhr.responseText);
+                console.log('NexusAI Debug: XHR status:', xhr.status);
+                console.log('NexusAI Debug: XHR status text:', xhr.statusText);
 
                 // Update progress popup with error
                 var errorResponse = {

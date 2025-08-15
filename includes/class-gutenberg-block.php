@@ -80,6 +80,39 @@ class Nexus_AI_WP_Translator_Gutenberg_Block {
             error_log('Nexus AI WP Translator: [BLOCK] Block registration result: ' . ($block_registered ? 'SUCCESS' : 'FAILED'));
             error_log('Nexus AI WP Translator: [BLOCK] Registered block type: nexus-ai-wp-translator/language-switcher');
         }
+        
+        // Also register a simpler language selector block for easier use
+        register_block_type('nexus-ai-wp-translator/simple-language-selector', array(
+            'attributes' => array(
+                'showLabels' => array(
+                    'type' => 'boolean',
+                    'default' => true
+                )
+            ),
+            'render_callback' => array($this, 'render_simple_selector_block'),
+            'editor_script' => 'nexus-ai-wp-translator-block-editor',
+            'style' => 'nexus-ai-wp-translator-frontend'
+        ));
+    }
+    
+    /**
+     * Render simple language selector block
+     */
+    public function render_simple_selector_block($attributes) {
+        if (!class_exists('Nexus_AI_WP_Translator_Frontend')) {
+            return '<p>' . __('Language selector temporarily unavailable.', 'nexus-ai-wp-translator') . '</p>';
+        }
+        
+        $frontend = Nexus_AI_WP_Translator_Frontend::get_instance();
+        
+        $args = array(
+            'style' => 'list',
+            'show_flags' => false,
+            'show_current' => $attributes['showLabels'] ?? true,
+            'container_class' => 'nexus-ai-wp-simple-language-selector'
+        );
+        
+        return $frontend->render_language_switcher($args);
     }
     
     /**
