@@ -52,9 +52,10 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this, 'ajax_get_translation_status'));
         add_action('wp_ajax_nexus_ai_wp_get_linked_posts', array($this, 'ajax_get_linked_posts'));
         add_action('wp_ajax_nexus_ai_wp_handle_post_action', array($this, 'ajax_handle_post_action'));
+        add_action('wp_ajax_nexus_ai_wp_link_posts', array($this, 'ajax_link_posts'));
 
         
-        // Add admin scripts for post list and edit screens - MUST be in admin context
+        // Add admin scripts for post management
         if (is_admin()) {
             add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 5);
         }
@@ -847,5 +848,83 @@ class Nexus_AI_WP_Translator_Manager {
             'cs' => __('Czech', 'nexus-ai-wp-translator'),
             'hu' => __('Hungarian', 'nexus-ai-wp-translator')
         );
+    }
+    
+    /**
+     * AJAX: Link posts together
+     */
+    public function ajax_link_posts() {
+        try {
+            check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+            
+            if (!current_user_can('edit_posts')) {
+                wp_send_json_error(__('Permission denied', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            $original_post_id = intval($_POST['original_post_id']);
+            $translated_post_ids = isset($_POST['translated_post_ids']) ? (array) $_POST['translated_post_ids'] : array();
+            
+            if (!$original_post_id || empty($translated_post_ids)) {
+                wp_send_json_error(__('Invalid post IDs', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            // Validate that all posts exist
+            $original_post = get_post($original_post_id);
+            if (!$original_post) {
+                wp_send_json_error(__('Original post not found', 'nexus-ai-wp-translator'));
+                return;
+            }
+            
+            foreach ($translated_post_ids as $post_id) {
+                $post = get_post($post_id);
+                if (!$post) {
+                    wp_send_json_error(__('One or more translated posts not found', 'nexus-ai-wp-translator'));
+                    return;
+                }
+            }
+            
+            // Validate that all posts are from different languages
+            $original_language = get_post_meta($original_post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+            
+            // Check that each translated post has a unique language
+            $languages = array($original_language);
+            
+            foreach ($translated_post_ids as $post_id) {
+                $language = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+                if (in_array($language, $languages)) {
+                    wp_send_json_error(__('All posts must be from different languages', 'nexus-ai-wp-translator'));
+                    return;
+                }
+                $languages[] = $language;
+            }
+            
+            // Store the relationships
+            foreach ($translated_post_ids as $post_id) {
+                $this->db->store_translation_relationship($original_post_id, $post_id, $original_language, get_post_meta($post_id, '_nexus_ai_wp_translator_language', true));
+            }
+            
+            // Update meta for translated posts to indicate they're linked
+            foreach ($translated_post_ids as $post_id) {
+                update_post_meta($post_id, '_nexus_ai_wp_translator_source_post', $original_post_id);
+            }
+            
+            // Log the linking action
+            $this->db->log_translation_activity(
+                $original_post_id,
+                'link',
+                'completed',
+                'Linked posts together: ' . implode(', ', $translated_post_ids)
+            );
+            
+            wp_send_json_success(__('Posts linked successfully', 'nexus-ai-wp-translator'));
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: AJAX link posts error: ' . $e->getMessage());
+            }
+            wp_send_json_error(__('Linking failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
+        }
     }
 }

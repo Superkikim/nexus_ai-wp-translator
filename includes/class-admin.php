@@ -283,6 +283,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output = '<table class="wp-list-table widefat fixed striped">';
         $output .= '<thead>';
         $output .= '<tr>';
+        $output .= '<th><input type="checkbox" id="select-all-' . $post_type . '" class="select-all-checkbox"></th>';
         $output .= '<th>' . __('Title', 'nexus-ai-wp-translator') . '</th>';
         $output .= '<th>' . __('Language', 'nexus-ai-wp-translator') . '</th>';
         $output .= '<th>' . __('Translations', 'nexus-ai-wp-translator') . '</th>';
@@ -297,6 +298,7 @@ class Nexus_AI_WP_Translator_Admin {
             $translation_count = count($translations);
             
             $output .= '<tr>';
+            $output .= '<td><input type="checkbox" class="select-post-checkbox" data-post-id="' . $post->ID . '" data-language="' . esc_attr($post_language) . '"></td>';
             $output .= '<td>';
             $output .= '<strong><a href="' . get_edit_post_link($post->ID) . '">' . esc_html($post->post_title) . '</a></strong>';
             $output .= '<br><small>ID: ' . $post->ID . ' | ' . get_the_date('Y-m-d H:i', $post->ID) . '</small>';

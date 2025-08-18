@@ -27,6 +27,55 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
         
+        <!-- Add a link button above the table -->
+        <script>
+        jQuery(document).ready(function($) {
+            // Initialize checkbox functionality
+            $('.select-all-checkbox').on('change', function() {
+                var postType = $(this).attr('id').replace('select-all-', '');
+                var isChecked = $(this).is(':checked');
+                
+                $('.select-post-checkbox[data-post-id]').each(function() {
+                    if ($(this).closest('tr').find('td').length > 0) { // Only for visible rows
+                        $(this).prop('checked', isChecked);
+                    }
+                });
+            });
+            
+            // Individual checkbox selection
+            $('.select-post-checkbox').on('change', function() {
+                updateLinkButtonState();
+            });
+            
+            // Link Selected Items button - we need to add this button to the UI
+            if ($('.nexus-ai-wp-content-tabs .tab-content.active #articles-list').length > 0) {
+                var linkButton = $('<button id="link-selected-items-btn" class="button" style="margin-top: 10px; margin-bottom: 10px;" disabled>Select at least 2 items to link</button>');
+                $('.nexus-ai-wp-content-tabs .tab-content.active #articles-list').before(linkButton);
+            }
+            
+            // Link Selected Items button
+            $('#link-selected-items-btn').on('click', function() {
+                linkSelectedItems();
+            });
+            
+            function updateLinkButtonState() {
+                var selectedCount = $('.select-post-checkbox:checked').length;
+                var linkButton = $('#link-selected-items-btn');
+                
+                if (selectedCount >= 2) {
+                    linkButton.prop('disabled', false).text('Link Selected Items');
+                } else {
+                    linkButton.prop('disabled', true).text('Select at least 2 items to link');
+                }
+            }
+            
+            function linkSelectedItems() {
+                // This function is implemented in assets/js/admin.js
+                console.log('Link selected items - functionality implemented in admin.js');
+            }
+        });
+        </script>
+        
         <!-- Pages Tab -->
         <div id="pages-tab" class="tab-content">
             <h2><?php _e('Pages to Translate', 'nexus-ai-wp-translator'); ?></h2>
