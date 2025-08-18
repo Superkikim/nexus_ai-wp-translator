@@ -140,6 +140,11 @@ class Nexus_AI_WP_Translator_Database {
      * Log translation activity
      */
     public function log_translation_activity($post_id, $action, $status, $message = '', $api_calls = 0, $processing_time = 0) {
+        // Ensure api_calls_count is at least 1 if we're logging a successful translation
+        if ($action === 'translate' && $status === 'success' && $api_calls === 0) {
+            $api_calls = 1;
+        }
+        
         return $this->wpdb->insert(
             $this->logs_table,
             array(

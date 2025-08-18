@@ -103,6 +103,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             error_log('Nexus AI WP Translator: Decoded models data: ' . print_r($data, true));
         }
         
+        // Check if we have a valid response structure
         if (!isset($data['data']) || !is_array($data['data'])) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: No models data in response, using fallback models');
@@ -408,7 +409,14 @@ class Nexus_AI_WP_Translator_API_Handler {
             "- Do not add explanations, comments, or meta-text\n" .
             "- Do not approximate times/dates (no 'around', 'about', 'o'clock' for specific times)\n" .
             "- Do not modify HTML attributes or CSS classes\n" .
-            "- Do not translate content inside code blocks or technical attributes\n\n" .
+            "- Do not translate content inside code blocks or technical attributes\n" .
+            "- Do not stop mid-sentence, complete the entire translation\n\n" .
+            
+            "INSTRUCTIONS:\n" .
+            "- Provide a complete, natural, fluent translation\n" .
+            "- Ensure cultural adaptation is appropriate for the target audience\n" .
+            "- Maintain exact formatting and structure\n" .
+            "- Complete the full translation without interruption or asking to continue\n\n" .
             
             "Source language: %s\n" .
             "Target language: %s\n\n" .
