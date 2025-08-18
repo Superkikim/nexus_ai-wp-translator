@@ -390,44 +390,37 @@ class Nexus_AI_WP_Translator_API_Handler {
     private function prepare_translation_prompt($content, $source_lang, $target_lang) {
         $source_lang_name = $this->get_language_name($source_lang);
         $target_lang_name = $this->get_language_name($target_lang);
-        
+
         $prompt = sprintf(
-            "You are a professional translator specializing in %s to %s translation. " .
-            "Translate the following content with absolute precision and cultural adaptation.\n\n" .
-            
+            "You are a professional translator. Translate the following %s content to %s with absolute precision.\n\n" .
+
             "CRITICAL REQUIREMENTS:\n" .
-            "1. DATES & TIMES: Preserve exact format and adapt to target language conventions\n" .
-            "   - Example: 'Le 22 août 2022 à 11 heures' → 'August 22, 2022 at 11 AM' (not 'at 11 o'clock')\n" .
-            "   - Keep numerical precision: times, percentages, measurements\n" .
-            "2. FORMATTING: Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
-            "3. TECHNICAL TERMS: Preserve URLs, email addresses, code snippets, and technical identifiers\n" .
-            "4. PROPER NOUNS: Keep brand names, person names, and place names in original form\n" .
-            "5. TONE & STYLE: Match the original tone (formal/informal) and adapt idioms culturally\n" .
-            "6. BLOCK CONTENT: This is WordPress block content - preserve all block structures\n\n" .
-            
-            "FORBIDDEN:\n" .
-            "- Do not add explanations, comments, or meta-text\n" .
-            "- Do not approximate times/dates (no 'around', 'about', 'o'clock' for specific times)\n" .
-            "- Do not modify HTML attributes or CSS classes\n" .
-            "- Do not translate content inside code blocks or technical attributes\n" .
-            "- Do not stop mid-sentence, complete the entire translation\n\n" .
-            
-            "INSTRUCTIONS:\n" .
-            "- Provide a complete, natural, fluent translation\n" .
-            "- Ensure cultural adaptation is appropriate for the target audience\n" .
-            "- Maintain exact formatting and structure\n" .
-            "- Complete the full translation without interruption or asking to continue\n\n" .
-            
-            "Source language: %s\n" .
-            "Target language: %s\n\n" .
-            "Content to translate:\n%s",
+            "1. OUTPUT ONLY THE TRANSLATION - No explanations, comments, meta-text, or additional content\n" .
+            "2. COMPLETE TRANSLATION - Translate the entire content without stopping or asking to continue\n" .
+            "3. NATURAL TONE - Maintain the questioning tone and conversational style of the original\n" .
+            "4. DIRECT TRANSLATION - Provide a natural, fluent translation that adapts to standard %s phrasing\n" .
+            "5. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
+            "6. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
+            "7. PROPER NOUNS - Keep brand names, person names, and place names in original form\n" .
+            "8. DATES & TIMES - Preserve exact format and adapt to target language conventions\n" .
+            "9. WORDPRESS BLOCKS - Preserve all WordPress block structures and attributes\n\n" .
+
+            "ABSOLUTELY FORBIDDEN:\n" .
+            "- Adding any comments, explanations, or notes\n" .
+            "- Stopping mid-translation or asking for continuation\n" .
+            "- Modifying HTML attributes, CSS classes, or technical elements\n" .
+            "- Translating content inside code blocks or technical attributes\n" .
+            "- Adding phrases like 'Here is the translation:' or similar\n" .
+            "- Approximating times/dates with words like 'around', 'about', 'o'clock'\n\n" .
+
+            "RESPOND WITH ONLY THE COMPLETE TRANSLATION:\n\n" .
+            "%s",
             $source_lang_name,
             $target_lang_name,
-            $source_lang_name,
             $target_lang_name,
             $content
         );
-        
+
         return $prompt;
     }
     
