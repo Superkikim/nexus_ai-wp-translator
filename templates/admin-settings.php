@@ -243,6 +243,11 @@ if (!defined('ABSPATH')) {
                                 </label>
                                 <p class="description">
                                     <?php _e('When enabled, translations are cached to reduce API calls for repeated content.', 'nexus-ai-wp-translator'); ?>
+                                    <br>
+                                    <button type="button" id="nexus-ai-wp-clear-cache" class="button button-secondary" style="margin-top: 10px;">
+                                        <?php _e('Clear Translation Cache', 'nexus-ai-wp-translator'); ?>
+                                    </button>
+                                    <span id="nexus-ai-wp-clear-cache-result" style="margin-left: 10px;"></span>
                                 </p>
                             </fieldset>
                         </td>

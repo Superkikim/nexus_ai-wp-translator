@@ -69,6 +69,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_save_settings', array($this, 'ajax_save_settings'));
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
+        add_action('wp_ajax_nexus_ai_wp_clear_translation_cache', array($this, 'ajax_clear_translation_cache'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -685,6 +686,30 @@ class Nexus_AI_WP_Translator_Admin {
         wp_send_json_success(sprintf(
             __('Cleaned up %d orphaned relationships', 'nexus-ai-wp-translator'),
             $total_deleted
+        ));
+    }
+
+    /**
+     * AJAX: Clear translation cache
+     */
+    public function ajax_clear_translation_cache() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        // Clear all translation cache by deleting all transients with our prefix
+        global $wpdb;
+        $deleted = $wpdb->query(
+            "DELETE FROM {$wpdb->options}
+             WHERE option_name LIKE '_transient_nexus_ai_wp_translation_%'
+             OR option_name LIKE '_transient_timeout_nexus_ai_wp_translation_%'"
+        );
+
+        wp_send_json_success(sprintf(
+            __('Cleared %d cached translations', 'nexus-ai-wp-translator'),
+            $deleted / 2 // Divide by 2 because each transient has a timeout entry
         ));
     }
 }

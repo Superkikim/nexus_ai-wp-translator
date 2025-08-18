@@ -257,16 +257,29 @@ class Nexus_AI_WP_Translator_Database {
     /**
      * Delete translation relationships
      */
-    public function delete_translation_relationships($post_id) {
-        return $this->wpdb->delete(
-            $this->translations_table,
-            array('source_post_id' => $post_id),
-            array('%d')
-        ) && $this->wpdb->delete(
-            $this->translations_table,
-            array('translated_post_id' => $post_id),
-            array('%d')
-        );
+    public function delete_translation_relationships($post_id, $target_language = null) {
+        if ($target_language) {
+            // Delete specific language translation
+            return $this->wpdb->delete(
+                $this->translations_table,
+                array(
+                    'source_post_id' => $post_id,
+                    'target_language' => $target_language
+                ),
+                array('%d', '%s')
+            );
+        } else {
+            // Delete all translations for this post
+            return $this->wpdb->delete(
+                $this->translations_table,
+                array('source_post_id' => $post_id),
+                array('%d')
+            ) && $this->wpdb->delete(
+                $this->translations_table,
+                array('translated_post_id' => $post_id),
+                array('%d')
+            );
+        }
     }
     
     /**

@@ -199,10 +199,29 @@ class Nexus_AI_WP_Translator_Manager {
 
             // Check if translation already exists
             $existing_translation = $this->db->get_translated_post($post_id, $target_lang);
+            $is_retranslation = false;
+
             if ($existing_translation && $existing_translation->status === 'completed') {
-                $skipped[] = $target_lang . ': ' . __('Translation already exists', 'nexus-ai-wp-translator');
-                continue;
+                // For manual translations, we allow retranslation by deleting the existing one
+                // This is triggered from the admin interface when user wants to retranslate
+                if (isset($_POST['force_retranslate']) || current_user_can('edit_posts')) {
+                    // Delete existing translated post
+                    wp_delete_post($existing_translation->translated_post_id, true);
+                    // Remove translation relationship
+                    $this->db->delete_translation_relationships($post_id, $target_lang);
+                    $is_retranslation = true;
+
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Retranslating post {$post_id} to {$target_lang} - deleted existing translation");
+                    }
+                } else {
+                    $skipped[] = $target_lang . ': ' . __('Translation already exists', 'nexus-ai-wp-translator');
+                    continue;
+                }
             }
+
+            // Clear cached translations for this post and target language to ensure fresh translation
+            $this->api_handler->clear_post_translation_cache($post_id, array($target_lang));
 
             // Log translation start
             $this->db->log_translation_activity($post_id, 'translate_start', 'processing', "Starting translation to {$target_lang}");
@@ -538,14 +557,20 @@ class Nexus_AI_WP_Translator_Manager {
                 return;
             }
             
+            // Clear cached translations before unlinking
+            $target_lang = get_post_meta($related_post_id, '_nexus_ai_wp_translator_language', true);
+            if ($target_lang) {
+                $this->api_handler->clear_post_translation_cache($post_id, array($target_lang));
+            }
+
             // Remove translation relationship
             $result = $this->db->delete_translation_relationships($post_id);
-            
+
             if ($result) {
                 // Remove meta fields
                 delete_post_meta($related_post_id, '_nexus_ai_wp_translator_source_post');
                 delete_post_meta($related_post_id, '_nexus_ai_wp_translator_translation_date');
-                
+
                 $this->db->log_translation_activity($post_id, 'unlink', 'completed', "Unlinked from post {$related_post_id}");
                 
                 wp_send_json_success(__('Translation unlinked successfully', 'nexus-ai-wp-translator'));

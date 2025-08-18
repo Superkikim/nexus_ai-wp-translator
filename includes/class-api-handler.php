@@ -522,15 +522,63 @@ class Nexus_AI_WP_Translator_API_Handler {
         if (!get_option('nexus_ai_wp_translator_cache_translations', true)) {
             return false;
         }
-        
+
         $cache_key = 'nexus_ai_wp_translation_' . md5($original . $source_lang . $target_lang);
         $cached = get_transient($cache_key);
-        
+
         if ($cached && isset($cached['translation'])) {
             return $cached['translation'];
         }
-        
+
         return false;
+    }
+
+    /**
+     * Clear cached translation for specific content
+     */
+    public function clear_cached_translation($original, $source_lang, $target_lang) {
+        $cache_key = 'nexus_ai_wp_translation_' . md5($original . $source_lang . $target_lang);
+        delete_transient($cache_key);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Cleared cache for translation: {$source_lang} -> {$target_lang}");
+        }
+    }
+
+    /**
+     * Clear all cached translations for a specific post
+     */
+    public function clear_post_translation_cache($post_id, $target_languages = null) {
+        $post = get_post($post_id);
+        if (!$post) {
+            return;
+        }
+
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        $content = $post->post_content;
+        $title = $post->post_title;
+        $excerpt = $post->post_excerpt;
+
+        if (!$target_languages) {
+            $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        }
+
+        if (!is_array($target_languages)) {
+            $target_languages = array($target_languages);
+        }
+
+        foreach ($target_languages as $target_lang) {
+            // Clear cache for title, content, and excerpt
+            $this->clear_cached_translation($title, $source_lang, $target_lang);
+            $this->clear_cached_translation($content, $source_lang, $target_lang);
+            if (!empty($excerpt)) {
+                $this->clear_cached_translation($excerpt, $source_lang, $target_lang);
+            }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Cleared all cached translations for post {$post_id}");
+        }
     }
     
     /**

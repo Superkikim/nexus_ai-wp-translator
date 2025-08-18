@@ -411,8 +411,45 @@ var NexusAIWPTranslatorAdmin = {
                 button.prop('disabled', false).text('Save Settings (AJAX)');
             });
         });
+
+        // Clear translation cache button
+        $('#nexus-ai-wp-clear-cache').on('click', function() {
+            console.log('NexusAI Debug: Clear cache button clicked');
+
+            var button = $(this);
+            var resultSpan = $('#nexus-ai-wp-clear-cache-result');
+
+            button.prop('disabled', true).text('Clearing...');
+            resultSpan.text('');
+
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_clear_translation_cache',
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                console.log('NexusAI Debug: Clear cache response:', response);
+                if (response.success) {
+                    resultSpan.html('<span style="color: green;">✓ ' + response.data + '</span>');
+                } else {
+                    resultSpan.html('<span style="color: red;">✗ ' + response.data + '</span>');
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.log('NexusAI Debug: Clear cache failed:', error);
+                resultSpan.html('<span style="color: red;">✗ Failed to clear cache</span>');
+            })
+            .always(function() {
+                button.prop('disabled', false).text('Clear Translation Cache');
+                // Clear the result message after 3 seconds
+                setTimeout(function() {
+                    resultSpan.fadeOut(500, function() {
+                        resultSpan.text('').show();
+                    });
+                }, 3000);
+            });
+        });
     },
-    
+
     /**
      * Initialize translation actions
      */
