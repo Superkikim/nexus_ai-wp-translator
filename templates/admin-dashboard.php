@@ -509,3 +509,67 @@ jQuery(document).ready(function($) {
     margin-left: 10px;
 }
 </style>
+
+<!-- Translation Progress Dialog -->
+<div id="nexus-ai-wp-progress-overlay" class="nexus-ai-wp-progress-overlay">
+    <div class="nexus-ai-wp-progress-dialog">
+        <div class="nexus-ai-wp-progress-header">
+            <h3><?php _e('Translating Content', 'nexus-ai-wp-translator'); ?></h3>
+            <button type="button" class="nexus-ai-wp-progress-close" id="nexus-ai-wp-progress-close">&times;</button>
+        </div>
+
+        <div class="nexus-ai-wp-progress-body">
+            <div class="nexus-ai-wp-progress-info">
+                <div class="nexus-ai-wp-progress-post-title" id="nexus-ai-wp-progress-post-title">
+                    <?php _e('Preparing translation...', 'nexus-ai-wp-translator'); ?>
+                </div>
+                <div class="nexus-ai-wp-progress-languages" id="nexus-ai-wp-progress-languages">
+                    <?php _e('Target languages: ', 'nexus-ai-wp-translator'); ?><span id="nexus-ai-wp-progress-target-langs"></span>
+                </div>
+            </div>
+
+            <div class="nexus-ai-wp-progress-bar-container">
+                <div class="nexus-ai-wp-progress-bar" id="nexus-ai-wp-progress-bar"></div>
+                <div class="nexus-ai-wp-progress-percentage" id="nexus-ai-wp-progress-percentage">0%</div>
+            </div>
+
+            <div class="nexus-ai-wp-progress-steps" id="nexus-ai-wp-progress-steps">
+                <!-- Progress steps will be dynamically added here -->
+            </div>
+        </div>
+
+        <div class="nexus-ai-wp-progress-footer">
+            <button type="button" class="nexus-ai-wp-progress-cancel" id="nexus-ai-wp-progress-cancel">
+                <?php _e('Cancel Translation', 'nexus-ai-wp-translator'); ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Translation Success Dialog -->
+<div id="nexus-ai-wp-success-overlay" class="nexus-ai-wp-progress-overlay">
+    <div class="nexus-ai-wp-progress-dialog">
+        <div class="nexus-ai-wp-progress-header">
+            <h3><?php _e('Translation Complete', 'nexus-ai-wp-translator'); ?></h3>
+            <button type="button" class="nexus-ai-wp-progress-close" id="nexus-ai-wp-success-close">&times;</button>
+        </div>
+
+        <div class="nexus-ai-wp-progress-success">
+            <div class="nexus-ai-wp-progress-success-icon">✓</div>
+            <div class="nexus-ai-wp-progress-success-message" id="nexus-ai-wp-success-message">
+                <?php _e('Translation completed successfully!', 'nexus-ai-wp-translator'); ?>
+            </div>
+            <div class="nexus-ai-wp-progress-success-details" id="nexus-ai-wp-success-details">
+                <!-- Success details will be added here -->
+            </div>
+            <div class="nexus-ai-wp-progress-success-actions">
+                <button type="button" class="button button-primary" id="nexus-ai-wp-success-view">
+                    <?php _e('View Translations', 'nexus-ai-wp-translator'); ?>
+                </button>
+                <button type="button" class="button" id="nexus-ai-wp-success-close-btn">
+                    <?php _e('Close', 'nexus-ai-wp-translator'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
