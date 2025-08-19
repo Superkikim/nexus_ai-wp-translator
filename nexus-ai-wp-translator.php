@@ -73,6 +73,7 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-api-handler.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-quality-assessor.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-templates.php';
 
         // Load manager classes that depend on base classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
@@ -136,6 +137,12 @@ class Nexus_AI_WP_Translator_Plugin {
                 error_log('Nexus AI WP Translator: [INIT] Initializing Gutenberg block');
             }
             Nexus_AI_WP_Translator_Gutenberg_Block::get_instance();
+
+            // Initialize translation templates
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing translation templates');
+            }
+            Nexus_AI_WP_Translator_Templates::get_instance();
             
             // Mark as initialized only after successful completion
             $initialized = true;

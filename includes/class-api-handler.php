@@ -260,7 +260,15 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate content using Claude AI
      */
-    public function translate_content($content, $source_lang, $target_lang, $model = null) {
+    public function translate_content($content, $source_lang, $target_lang, $context_or_model = null) {
+        // Handle backward compatibility - if context_or_model is a string, it's a model
+        if (is_string($context_or_model)) {
+            $model = $context_or_model;
+            $context = array();
+        } else {
+            $context = is_array($context_or_model) ? $context_or_model : array();
+            $model = null;
+        }
         error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
         
         if (empty($this->api_key)) {
@@ -294,8 +302,8 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         error_log("Nexus AI WP Translator: Final model to use: " . $model);
         
-        // Prepare the prompt
-        $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang);
+        // Prepare the prompt with context
+        $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang, $context);
         error_log('Nexus AI WP Translator: Prepared prompt for translation');
         
         // Prepare request
@@ -387,39 +395,55 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Prepare translation prompt
      */
-    private function prepare_translation_prompt($content, $source_lang, $target_lang) {
-        $source_lang_name = $this->get_language_name($source_lang);
-        $target_lang_name = $this->get_language_name($target_lang);
+    private function prepare_translation_prompt($content, $source_lang, $target_lang, $context = array()) {
+        // Get templates manager
+        $templates_manager = Nexus_AI_WP_Translator_Templates::get_instance();
 
-        $prompt = sprintf(
-            "You are a professional translator. Translate the following %s content to %s with absolute precision.\n\n" .
+        // Determine content type
+        $content_type = isset($context['content_type']) ? $context['content_type'] : 'general';
+        $post_id = isset($context['post_id']) ? $context['post_id'] : null;
 
-            "CRITICAL REQUIREMENTS:\n" .
-            "1. OUTPUT ONLY THE TRANSLATION - No explanations, comments, meta-text, or additional content\n" .
-            "2. COMPLETE TRANSLATION - Translate the entire content without stopping or asking to continue\n" .
-            "3. NATURAL TONE - Maintain the questioning tone and conversational style of the original\n" .
-            "4. DIRECT TRANSLATION - Provide a natural, fluent translation that adapts to standard %s phrasing\n" .
-            "5. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
-            "6. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
-            "7. PROPER NOUNS - Keep brand names, person names, and place names in original form\n" .
-            "8. DATES & TIMES - Preserve exact format and adapt to target language conventions\n" .
-            "9. WORDPRESS BLOCKS - Preserve all WordPress block structures and attributes\n\n" .
+        // Get appropriate template
+        $template = $templates_manager->get_template_for_content_type($content_type, $post_id);
 
-            "ABSOLUTELY FORBIDDEN:\n" .
-            "- Adding any comments, explanations, or notes\n" .
-            "- Stopping mid-translation or asking for continuation\n" .
-            "- Modifying HTML attributes, CSS classes, or technical elements\n" .
-            "- Translating content inside code blocks or technical attributes\n" .
-            "- Adding phrases like 'Here is the translation:' or similar\n" .
-            "- Approximating times/dates with words like 'around', 'about', 'o'clock'\n\n" .
+        if ($template) {
+            // Use template to generate prompt
+            $prompt = $templates_manager->apply_template($template, $content, $source_lang, $target_lang, $context);
+        } else {
+            // Fallback to default prompt
+            $source_lang_name = $this->get_language_name($source_lang);
+            $target_lang_name = $this->get_language_name($target_lang);
 
-            "RESPOND WITH ONLY THE COMPLETE TRANSLATION:\n\n" .
-            "%s",
-            $source_lang_name,
-            $target_lang_name,
-            $target_lang_name,
-            $content
-        );
+            $prompt = sprintf(
+                "You are a professional translator. Translate the following %s content to %s with absolute precision.\n\n" .
+
+                "CRITICAL REQUIREMENTS:\n" .
+                "1. OUTPUT ONLY THE TRANSLATION - No explanations, comments, meta-text, or additional content\n" .
+                "2. COMPLETE TRANSLATION - Translate the entire content without stopping or asking to continue\n" .
+                "3. NATURAL TONE - Maintain the questioning tone and conversational style of the original\n" .
+                "4. DIRECT TRANSLATION - Provide a natural, fluent translation that adapts to standard %s phrasing\n" .
+                "5. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
+                "6. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
+                "7. PROPER NOUNS - Keep brand names, person names, and place names in original form\n" .
+                "8. DATES & TIMES - Preserve exact format and adapt to target language conventions\n" .
+                "9. WORDPRESS BLOCKS - Preserve all WordPress block structures and attributes\n\n" .
+
+                "ABSOLUTELY FORBIDDEN:\n" .
+                "- Adding any comments, explanations, or notes\n" .
+                "- Stopping mid-translation or asking for continuation\n" .
+                "- Modifying HTML attributes, CSS classes, or technical elements\n" .
+                "- Translating content inside code blocks or technical attributes\n" .
+                "- Adding phrases like 'Here is the translation:' or similar\n" .
+                "- Approximating times/dates with words like 'around', 'about', 'o'clock'\n\n" .
+
+                "RESPOND WITH ONLY THE COMPLETE TRANSLATION:\n\n" .
+                "%s",
+                $source_lang_name,
+                $target_lang_name,
+                $target_lang_name,
+                $content
+            );
+        }
 
         return $prompt;
     }
@@ -696,7 +720,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate with cache check and retry mechanism
      */
-    private function translate_with_cache_and_retry($content, $source_lang, $target_lang, $retry_attempts = 3) {
+    private function translate_with_cache_and_retry($content, $source_lang, $target_lang, $retry_attempts = 3, $context = array()) {
         // Check cache first
         $cached = $this->get_cached_translation($content, $source_lang, $target_lang);
         if ($cached) {
@@ -710,7 +734,7 @@ class Nexus_AI_WP_Translator_API_Handler {
 
         // Translate with retry
         for ($i = 0; $i < $retry_attempts; $i++) {
-            $result = $this->translate_content($content, $source_lang, $target_lang);
+            $result = $this->translate_content($content, $source_lang, $target_lang, $context);
             if ($result['success']) {
                 return $result;
             }
@@ -767,7 +791,15 @@ class Nexus_AI_WP_Translator_API_Handler {
             $this->update_progress($progress_id, 'title', 'processing', 'Translating post title...', 15);
         }
 
-        $title_result = $this->translate_with_cache_and_retry($post->post_title, $source_lang, $target_lang, $retry_attempts);
+        // Prepare context for translation
+        $translation_context = array(
+            'content_type' => $post->post_type,
+            'post_id' => $post->ID,
+            'post_title' => $post->post_title,
+            'post_type' => $post->post_type
+        );
+
+        $title_result = $this->translate_with_cache_and_retry($post->post_title, $source_lang, $target_lang, $retry_attempts, $translation_context);
 
         if (!$title_result['success']) {
             $results['progress'][] = array('step' => 'title', 'status' => 'failed', 'message' => $title_result['message']);
@@ -807,7 +839,7 @@ class Nexus_AI_WP_Translator_API_Handler {
                     $current_progress);
             }
 
-            $block_result = $this->translate_with_cache_and_retry($block['content'], $source_lang, $target_lang, $retry_attempts);
+            $block_result = $this->translate_with_cache_and_retry($block['content'], $source_lang, $target_lang, $retry_attempts, $translation_context);
 
             if (!$block_result['success']) {
                 $results['progress'][] = array(
@@ -863,7 +895,7 @@ class Nexus_AI_WP_Translator_API_Handler {
                 $this->update_progress($progress_id, 'excerpt', 'processing', 'Translating post excerpt...', 70);
             }
 
-            $excerpt_result = $this->translate_with_cache_and_retry($post->post_excerpt, $source_lang, $target_lang, $retry_attempts);
+            $excerpt_result = $this->translate_with_cache_and_retry($post->post_excerpt, $source_lang, $target_lang, $retry_attempts, $translation_context);
 
             if ($excerpt_result['success']) {
                 $results['excerpt'] = $excerpt_result['translated_content'];
@@ -889,7 +921,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             }
 
             foreach ($categories as $category) {
-                $cat_result = $this->translate_with_cache_and_retry($category, $source_lang, $target_lang, $retry_attempts);
+                $cat_result = $this->translate_with_cache_and_retry($category, $source_lang, $target_lang, $retry_attempts, $translation_context);
                 if ($cat_result['success']) {
                     $results['categories'][] = $cat_result['translated_content'];
                     $results['api_calls'] += $cat_result['api_calls'];
@@ -910,7 +942,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             }
 
             foreach ($tags as $tag) {
-                $tag_result = $this->translate_with_cache_and_retry($tag, $source_lang, $target_lang, $retry_attempts);
+                $tag_result = $this->translate_with_cache_and_retry($tag, $source_lang, $target_lang, $retry_attempts, $translation_context);
                 if ($tag_result['success']) {
                     $results['tags'][] = $tag_result['translated_content'];
                     $results['api_calls'] += $tag_result['api_calls'];
