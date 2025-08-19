@@ -70,6 +70,10 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_nexus_ai_wp_cleanup_orphaned', array($this, 'ajax_cleanup_orphaned'));
         add_action('wp_ajax_nexus_ai_wp_clear_translation_cache', array($this, 'ajax_clear_translation_cache'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_link_posts', array($this, 'ajax_bulk_link_posts'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_unlink_posts', array($this, 'ajax_bulk_unlink_posts'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_delete_posts', array($this, 'ajax_bulk_delete_posts'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_clear_cache_posts', array($this, 'ajax_bulk_clear_cache_posts'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -281,8 +285,27 @@ class Nexus_AI_WP_Translator_Admin {
         if (empty($posts)) {
             return '<p>' . sprintf(__('No %s found.', 'nexus-ai-wp-translator'), $post_type) . '</p>';
         }
-        
-        $output = '<table class="wp-list-table widefat fixed striped">';
+
+        // Add bulk actions interface
+        $output = '<div class="nexus-ai-wp-bulk-actions-container">';
+        $output .= '<div class="nexus-ai-wp-bulk-actions">';
+        $output .= '<label for="nexus-ai-wp-bulk-action-' . $post_type . '">' . __('Actions for selected items:', 'nexus-ai-wp-translator') . '</label>';
+        $output .= '<select id="nexus-ai-wp-bulk-action-' . $post_type . '" class="nexus-ai-wp-bulk-action-select" data-post-type="' . $post_type . '">';
+        $output .= '<option value="">' . __('Select Action', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="translate">' . __('Translate', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="link">' . __('Link', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="unlink">' . __('Unlink', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="delete">' . __('Delete', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="clear_cache">' . __('Clear Cache', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '</select>';
+        $output .= '<button type="button" class="button nexus-ai-wp-bulk-action-apply" data-post-type="' . $post_type . '" disabled>';
+        $output .= __('Apply', 'nexus-ai-wp-translator');
+        $output .= '</button>';
+        $output .= '<span class="nexus-ai-wp-bulk-selection-count">0 ' . __('items selected', 'nexus-ai-wp-translator') . '</span>';
+        $output .= '</div>';
+        $output .= '</div>';
+
+        $output .= '<table class="wp-list-table widefat fixed striped">';
         $output .= '<thead>';
         $output .= '<tr>';
         $output .= '<th><input type="checkbox" id="select-all-' . $post_type . '" class="select-all-checkbox"></th>';
@@ -713,6 +736,160 @@ class Nexus_AI_WP_Translator_Admin {
         wp_send_json_success(sprintf(
             __('Cleared %d cached translations', 'nexus-ai-wp-translator'),
             $deleted / 2 // Divide by 2 because each transient has a timeout entry
+        ));
+    }
+
+    /**
+     * AJAX: Bulk link posts
+     */
+    public function ajax_bulk_link_posts() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $source_post_id = intval($_POST['source_post_id']);
+        $post_ids = array_map('intval', $_POST['post_ids']);
+
+        if (!$source_post_id || empty($post_ids)) {
+            wp_send_json_error(__('Invalid post IDs provided', 'nexus-ai-wp-translator'));
+        }
+
+        $linked_count = 0;
+        $errors = array();
+
+        foreach ($post_ids as $post_id) {
+            if ($post_id === $source_post_id) {
+                continue; // Skip source post
+            }
+
+            $target_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
+            if (!$target_lang) {
+                $errors[] = sprintf(__('Post %d has no language set', 'nexus-ai-wp-translator'), $post_id);
+                continue;
+            }
+
+            // Create translation relationship
+            $result = $this->db->save_translation_relationship($source_post_id, $post_id, $target_lang, 'completed');
+
+            if ($result) {
+                // Update post meta
+                update_post_meta($post_id, '_nexus_ai_wp_translator_source_post', $source_post_id);
+                update_post_meta($post_id, '_nexus_ai_wp_translator_translation_date', current_time('mysql'));
+                $linked_count++;
+            } else {
+                $errors[] = sprintf(__('Failed to link post %d', 'nexus-ai-wp-translator'), $post_id);
+            }
+        }
+
+        $message = sprintf(__('Successfully linked %d posts', 'nexus-ai-wp-translator'), $linked_count);
+        if (!empty($errors)) {
+            $message .= '. ' . __('Errors: ', 'nexus-ai-wp-translator') . implode(', ', $errors);
+        }
+
+        wp_send_json_success($message);
+    }
+
+    /**
+     * AJAX: Bulk unlink posts
+     */
+    public function ajax_bulk_unlink_posts() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_ids = array_map('intval', $_POST['post_ids']);
+
+        if (empty($post_ids)) {
+            wp_send_json_error(__('No post IDs provided', 'nexus-ai-wp-translator'));
+        }
+
+        $unlinked_count = 0;
+
+        foreach ($post_ids as $post_id) {
+            // Remove all translation relationships for this post
+            $result = $this->db->delete_translation_relationships($post_id);
+
+            if ($result) {
+                // Remove meta fields
+                delete_post_meta($post_id, '_nexus_ai_wp_translator_source_post');
+                delete_post_meta($post_id, '_nexus_ai_wp_translator_translation_date');
+                $unlinked_count++;
+            }
+        }
+
+        wp_send_json_success(sprintf(
+            __('Successfully unlinked %d posts', 'nexus-ai-wp-translator'),
+            $unlinked_count
+        ));
+    }
+
+    /**
+     * AJAX: Bulk delete posts
+     */
+    public function ajax_bulk_delete_posts() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('delete_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_ids = array_map('intval', $_POST['post_ids']);
+
+        if (empty($post_ids)) {
+            wp_send_json_error(__('No post IDs provided', 'nexus-ai-wp-translator'));
+        }
+
+        $deleted_count = 0;
+
+        foreach ($post_ids as $post_id) {
+            // First unlink the post
+            $this->db->delete_translation_relationships($post_id);
+
+            // Then delete the post
+            $result = wp_delete_post($post_id, true);
+
+            if ($result) {
+                $deleted_count++;
+            }
+        }
+
+        wp_send_json_success(sprintf(
+            __('Successfully deleted %d posts', 'nexus-ai-wp-translator'),
+            $deleted_count
+        ));
+    }
+
+    /**
+     * AJAX: Bulk clear cache for posts
+     */
+    public function ajax_bulk_clear_cache_posts() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_ids = array_map('intval', $_POST['post_ids']);
+
+        if (empty($post_ids)) {
+            wp_send_json_error(__('No post IDs provided', 'nexus-ai-wp-translator'));
+        }
+
+        $cleared_count = 0;
+
+        foreach ($post_ids as $post_id) {
+            // Clear translation cache for this post
+            $this->api_handler->clear_post_translation_cache($post_id);
+            $cleared_count++;
+        }
+
+        wp_send_json_success(sprintf(
+            __('Successfully cleared cache for %d posts', 'nexus-ai-wp-translator'),
+            $cleared_count
         ));
     }
 }

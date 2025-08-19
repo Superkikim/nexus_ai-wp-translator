@@ -573,3 +573,26 @@ jQuery(document).ready(function($) {
         </div>
     </div>
 </div>
+
+<!-- Bulk Link Dialog Template -->
+<div id="nexus-ai-wp-bulk-link-dialog-template" style="display: none;">
+    <div class="nexus-ai-wp-bulk-dialog-overlay">
+        <div class="nexus-ai-wp-bulk-dialog">
+            <div class="nexus-ai-wp-bulk-dialog-header">
+                <h3><?php _e('Link Posts', 'nexus-ai-wp-translator'); ?></h3>
+                <button type="button" class="nexus-ai-wp-bulk-dialog-close">&times;</button>
+            </div>
+            <div class="nexus-ai-wp-bulk-dialog-body">
+                <p><?php _e('Select the source post that other posts should be linked to:', 'nexus-ai-wp-translator'); ?></p>
+                <div class="nexus-ai-wp-selected-items" id="nexus-ai-wp-link-source-selection">
+                    <!-- Source selection will be populated here -->
+                </div>
+                <p><small><?php _e('Note: Posts will be linked as translations of the selected source post. Make sure they have different languages.', 'nexus-ai-wp-translator'); ?></small></p>
+            </div>
+            <div class="nexus-ai-wp-bulk-dialog-footer">
+                <button type="button" class="button nexus-ai-wp-bulk-dialog-cancel"><?php _e('Cancel', 'nexus-ai-wp-translator'); ?></button>
+                <button type="button" class="button button-primary nexus-ai-wp-bulk-link-confirm"><?php _e('Link Posts', 'nexus-ai-wp-translator'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
