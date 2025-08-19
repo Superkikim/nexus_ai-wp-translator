@@ -156,20 +156,11 @@ class Nexus_AI_WP_Translator_Admin {
         
         add_submenu_page(
             'nexus-ai-wp-translator-dashboard',
-            __('Translation Logs', 'nexus-ai-wp-translator'),
-            __('Logs', 'nexus-ai-wp-translator'),
+            __('Translation', 'nexus-ai-wp-translator'),
+            __('Translation', 'nexus-ai-wp-translator'),
             'manage_options',
-            'nexus-ai-wp-translator-logs',
-            array($this, 'admin_page_logs')
-        );
-        
-        add_submenu_page(
-            'nexus-ai-wp-translator-dashboard',
-            __('Post Relationships', 'nexus-ai-wp-translator'),
-            __('Relationships', 'nexus-ai-wp-translator'),
-            'manage_options',
-            'nexus-ai-wp-translator-relationships',
-            array($this, 'admin_page_relationships')
+            'nexus-ai-wp-translator-translation',
+            array($this, 'admin_page_translation')
         );
     }
     
@@ -424,16 +415,14 @@ class Nexus_AI_WP_Translator_Admin {
         $languages = $this->translation_manager->get_available_languages();
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
-        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        $source_language = get_option('nexus_ai_wp_translator_source_language', ''); // No default per requirements
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array());
         $auto_redirect = get_option('nexus_ai_wp_translator_auto_redirect', true);
         $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
-        $cache_translations = get_option('nexus_ai_wp_translator_cache_translations', true);
-        $seo_friendly_urls = get_option('nexus_ai_wp_translator_seo_friendly_urls', true);
         
-        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings-new.php';
     }
     
     /**
@@ -450,7 +439,19 @@ class Nexus_AI_WP_Translator_Admin {
     }
     
     /**
-     * Relationships page
+     * Translation page
+     */
+    public function admin_page_translation() {
+        if (!$this->translation_manager) {
+            echo '<div class="notice notice-error"><p>' . __('Translation manager error', 'nexus-ai-wp-translator') . '</p></div>';
+            return;
+        }
+        
+        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-translation.php';
+    }
+    
+    /**
+     * Relationships page (legacy - kept for compatibility)
      */
     public function admin_page_relationships() {
         global $wpdb;
