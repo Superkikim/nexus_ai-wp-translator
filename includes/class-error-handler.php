@@ -381,7 +381,7 @@ class Nexus_AI_WP_Translator_Error_Handler {
         update_option('nexus_ai_wp_translator_temp_chunk_size', $new_chunk_size);
         
         // Retry translation
-        $translation_manager = Nexus_AI_WP_Translator_Translation_Manager::get_instance();
+        $translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
         $result = $translation_manager->translate_post($error->post_id, array($error->target_language));
         
         // Clean up temporary setting
@@ -405,7 +405,7 @@ class Nexus_AI_WP_Translator_Error_Handler {
         update_option('nexus_ai_wp_translator_temp_model', $fallback_model);
         
         // Retry translation
-        $translation_manager = Nexus_AI_WP_Translator_Translation_Manager::get_instance();
+        $translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
         $result = $translation_manager->translate_post($error->post_id, array($error->target_language));
         
         // Restore original model
@@ -427,7 +427,7 @@ class Nexus_AI_WP_Translator_Error_Handler {
         update_option('nexus_ai_wp_translator_max_chunk_size', $config['max_chunk_size']);
         
         // Retry translation
-        $translation_manager = Nexus_AI_WP_Translator_Translation_Manager::get_instance();
+        $translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
         $result = $translation_manager->translate_post($error->post_id, array($error->target_language));
         
         // Clean up temporary settings
@@ -464,7 +464,7 @@ class Nexus_AI_WP_Translator_Error_Handler {
         
         // Retry the original operation
         if ($error->post_id) {
-            $translation_manager = Nexus_AI_WP_Translator_Translation_Manager::get_instance();
+            $translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
             $result = $translation_manager->translate_post($error->post_id, array($error->target_language));
             return $result['success'];
         }

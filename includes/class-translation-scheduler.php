@@ -24,7 +24,7 @@ class Nexus_AI_WP_Translator_Scheduler {
     
     private function __construct() {
         $this->db = Nexus_AI_WP_Translator_Database::get_instance();
-        $this->translation_manager = Nexus_AI_WP_Translator_Translation_Manager::get_instance();
+        $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
         
         $this->init_hooks();
         $this->init_cron_schedules();
