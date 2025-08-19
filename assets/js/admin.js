@@ -939,12 +939,17 @@ var NexusAIWPTranslatorAdmin = {
     performTranslationWithProgress: function(postId, targetLanguages, button) {
         var self = this;
 
-        console.log('NexusAI Debug: Starting AJAX translation request');
+        console.log('NexusAI Debug: Starting AJAX translation request with real-time progress');
 
+        // Generate unique progress ID
+        var progressId = 'trans_' + postId + '_' + targetLanguages.join('_') + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+
+        // Start translation
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_translate_post',
             post_id: postId,
             target_languages: targetLanguages,
+            progress_id: progressId,
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
@@ -961,12 +966,127 @@ var NexusAIWPTranslatorAdmin = {
             self.handleTranslationError('Network error: ' + error, button);
         });
 
-        // Simulate progress updates (since we don't have real-time updates yet)
-        this.simulateProgress();
+        // Start real-time progress tracking
+        this.startRealTimeProgressTracking(progressId);
     },
 
     /**
-     * Simulate progress updates
+     * Start real-time progress tracking
+     */
+    startRealTimeProgressTracking: function(progressId) {
+        var self = this;
+        console.log('NexusAI Debug: Starting real-time progress tracking for:', progressId);
+
+        // Poll for progress updates every 500ms
+        var progressInterval = setInterval(function() {
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_progress',
+                progress_id: progressId,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success) {
+                    self.updateRealTimeProgress(response.data);
+
+                    // Stop polling if translation is complete or failed
+                    if (response.data.status === 'completed' || response.data.status === 'failed') {
+                        clearInterval(progressInterval);
+                        console.log('NexusAI Debug: Progress tracking completed:', response.data.status);
+                    }
+                } else {
+                    console.log('NexusAI Debug: Progress tracking error:', response.message);
+                }
+            })
+            .fail(function() {
+                console.log('NexusAI Debug: Progress tracking request failed');
+            });
+        }, 500);
+
+        // Store interval for cleanup
+        this.progressInterval = progressInterval;
+
+        // Cleanup after 5 minutes (safety)
+        setTimeout(function() {
+            if (self.progressInterval) {
+                clearInterval(self.progressInterval);
+                console.log('NexusAI Debug: Progress tracking timeout - cleaning up');
+            }
+        }, 300000);
+    },
+
+    /**
+     * Update progress with real-time data
+     */
+    updateRealTimeProgress: function(progressData) {
+        console.log('NexusAI Debug: Updating real-time progress:', progressData);
+
+        // Update progress bar
+        var percentage = progressData.progress_percentage || 0;
+        $('#nexus-ai-wp-progress-bar').css('width', percentage + '%');
+        $('#nexus-ai-wp-progress-percentage').text(Math.round(percentage) + '%');
+
+        // Update current step status
+        if (progressData.current_step) {
+            // Reset all steps to pending first
+            $('.nexus-ai-wp-progress-step').removeClass('processing completed failed').addClass('pending');
+            $('.nexus-ai-wp-progress-step .nexus-ai-wp-progress-step-icon').text('⏳');
+
+            // Update steps based on progress history
+            if (progressData.steps && progressData.steps.length > 0) {
+                var stepMap = {
+                    'title': 'title',
+                    'content_block': 'content',
+                    'excerpt': 'excerpt',
+                    'categories': 'categories',
+                    'tags': 'tags'
+                };
+
+                var completedSteps = {};
+                var currentStep = null;
+
+                // Process all steps to determine status
+                progressData.steps.forEach(function(step) {
+                    var mappedStep = stepMap[step.step] || step.step;
+
+                    if (step.status === 'completed') {
+                        completedSteps[mappedStep] = 'completed';
+                    } else if (step.status === 'processing') {
+                        currentStep = mappedStep;
+                    } else if (step.status === 'failed') {
+                        completedSteps[mappedStep] = 'failed';
+                    }
+                });
+
+                // Update completed steps
+                Object.keys(completedSteps).forEach(function(stepId) {
+                    var status = completedSteps[stepId];
+                    $('#step-' + stepId).removeClass('pending processing').addClass(status);
+                    var icon = status === 'completed' ? '✓' : '✗';
+                    $('#step-' + stepId + ' .nexus-ai-wp-progress-step-icon').text(icon);
+                });
+
+                // Update current processing step
+                if (currentStep) {
+                    $('#step-' + currentStep).removeClass('pending').addClass('processing');
+                    $('#step-' + currentStep + ' .nexus-ai-wp-progress-step-icon').text('⚡');
+                }
+            }
+        }
+
+        // Update step descriptions with latest messages
+        if (progressData.steps && progressData.steps.length > 0) {
+            var latestStep = progressData.steps[progressData.steps.length - 1];
+            if (latestStep && latestStep.message) {
+                var stepElement = $('#step-' + (latestStep.step === 'content_block' ? 'content' : latestStep.step));
+                if (stepElement.length > 0) {
+                    stepElement.find('.nexus-ai-wp-progress-step-description').text(latestStep.message);
+                }
+            }
+        }
+    },
+
+    /**
+     * Simulate progress updates (fallback)
      */
     simulateProgress: function() {
         var self = this;

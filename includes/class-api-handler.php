@@ -677,7 +677,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate post content with block-by-block approach and caching
      */
-    public function translate_post_content($post_id, $target_lang) {
+    public function translate_post_content($post_id, $target_lang, $progress_id = null) {
         $post = get_post($post_id);
         if (!$post) {
             return array(
@@ -690,7 +690,7 @@ class Nexus_AI_WP_Translator_API_Handler {
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
 
         // Use new block-by-block translation method
-        return $this->translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts);
+        return $this->translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts, false, $progress_id);
     }
 
     /**
@@ -726,7 +726,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate post content block by block with progress tracking
      */
-    public function translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts = 3, $resume = false) {
+    public function translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts = 3, $resume = false, $progress_id = null) {
         $results = array(
             'success' => false,
             'title' => '',
@@ -738,8 +738,14 @@ class Nexus_AI_WP_Translator_API_Handler {
             'total_blocks' => 0,
             'completed_blocks' => 0,
             'api_calls' => 0,
-            'resumed' => false
+            'resumed' => false,
+            'progress_id' => $progress_id
         );
+
+        // Initialize progress tracking
+        if ($progress_id) {
+            $this->init_progress_tracking($progress_id, $post->post_title, array($target_lang));
+        }
 
         // Check for partial translation cache if resuming
         if ($resume) {
@@ -748,21 +754,35 @@ class Nexus_AI_WP_Translator_API_Handler {
                 $results = array_merge($results, $partial_cache);
                 $results['resumed'] = true;
                 $results['progress'][] = array('step' => 'resume', 'status' => 'completed', 'message' => 'Resumed from cached progress');
+
+                if ($progress_id) {
+                    $this->update_progress($progress_id, 'resume', 'completed', 'Resumed from cached progress', 10);
+                }
             }
         }
 
         // Step 1: Translate title
         $results['progress'][] = array('step' => 'title', 'status' => 'processing');
+        if ($progress_id) {
+            $this->update_progress($progress_id, 'title', 'processing', 'Translating post title...', 15);
+        }
+
         $title_result = $this->translate_with_cache_and_retry($post->post_title, $source_lang, $target_lang, $retry_attempts);
 
         if (!$title_result['success']) {
             $results['progress'][] = array('step' => 'title', 'status' => 'failed', 'message' => $title_result['message']);
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'title', 'failed', $title_result['message'], 15);
+            }
             return $results;
         }
 
         $results['title'] = $title_result['translated_content'];
         $results['api_calls'] += $title_result['api_calls'];
         $results['progress'][] = array('step' => 'title', 'status' => 'completed');
+        if ($progress_id) {
+            $this->update_progress($progress_id, 'title', 'completed', 'Title translated successfully', 25);
+        }
 
         // Step 2: Split and translate content blocks
         $content_blocks = $this->split_content_into_blocks($post->post_content);
@@ -771,13 +791,21 @@ class Nexus_AI_WP_Translator_API_Handler {
 
         $translated_blocks = array();
 
-        foreach ($content_blocks as $block) {
+        foreach ($content_blocks as $block_index => $block) {
+            $current_progress = 25 + (($block_index / count($content_blocks)) * 40); // 25-65% for content blocks
+
             $results['progress'][] = array(
                 'step' => 'content_block',
                 'status' => 'processing',
                 'block_type' => $block['type'],
                 'block_index' => $block['index']
             );
+
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'content_block', 'processing',
+                    "Translating content block " . ($block_index + 1) . " of " . count($content_blocks),
+                    $current_progress);
+            }
 
             $block_result = $this->translate_with_cache_and_retry($block['content'], $source_lang, $target_lang, $retry_attempts);
 
@@ -788,6 +816,12 @@ class Nexus_AI_WP_Translator_API_Handler {
                     'message' => $block_result['message'],
                     'block_index' => $block['index']
                 );
+
+                if ($progress_id) {
+                    $this->update_progress($progress_id, 'content_block', 'failed',
+                        "Failed to translate block " . ($block_index + 1) . ": " . $block_result['message'],
+                        $current_progress);
+                }
 
                 // Save partial results for resume functionality
                 $results['partial_failure'] = true;
@@ -811,6 +845,12 @@ class Nexus_AI_WP_Translator_API_Handler {
                 'status' => 'completed',
                 'block_index' => $block['index']
             );
+
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'content_block', 'completed',
+                    "Completed block " . ($block_index + 1) . " of " . count($content_blocks),
+                    $current_progress + (40 / count($content_blocks)));
+            }
         }
 
         // Reconstruct content from translated blocks
@@ -819,14 +859,24 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Step 3: Translate excerpt if exists
         if (!empty($post->post_excerpt)) {
             $results['progress'][] = array('step' => 'excerpt', 'status' => 'processing');
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'excerpt', 'processing', 'Translating post excerpt...', 70);
+            }
+
             $excerpt_result = $this->translate_with_cache_and_retry($post->post_excerpt, $source_lang, $target_lang, $retry_attempts);
 
             if ($excerpt_result['success']) {
                 $results['excerpt'] = $excerpt_result['translated_content'];
                 $results['api_calls'] += $excerpt_result['api_calls'];
                 $results['progress'][] = array('step' => 'excerpt', 'status' => 'completed');
+                if ($progress_id) {
+                    $this->update_progress($progress_id, 'excerpt', 'completed', 'Excerpt translated successfully', 75);
+                }
             } else {
                 $results['progress'][] = array('step' => 'excerpt', 'status' => 'failed', 'message' => $excerpt_result['message']);
+                if ($progress_id) {
+                    $this->update_progress($progress_id, 'excerpt', 'failed', $excerpt_result['message'], 75);
+                }
             }
         }
 
@@ -834,6 +884,10 @@ class Nexus_AI_WP_Translator_API_Handler {
         $categories = wp_get_post_categories($post->ID, array('fields' => 'names'));
         if (!empty($categories)) {
             $results['progress'][] = array('step' => 'categories', 'status' => 'processing');
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'categories', 'processing', 'Translating categories...', 80);
+            }
+
             foreach ($categories as $category) {
                 $cat_result = $this->translate_with_cache_and_retry($category, $source_lang, $target_lang, $retry_attempts);
                 if ($cat_result['success']) {
@@ -842,12 +896,19 @@ class Nexus_AI_WP_Translator_API_Handler {
                 }
             }
             $results['progress'][] = array('step' => 'categories', 'status' => 'completed');
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'categories', 'completed', 'Categories translated successfully', 85);
+            }
         }
 
         // Step 5: Translate tags
         $tags = wp_get_post_tags($post->ID, array('fields' => 'names'));
         if (!empty($tags)) {
             $results['progress'][] = array('step' => 'tags', 'status' => 'processing');
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'tags', 'processing', 'Translating tags...', 90);
+            }
+
             foreach ($tags as $tag) {
                 $tag_result = $this->translate_with_cache_and_retry($tag, $source_lang, $target_lang, $retry_attempts);
                 if ($tag_result['success']) {
@@ -856,12 +917,20 @@ class Nexus_AI_WP_Translator_API_Handler {
                 }
             }
             $results['progress'][] = array('step' => 'tags', 'status' => 'completed');
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'tags', 'completed', 'Tags translated successfully', 95);
+            }
         }
 
         $results['success'] = true;
 
         // Clear partial translation cache on successful completion
         $this->clear_partial_translation_cache($post->ID, $target_lang);
+
+        // Complete progress tracking
+        if ($progress_id) {
+            $this->complete_progress($progress_id, true, 'Translation completed successfully');
+        }
 
         return $results;
     }
@@ -954,5 +1023,107 @@ class Nexus_AI_WP_Translator_API_Handler {
     public function has_partial_translation_cache($post_id, $target_lang) {
         $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $target_lang;
         return get_transient($cache_key) !== false;
+    }
+
+    /**
+     * Initialize progress tracking for a translation session
+     */
+    public function init_progress_tracking($progress_id, $post_title, $target_languages) {
+        $progress_data = array(
+            'post_title' => $post_title,
+            'target_languages' => $target_languages,
+            'start_time' => time(),
+            'status' => 'started',
+            'current_step' => 'initializing',
+            'progress_percentage' => 0,
+            'steps' => array(),
+            'errors' => array()
+        );
+
+        set_transient('nexus_ai_wp_progress_' . $progress_id, $progress_data, 3600); // 1 hour
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Initialized progress tracking for session {$progress_id}");
+        }
+    }
+
+    /**
+     * Update progress for a translation session
+     */
+    public function update_progress($progress_id, $step, $status, $message, $percentage = null) {
+        $progress_data = get_transient('nexus_ai_wp_progress_' . $progress_id);
+
+        if (!$progress_data) {
+            return false;
+        }
+
+        $progress_data['current_step'] = $step;
+        $progress_data['last_update'] = time();
+
+        if ($percentage !== null) {
+            $progress_data['progress_percentage'] = $percentage;
+        }
+
+        // Add step to history
+        $progress_data['steps'][] = array(
+            'step' => $step,
+            'status' => $status,
+            'message' => $message,
+            'timestamp' => time()
+        );
+
+        if ($status === 'failed') {
+            $progress_data['errors'][] = array(
+                'step' => $step,
+                'message' => $message,
+                'timestamp' => time()
+            );
+        }
+
+        set_transient('nexus_ai_wp_progress_' . $progress_id, $progress_data, 3600);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Updated progress {$progress_id}: {$step} -> {$status} ({$percentage}%)");
+        }
+
+        return true;
+    }
+
+    /**
+     * Get progress data for a translation session
+     */
+    public function get_progress($progress_id) {
+        return get_transient('nexus_ai_wp_progress_' . $progress_id);
+    }
+
+    /**
+     * Complete progress tracking
+     */
+    public function complete_progress($progress_id, $success = true, $final_message = '') {
+        $progress_data = get_transient('nexus_ai_wp_progress_' . $progress_id);
+
+        if (!$progress_data) {
+            return false;
+        }
+
+        $progress_data['status'] = $success ? 'completed' : 'failed';
+        $progress_data['end_time'] = time();
+        $progress_data['progress_percentage'] = 100;
+        $progress_data['final_message'] = $final_message;
+
+        set_transient('nexus_ai_wp_progress_' . $progress_id, $progress_data, 3600);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Completed progress tracking for session {$progress_id}: " . ($success ? 'SUCCESS' : 'FAILED'));
+        }
+
+        return true;
+    }
+
+    /**
+     * Clear progress tracking data
+     */
+    public function clear_progress($progress_id) {
+        delete_transient('nexus_ai_wp_progress_' . $progress_id);
     }
 }

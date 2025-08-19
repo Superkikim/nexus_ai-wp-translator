@@ -152,7 +152,7 @@ class Nexus_AI_WP_Translator_Manager {
     /**
      * Translate a post to all target languages
      */
-    public function translate_post($post_id, $target_languages = null) {
+    public function translate_post($post_id, $target_languages = null, $progress_id = null) {
         $start_time = microtime(true);
 
         // Validate post exists
@@ -227,7 +227,7 @@ class Nexus_AI_WP_Translator_Manager {
             $this->db->log_translation_activity($post_id, 'translate_start', 'processing', "Starting translation to {$target_lang}");
 
             // Perform translation
-            $result = $this->create_translated_post($post_id, $target_lang);
+            $result = $this->create_translated_post($post_id, $target_lang, $progress_id);
 
             if ($result['success']) {
                 $success_count++;
@@ -313,15 +313,20 @@ class Nexus_AI_WP_Translator_Manager {
     /**
      * Create translated post
      */
-    private function create_translated_post($source_post_id, $target_lang) {
+    private function create_translated_post($source_post_id, $target_lang, $progress_id = null) {
         $source_post = get_post($source_post_id);
         if (!$source_post) {
             return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
             return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
         }
         
-        // Get translation from API
-        $translation_result = $this->api_handler->translate_post_content($source_post_id, $target_lang);
+        // Generate progress ID for real-time tracking if not provided
+        if (!$progress_id) {
+            $progress_id = 'trans_' . $source_post_id . '_' . $target_lang . '_' . time() . '_' . wp_rand(1000, 9999);
+        }
+
+        // Get translation from API with progress tracking
+        $translation_result = $this->api_handler->translate_post_content($source_post_id, $target_lang, $progress_id);
         
         if (!$translation_result['success']) {
             return $translation_result;
@@ -562,13 +567,14 @@ class Nexus_AI_WP_Translator_Manager {
             
             $post_id = intval($_POST['post_id']);
             $target_languages = isset($_POST['target_languages']) ? (array) $_POST['target_languages'] : null;
-            
+            $progress_id = isset($_POST['progress_id']) ? sanitize_text_field($_POST['progress_id']) : null;
+
             if (!$post_id) {
                 wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
                 return;
             }
-            
-            $result = $this->translate_post($post_id, $target_languages);
+
+            $result = $this->translate_post($post_id, $target_languages, $progress_id);
             
             wp_send_json($result);
             

@@ -75,6 +75,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_bulk_delete_posts', array($this, 'ajax_bulk_delete_posts'));
         add_action('wp_ajax_nexus_ai_wp_bulk_clear_cache_posts', array($this, 'ajax_bulk_clear_cache_posts'));
         add_action('wp_ajax_nexus_ai_wp_resume_translation', array($this, 'ajax_resume_translation'));
+        add_action('wp_ajax_nexus_ai_wp_get_progress', array($this, 'ajax_get_progress'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -984,5 +985,30 @@ class Nexus_AI_WP_Translator_Admin {
             'error_count' => $error_count,
             'results' => $results
         ));
+    }
+
+    /**
+     * AJAX: Get translation progress
+     */
+    public function ajax_get_progress() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $progress_id = sanitize_text_field($_POST['progress_id']);
+
+        if (!$progress_id) {
+            wp_send_json_error(__('Invalid progress ID', 'nexus-ai-wp-translator'));
+        }
+
+        $progress_data = $this->api_handler->get_progress($progress_id);
+
+        if (!$progress_data) {
+            wp_send_json_error(__('Progress data not found', 'nexus-ai-wp-translator'));
+        }
+
+        wp_send_json_success($progress_data);
     }
 }
