@@ -954,8 +954,24 @@ class Nexus_AI_WP_Translator_Admin {
         $resumable_languages = array();
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
 
+        // Ensure target_languages is an array (fix for string conversion issue)
+        if (is_string($target_languages)) {
+            // Handle serialized string or comma-separated values
+            if (is_serialized($target_languages)) {
+                $target_languages = maybe_unserialize($target_languages);
+            } else {
+                // Fallback: split by comma if it's a comma-separated string
+                $target_languages = array_map('trim', explode(',', $target_languages));
+            }
+        }
+
+        // Ensure we have an array
+        if (!is_array($target_languages)) {
+            $target_languages = array('es', 'fr', 'de'); // fallback to default
+        }
+
         foreach ($target_languages as $lang) {
-            if ($this->api_handler->has_partial_translation_cache($post_id, $lang)) {
+            if ($this->api_handler && $this->api_handler->has_partial_translation_cache($post_id, $lang)) {
                 $resumable_languages[] = $lang;
             }
         }
