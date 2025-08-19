@@ -76,6 +76,7 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-templates.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-seo-optimizer.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-scheduler.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-analytics.php';
 
         // Load manager classes that depend on base classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
@@ -157,6 +158,12 @@ class Nexus_AI_WP_Translator_Plugin {
                 error_log('Nexus AI WP Translator: [INIT] Initializing translation scheduler');
             }
             Nexus_AI_WP_Translator_Scheduler::get_instance();
+
+            // Initialize analytics
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing analytics');
+            }
+            Nexus_AI_WP_Translator_Analytics::get_instance();
             
             // Mark as initialized only after successful completion
             $initialized = true;

@@ -18,6 +18,7 @@ if (!defined('ABSPATH')) {
             <a href="#pages-tab" class="nav-tab"><?php _e('Pages', 'nexus-ai-wp-translator'); ?></a>
             <a href="#events-tab" class="nav-tab"><?php _e('Events', 'nexus-ai-wp-translator'); ?></a>
             <a href="#queue-tab" class="nav-tab"><?php _e('Translation Queue', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#analytics-tab" class="nav-tab"><?php _e('Analytics', 'nexus-ai-wp-translator'); ?></a>
         </nav>
         
         <!-- Articles Tab -->
@@ -159,8 +160,131 @@ if (!defined('ABSPATH')) {
                 </table>
             </div>
         </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <h2><?php _e('Translation Analytics', 'nexus-ai-wp-translator'); ?></h2>
+
+            <!-- Analytics Controls -->
+            <div class="nexus-ai-wp-analytics-controls">
+                <div class="nexus-ai-wp-analytics-filters">
+                    <label for="analytics-period"><?php _e('Time Period:', 'nexus-ai-wp-translator'); ?></label>
+                    <select id="analytics-period">
+                        <option value="7_days"><?php _e('Last 7 Days', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="30_days" selected><?php _e('Last 30 Days', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="90_days"><?php _e('Last 90 Days', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="1_year"><?php _e('Last Year', 'nexus-ai-wp-translator'); ?></option>
+                    </select>
+
+                    <button type="button" class="button" id="refresh-analytics-btn"><?php _e('Refresh', 'nexus-ai-wp-translator'); ?></button>
+                    <button type="button" class="button" id="export-analytics-btn"><?php _e('Export', 'nexus-ai-wp-translator'); ?></button>
+                </div>
+            </div>
+
+            <!-- Analytics Overview Cards -->
+            <div class="nexus-ai-wp-analytics-overview">
+                <div class="analytics-card">
+                    <h3><?php _e('Total Translations', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-total-translations">-</div>
+                    <div class="analytics-change" id="analytics-translations-change"></div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3><?php _e('Success Rate', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-success-rate">-</div>
+                    <div class="analytics-change" id="analytics-success-change"></div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3><?php _e('Average Quality', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-avg-quality">-</div>
+                    <div class="analytics-change" id="analytics-quality-change"></div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3><?php _e('Total Cost', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-total-cost">-</div>
+                    <div class="analytics-change" id="analytics-cost-change"></div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3><?php _e('API Calls', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-api-calls">-</div>
+                    <div class="analytics-change" id="analytics-calls-change"></div>
+                </div>
+
+                <div class="analytics-card">
+                    <h3><?php _e('Tokens Used', 'nexus-ai-wp-translator'); ?></h3>
+                    <div class="analytics-value" id="analytics-tokens-used">-</div>
+                    <div class="analytics-change" id="analytics-tokens-change"></div>
+                </div>
+            </div>
+
+            <!-- Analytics Charts -->
+            <div class="nexus-ai-wp-analytics-charts">
+                <div class="analytics-chart-container">
+                    <h3><?php _e('Translation Trends', 'nexus-ai-wp-translator'); ?></h3>
+                    <canvas id="translation-trends-chart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="analytics-chart-container">
+                    <h3><?php _e('Language Distribution', 'nexus-ai-wp-translator'); ?></h3>
+                    <canvas id="language-distribution-chart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="analytics-chart-container">
+                    <h3><?php _e('Quality Metrics', 'nexus-ai-wp-translator'); ?></h3>
+                    <canvas id="quality-metrics-chart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="analytics-chart-container">
+                    <h3><?php _e('Cost Analysis', 'nexus-ai-wp-translator'); ?></h3>
+                    <canvas id="cost-analysis-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Analytics Tables -->
+            <div class="nexus-ai-wp-analytics-tables">
+                <div class="analytics-table-container">
+                    <h3><?php _e('Top Languages', 'nexus-ai-wp-translator'); ?></h3>
+                    <table class="wp-list-table widefat fixed striped" id="top-languages-table">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Language', 'nexus-ai-wp-translator'); ?></th>
+                                <th><?php _e('Translations', 'nexus-ai-wp-translator'); ?></th>
+                                <th><?php _e('Avg Quality', 'nexus-ai-wp-translator'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-languages-tbody">
+                            <tr>
+                                <td colspan="3" class="nexus-ai-wp-loading"><?php _e('Loading...', 'nexus-ai-wp-translator'); ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="analytics-table-container">
+                    <h3><?php _e('Recent Activity', 'nexus-ai-wp-translator'); ?></h3>
+                    <table class="wp-list-table widefat fixed striped" id="recent-activity-table">
+                        <thead>
+                            <tr>
+                                <th><?php _e('Post', 'nexus-ai-wp-translator'); ?></th>
+                                <th><?php _e('Language', 'nexus-ai-wp-translator'); ?></th>
+                                <th><?php _e('Status', 'nexus-ai-wp-translator'); ?></th>
+                                <th><?php _e('Date', 'nexus-ai-wp-translator'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-activity-tbody">
+                            <tr>
+                                <td colspan="4" class="nexus-ai-wp-loading"><?php _e('Loading...', 'nexus-ai-wp-translator'); ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <div class="nexus-ai-wp-translator-dashboard">
         <!-- Statistics Cards -->
         <div class="nexus-ai-wp-stats-cards">
