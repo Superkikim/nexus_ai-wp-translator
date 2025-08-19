@@ -315,12 +315,11 @@ class Nexus_AI_WP_Translator_Manager {
     }
     
     /**
-     * Create translated post
+     * Create translated post using improved streaming approach
      */
     private function create_translated_post($source_post_id, $target_lang, $progress_id = null) {
         $source_post = get_post($source_post_id);
         if (!$source_post) {
-            return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
             return array('success' => false, 'message' => __('Source post not found', 'nexus-ai-wp-translator'));
         }
         
@@ -329,8 +328,40 @@ class Nexus_AI_WP_Translator_Manager {
             $progress_id = 'trans_' . $source_post_id . '_' . $target_lang . '_' . time() . '_' . wp_rand(1000, 9999);
         }
 
-        // Get translation from API with progress tracking
-        $translation_result = $this->api_handler->translate_post_content($source_post_id, $target_lang, $progress_id);
+        // Check if we should use streaming approach (default to true for better results)
+        $use_streaming = get_option('nexus_ai_wp_translator_use_streaming', true);
+        $use_complete_json = get_option('nexus_ai_wp_translator_use_complete_json', true);
+
+        error_log("Nexus AI WP Translator: Creating translated post using " . 
+            ($use_complete_json ? 'complete JSON' : 'block-by-block') . 
+            " approach with " . ($use_streaming ? 'streaming' : 'standard') . " API calls");
+
+        // Try the new complete JSON translation approach first
+        if ($use_complete_json) {
+            $translation_result = $this->api_handler->translate_post_content_complete(
+                $source_post_id, 
+                $target_lang, 
+                $progress_id, 
+                $use_streaming
+            );
+
+            // If the new approach fails, log and fall back to the old approach
+            if (!$translation_result['success']) {
+                error_log("Nexus AI WP Translator: Complete JSON translation failed: " . $translation_result['message']);
+                
+                // Check if this is an interruption that can be resumed
+                if (isset($translation_result['interrupted']) && $translation_result['interrupted']) {
+                    error_log("Nexus AI WP Translator: Translation was interrupted, attempting resume...");
+                    return $this->handle_translation_interruption($source_post_id, $target_lang, $progress_id, $translation_result);
+                }
+                
+                error_log("Nexus AI WP Translator: Falling back to block-by-block translation approach");
+                $translation_result = $this->api_handler->translate_post_content($source_post_id, $target_lang, $progress_id);
+            }
+        } else {
+            // Use the original block-by-block approach
+            $translation_result = $this->api_handler->translate_post_content($source_post_id, $target_lang, $progress_id);
+        }
         
         if (!$translation_result['success']) {
             return $translation_result;
@@ -1019,6 +1050,118 @@ class Nexus_AI_WP_Translator_Manager {
             }
             wp_send_json_error(__('Linking failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
         }
+    }
+
+    /**
+     * Handle translation interruption and attempt resume
+     */
+    private function handle_translation_interruption($source_post_id, $target_lang, $progress_id, $interrupted_result) {
+        error_log("Nexus AI WP Translator: Handling translation interruption for post {$source_post_id} -> {$target_lang}");
+
+        // Save the interrupted state for potential manual resume
+        $interruption_data = array(
+            'post_id' => $source_post_id,
+            'target_lang' => $target_lang,
+            'progress_id' => $progress_id,
+            'interrupted_at' => time(),
+            'partial_result' => $interrupted_result,
+            'resume_attempts' => 0
+        );
+
+        // Cache interruption data for 1 hour
+        $cache_key = 'nexus_ai_wp_interrupted_' . $source_post_id . '_' . $target_lang;
+        set_transient($cache_key, $interruption_data, HOUR_IN_SECONDS);
+
+        // Log the interruption
+        $this->db->log_translation_activity(
+            $source_post_id, 
+            'interrupted', 
+            'failed', 
+            'Translation was interrupted - cached for potential resume'
+        );
+
+        // Return a detailed error response
+        return array(
+            'success' => false,
+            'message' => __('Translation was interrupted due to connection issues. You can try again to resume from where it left off.', 'nexus-ai-wp-translator'),
+            'interrupted' => true,
+            'resumable' => true,
+            'cache_key' => $cache_key
+        );
+    }
+
+    /**
+     * Check and resume interrupted translation
+     */
+    public function resume_interrupted_translation($source_post_id, $target_lang) {
+        $cache_key = 'nexus_ai_wp_interrupted_' . $source_post_id . '_' . $target_lang;
+        $interruption_data = get_transient($cache_key);
+
+        if (!$interruption_data) {
+            return false;
+        }
+
+        error_log("Nexus AI WP Translator: Resuming interrupted translation for post {$source_post_id} -> {$target_lang}");
+
+        // Increment resume attempts
+        $interruption_data['resume_attempts']++;
+        
+        // Don't allow too many resume attempts
+        if ($interruption_data['resume_attempts'] > 3) {
+            delete_transient($cache_key);
+            return false;
+        }
+
+        // Update the cached data
+        set_transient($cache_key, $interruption_data, HOUR_IN_SECONDS);
+
+        // Try the complete JSON approach again with non-streaming to be safer
+        $translation_result = $this->api_handler->translate_post_content_complete(
+            $source_post_id, 
+            $target_lang, 
+            $interruption_data['progress_id'], 
+            false // Use standard (non-streaming) API call for resume
+        );
+
+        if ($translation_result['success']) {
+            // Clear the interruption cache on success
+            delete_transient($cache_key);
+            error_log("Nexus AI WP Translator: Successfully resumed interrupted translation");
+        }
+
+        return $translation_result;
+    }
+
+    /**
+     * Get interrupted translation status
+     */
+    public function get_interrupted_translations($post_id = null) {
+        $interrupted = array();
+        
+        if ($post_id) {
+            // Check for specific post
+            $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+            foreach ($target_languages as $target_lang) {
+                $cache_key = 'nexus_ai_wp_interrupted_' . $post_id . '_' . $target_lang;
+                $data = get_transient($cache_key);
+                if ($data) {
+                    $interrupted[] = $data;
+                }
+            }
+        } else {
+            // This would require a more complex implementation to scan all possible cache keys
+            // For now, we'll just return empty array if no specific post is requested
+        }
+
+        return $interrupted;
+    }
+
+    /**
+     * Clear interrupted translation cache
+     */
+    public function clear_interrupted_translation($source_post_id, $target_lang) {
+        $cache_key = 'nexus_ai_wp_interrupted_' . $source_post_id . '_' . $target_lang;
+        return delete_transient($cache_key);
     }
 
     /**

@@ -258,9 +258,9 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
     
     /**
-     * Translate content using Claude AI
+     * Translate content using Claude AI with streaming support
      */
-    public function translate_content($content, $source_lang, $target_lang, $context_or_model = null) {
+    public function translate_content($content, $source_lang, $target_lang, $context_or_model = null, $use_streaming = false) {
         // Handle backward compatibility - if context_or_model is a string, it's a model
         if (is_string($context_or_model)) {
             $model = $context_or_model;
@@ -269,7 +269,8 @@ class Nexus_AI_WP_Translator_API_Handler {
             $context = is_array($context_or_model) ? $context_or_model : array();
             $model = null;
         }
-        error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang}");
+        
+        error_log("Nexus AI WP Translator: Starting translation from {$source_lang} to {$target_lang} (streaming: " . ($use_streaming ? 'yes' : 'no') . ")");
         
         if (empty($this->api_key)) {
             error_log('Nexus AI WP Translator: API key not configured');
@@ -291,46 +292,54 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         $start_time = microtime(true);
         
-        // Get model from parameter or settings with detailed debugging
+        // Get model from parameter or settings
         if (!$model) {
             $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
-            error_log("Nexus AI WP Translator: Retrieved model from settings: '" . $model . "'");
-            error_log("Nexus AI WP Translator: Model length: " . strlen($model));
-        } else {
-            error_log("Nexus AI WP Translator: Using model from parameter: '" . $model . "'");
         }
         
-        error_log("Nexus AI WP Translator: Final model to use: " . $model);
+        error_log("Nexus AI WP Translator: Using model: " . $model);
         
         // Prepare the prompt with context
         $prompt = $this->prepare_translation_prompt($content, $source_lang, $target_lang, $context);
-        error_log('Nexus AI WP Translator: Prepared prompt for translation');
         
-        // Prepare request
+        // Prepare request headers
         $headers = array(
             'Content-Type' => 'application/json',
             'x-api-key' => $this->api_key,
             'anthropic-version' => '2023-06-01'
         );
         
+        // Prepare request body
         $body = array(
             'model' => $model,
-            'max_tokens' => 4000,
+            'max_tokens' => 8000, // Increased for complete content translation
             'messages' => array(
                 array(
                     'role' => 'user',
                     'content' => $prompt
                 )
-            )
+            ),
+            'stream' => $use_streaming
         );
         
-        error_log('Nexus AI WP Translator: Making API request to ' . $this->api_endpoint);
+        if ($use_streaming) {
+            return $this->handle_streaming_translation($headers, $body, $content, $source_lang, $target_lang, $start_time);
+        } else {
+            return $this->handle_standard_translation($headers, $body, $content, $source_lang, $target_lang, $start_time);
+        }
+    }
+
+    /**
+     * Handle standard (non-streaming) translation
+     */
+    private function handle_standard_translation($headers, $body, $original_content, $source_lang, $target_lang, $start_time) {
+        error_log('Nexus AI WP Translator: Making standard API request');
         
         // Make API request
         $response = wp_remote_post($this->api_endpoint, array(
             'headers' => $headers,
             'body' => wp_json_encode($body),
-            'timeout' => 60
+            'timeout' => 120 // Increased timeout for larger content
         ));
         
         $processing_time = microtime(true) - $start_time;
@@ -354,10 +363,9 @@ class Nexus_AI_WP_Translator_API_Handler {
             $error_data = json_decode($response_body, true);
             $error_message = isset($error_data['error']['message']) 
                 ? $error_data['error']['message'] 
-                : __('API request failed', 'claude-translator');
+                : __('API request failed', 'nexus-ai-wp-translator');
             
             error_log('Nexus AI WP Translator: API Error - ' . $error_message);
-            error_log('Nexus AI WP Translator: Response body - ' . $response_body);
                 
             return array(
                 'success' => false,
@@ -370,7 +378,6 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         if (!isset($data['content'][0]['text'])) {
             error_log('Nexus AI WP Translator: Invalid API response format');
-            error_log('Nexus AI WP Translator: Response data - ' . print_r($data, true));
             return array(
                 'success' => false,
                 'message' => __('Invalid API response format', 'nexus-ai-wp-translator'),
@@ -382,7 +389,7 @@ class Nexus_AI_WP_Translator_API_Handler {
         error_log('Nexus AI WP Translator: Translation successful');
         
         // Cache the translation
-        $this->cache_translation($content, $source_lang, $target_lang, $translated_content);
+        $this->cache_translation($original_content, $source_lang, $target_lang, $translated_content);
         
         return array(
             'success' => true,
@@ -391,11 +398,402 @@ class Nexus_AI_WP_Translator_API_Handler {
             'api_calls' => 1
         );
     }
+
+    /**
+     * Handle streaming translation with proper interruption support
+     */
+    private function handle_streaming_translation($headers, $body, $original_content, $source_lang, $target_lang, $start_time) {
+        error_log('Nexus AI WP Translator: Starting streaming translation');
+        
+        // Use cURL for streaming support since wp_remote_post doesn't handle streams well
+        $ch = curl_init();
+        
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $this->api_endpoint,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => wp_json_encode($body),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $this->api_key,
+                'anthropic-version: 2023-06-01'
+            ],
+            CURLOPT_WRITEFUNCTION => [$this, 'stream_callback'],
+            CURLOPT_TIMEOUT => 300, // 5 minutes timeout for streaming
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT => 'Nexus-AI-WP-Translator/1.0'
+        ]);
+        
+        // Initialize streaming variables
+        $this->streaming_buffer = '';
+        $this->streaming_result = '';
+        $this->streaming_error = null;
+        $this->streaming_interrupted = false;
+        
+        error_log('Nexus AI WP Translator: Executing streaming request');
+        
+        $curl_result = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        
+        curl_close($ch);
+        
+        $processing_time = microtime(true) - $start_time;
+        
+        if ($curl_error) {
+            error_log('Nexus AI WP Translator: cURL error - ' . $curl_error);
+            return array(
+                'success' => false,
+                'message' => __('Connection error: ', 'nexus-ai-wp-translator') . $curl_error,
+                'processing_time' => $processing_time
+            );
+        }
+        
+        if ($this->streaming_error) {
+            error_log('Nexus AI WP Translator: Streaming error - ' . $this->streaming_error);
+            return array(
+                'success' => false,
+                'message' => $this->streaming_error,
+                'processing_time' => $processing_time,
+                'interrupted' => $this->streaming_interrupted
+            );
+        }
+        
+        if ($http_code !== 200) {
+            error_log("Nexus AI WP Translator: HTTP error code {$http_code}");
+            return array(
+                'success' => false,
+                'message' => sprintf(__('HTTP error: %d', 'nexus-ai-wp-translator'), $http_code),
+                'processing_time' => $processing_time
+            );
+        }
+        
+        if (empty($this->streaming_result)) {
+            error_log('Nexus AI WP Translator: Empty streaming result');
+            return array(
+                'success' => false,
+                'message' => __('No content received from API', 'nexus-ai-wp-translator'),
+                'processing_time' => $processing_time
+            );
+        }
+        
+        error_log('Nexus AI WP Translator: Streaming translation completed successfully');
+        
+        // Cache the translation
+        $this->cache_translation($original_content, $source_lang, $target_lang, $this->streaming_result);
+        
+        return array(
+            'success' => true,
+            'translated_content' => $this->streaming_result,
+            'processing_time' => $processing_time,
+            'api_calls' => 1,
+            'streaming' => true,
+            'interrupted' => $this->streaming_interrupted
+        );
+    }
+
+    /**
+     * Streaming callback function to handle server-sent events
+     */
+    public function stream_callback($ch, $data) {
+        $this->streaming_buffer .= $data;
+        
+        // Process complete lines
+        while (($pos = strpos($this->streaming_buffer, "\n")) !== false) {
+            $line = substr($this->streaming_buffer, 0, $pos);
+            $this->streaming_buffer = substr($this->streaming_buffer, $pos + 1);
+            
+            $line = trim($line);
+            
+            if (empty($line)) {
+                continue;
+            }
+            
+            // Parse server-sent events
+            if (strpos($line, 'data: ') === 0) {
+                $json_data = substr($line, 6);
+                
+                if ($json_data === '[DONE]') {
+                    break;
+                }
+                
+                $event_data = json_decode($json_data, true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    continue;
+                }
+                
+                if (isset($event_data['type'])) {
+                    switch ($event_data['type']) {
+                        case 'content_block_delta':
+                            if (isset($event_data['delta']['text'])) {
+                                $this->streaming_result .= $event_data['delta']['text'];
+                            }
+                            break;
+                            
+                        case 'message_stop':
+                            // Translation completed
+                            break;
+                            
+                        case 'error':
+                            $this->streaming_error = isset($event_data['error']['message']) 
+                                ? $event_data['error']['message'] 
+                                : __('Unknown streaming error', 'nexus-ai-wp-translator');
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Check for interruption (e.g., user cancellation, timeout)
+        if (connection_aborted()) {
+            $this->streaming_interrupted = true;
+            return 0; // Stop the transfer
+        }
+        
+        return strlen($data);
+    }
+
+    // Streaming state variables
+    private $streaming_buffer = '';
+    private $streaming_result = '';
+    private $streaming_error = null;
+    private $streaming_interrupted = false;
     
+    /**
+     * Translate complete post content using streaming JSON approach
+     */
+    public function translate_post_content_complete($post_id, $target_lang, $progress_id = null, $use_streaming = true) {
+        $post = get_post($post_id);
+        if (!$post) {
+            return array(
+                'success' => false,
+                'message' => __('Post not found', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        
+        error_log("Nexus AI WP Translator: Starting complete post translation using " . ($use_streaming ? 'streaming' : 'standard') . " approach");
+
+        // Prepare complete post data for translation
+        $post_data = array(
+            'title' => $post->post_title,
+            'content' => $post->post_content,
+            'excerpt' => $post->post_excerpt,
+            'categories' => wp_get_post_categories($post_id, array('fields' => 'names')),
+            'tags' => wp_get_post_tags($post_id, array('fields' => 'names'))
+        );
+
+        // Create JSON prompt for complete translation
+        $json_content = wp_json_encode($post_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        
+        $context = array(
+            'content_type' => 'complete_post_json',
+            'post_id' => $post_id,
+            'post_title' => $post->post_title,
+            'use_streaming' => $use_streaming
+        );
+
+        $prompt = $this->prepare_complete_json_translation_prompt($json_content, $source_lang, $target_lang, $context);
+
+        // Initialize progress tracking
+        if ($progress_id) {
+            $this->init_progress_tracking($progress_id, $post->post_title, array($target_lang));
+            $this->update_progress($progress_id, 'complete_translation', 'processing', 'Translating complete post content...', 20);
+        }
+
+        // Perform translation
+        $result = $this->translate_content($json_content, $source_lang, $target_lang, $context, $use_streaming);
+
+        if (!$result['success']) {
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'complete_translation', 'failed', $result['message'], 20);
+            }
+            return $result;
+        }
+
+        // Parse the JSON response
+        $translated_data = json_decode($result['translated_content'], true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('Nexus AI WP Translator: Failed to parse JSON response: ' . json_last_error_msg());
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'parse_response', 'failed', 'Failed to parse translation JSON', 30);
+            }
+            return array(
+                'success' => false,
+                'message' => __('Invalid JSON response from translation API', 'nexus-ai-wp-translator'),
+                'raw_response' => $result['translated_content']
+            );
+        }
+
+        // Validate and clean the translated data
+        $cleaned_result = $this->validate_and_clean_json_translation($translated_data, $post_data);
+
+        if (!$cleaned_result['success']) {
+            if ($progress_id) {
+                $this->update_progress($progress_id, 'validate_translation', 'failed', $cleaned_result['message'], 40);
+            }
+            return $cleaned_result;
+        }
+
+        if ($progress_id) {
+            $this->update_progress($progress_id, 'complete_translation', 'completed', 'Translation completed successfully', 100);
+            $this->complete_progress($progress_id, true, 'Complete post translation finished');
+        }
+
+        return array(
+            'success' => true,
+            'title' => $cleaned_result['data']['title'],
+            'content' => $cleaned_result['data']['content'],
+            'excerpt' => $cleaned_result['data']['excerpt'],
+            'categories' => $cleaned_result['data']['categories'],
+            'tags' => $cleaned_result['data']['tags'],
+            'api_calls' => $result['api_calls'],
+            'processing_time' => $result['processing_time'],
+            'streaming' => isset($result['streaming']) ? $result['streaming'] : false,
+            'interrupted' => isset($result['interrupted']) ? $result['interrupted'] : false
+        );
+    }
+
+    /**
+     * Prepare complete JSON translation prompt
+     */
+    private function prepare_complete_json_translation_prompt($json_content, $source_lang, $target_lang, $context = array()) {
+        $source_lang_name = $this->get_language_name($source_lang);
+        $target_lang_name = $this->get_language_name($target_lang);
+
+        $prompt = sprintf(
+            "You are a professional translator. You will receive a JSON object containing a WordPress post in %s and must translate it to %s.\n\n" .
+
+            "CRITICAL REQUIREMENTS:\n" .
+            "1. OUTPUT ONLY VALID JSON - Return only the translated JSON object, no explanations or additional text\n" .
+            "2. MAINTAIN JSON STRUCTURE - Keep the exact same JSON structure with the same keys\n" .
+            "3. TITLE CONSISTENCY - Ensure the translated title is identical in both the 'title' field and within the 'content' if it appears there\n" .
+            "4. COMPLETE TRANSLATION - Translate ALL text content while preserving HTML formatting, WordPress blocks, and technical elements\n" .
+            "5. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, WordPress block structures, and technical attributes exactly\n" .
+            "6. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
+            "7. PROPER NOUNS - Keep brand names, person names, and place names in original form unless they have official translations\n" .
+            "8. CONTENT COHERENCE - Ensure the entire translation maintains coherence and consistency throughout\n\n" .
+
+            "JSON FIELD TRANSLATIONS:\n" .
+            "- 'title': Translate the post title\n" .
+            "- 'content': Translate the full post content, maintaining ALL WordPress blocks and HTML structure\n" .
+            "- 'excerpt': Translate the post excerpt if present\n" .
+            "- 'categories': Translate category names appropriately for the target language\n" .
+            "- 'tags': Translate tag names appropriately for the target language\n\n" .
+
+            "ABSOLUTELY FORBIDDEN:\n" .
+            "- Adding explanations, comments, or meta-text outside the JSON\n" .
+            "- Modifying the JSON structure or key names\n" .
+            "- Stopping mid-translation or asking for continuation\n" .
+            "- Adding phrases like 'Here is the translation:' or similar\n" .
+            "- Breaking or corrupting WordPress block structures\n" .
+            "- Translating technical attributes, CSS classes, or code elements\n\n" .
+
+            "RESPOND WITH ONLY THE TRANSLATED JSON OBJECT:\n\n" .
+            "%s",
+            $source_lang_name,
+            $target_lang_name,
+            $json_content
+        );
+
+        return $prompt;
+    }
+
+    /**
+     * Validate and clean JSON translation response
+     */
+    private function validate_and_clean_json_translation($translated_data, $original_data) {
+        if (!is_array($translated_data)) {
+            return array(
+                'success' => false,
+                'message' => __('Translation response is not a valid array', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $required_fields = array('title', 'content', 'excerpt', 'categories', 'tags');
+        $cleaned_data = array();
+
+        foreach ($required_fields as $field) {
+            if (!isset($translated_data[$field])) {
+                error_log("Nexus AI WP Translator: Missing required field: {$field}");
+                // Use original data as fallback
+                $cleaned_data[$field] = isset($original_data[$field]) ? $original_data[$field] : '';
+            } else {
+                $cleaned_data[$field] = $translated_data[$field];
+            }
+        }
+
+        // Validate title consistency in content
+        if (!empty($cleaned_data['title']) && !empty($cleaned_data['content'])) {
+            $title_in_content = $this->extract_title_from_content($cleaned_data['content']);
+            if ($title_in_content && $title_in_content !== $cleaned_data['title']) {
+                error_log("Nexus AI WP Translator: Title inconsistency detected, fixing...");
+                $cleaned_data['content'] = $this->fix_title_consistency($cleaned_data['content'], $cleaned_data['title']);
+            }
+        }
+
+        // Ensure categories and tags are arrays
+        $cleaned_data['categories'] = is_array($cleaned_data['categories']) ? $cleaned_data['categories'] : array();
+        $cleaned_data['tags'] = is_array($cleaned_data['tags']) ? $cleaned_data['tags'] : array();
+
+        // Validate content integrity
+        if (empty($cleaned_data['content']) && !empty($original_data['content'])) {
+            error_log("Nexus AI WP Translator: Content was lost during translation, using original");
+            return array(
+                'success' => false,
+                'message' => __('Content was lost during translation', 'nexus-ai-wp-translator')
+            );
+        }
+
+        return array(
+            'success' => true,
+            'data' => $cleaned_data
+        );
+    }
+
+    /**
+     * Extract title from content (look for h1 tags or similar)
+     */
+    private function extract_title_from_content($content) {
+        // Look for h1 tags first
+        if (preg_match('/<h1[^>]*>(.*?)<\/h1>/i', $content, $matches)) {
+            return strip_tags($matches[1]);
+        }
+        
+        // Look for WordPress heading blocks
+        if (preg_match('/<!-- wp:heading {"level":1[^}]*} -->\s*<h1[^>]*>(.*?)<\/h1>/i', $content, $matches)) {
+            return strip_tags($matches[1]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Fix title consistency in content
+     */
+    private function fix_title_consistency($content, $correct_title) {
+        // Replace h1 tags
+        $content = preg_replace('/<h1[^>]*>(.*?)<\/h1>/i', '<h1>$' . $correct_title . '</h1>', $content);
+        
+        // Replace WordPress heading blocks
+        $content = preg_replace('/<!-- wp:heading {"level":1[^}]*} -->\s*<h1[^>]*>(.*?)<\/h1>/i', 
+            '<!-- wp:heading {"level":1} --><h1>' . $correct_title . '</h1>', $content);
+
+        return $content;
+    }
+
     /**
      * Prepare translation prompt
      */
     private function prepare_translation_prompt($content, $source_lang, $target_lang, $context = array()) {
+        // Check if this is a complete JSON translation
+        if (isset($context['content_type']) && $context['content_type'] === 'complete_post_json') {
+            return $this->prepare_complete_json_translation_prompt($content, $source_lang, $target_lang, $context);
+        }
+
         // Get templates manager
         $templates_manager = Nexus_AI_WP_Translator_Templates::get_instance();
 
