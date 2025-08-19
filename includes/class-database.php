@@ -160,6 +160,48 @@ class Nexus_AI_WP_Translator_Database {
     }
     
     /**
+     * Log invalid AI response for debugging
+     */
+    public function log_invalid_ai_response($post_id, $original_content, $ai_response, $issues, $target_lang) {
+        $message = sprintf(
+            'Invalid AI response filtered for %s translation. Issues: %s. Original: %s... Response: %s...',
+            $target_lang,
+            implode(', ', $issues),
+            substr($original_content, 0, 50),
+            substr($ai_response, 0, 100)
+        );
+        
+        return $this->log_translation_activity(
+            $post_id, 
+            'invalid_response_filtered', 
+            'warning', 
+            $message, 
+            0,  // No API calls consumed for invalid responses
+            0
+        );
+    }
+    
+    /**
+     * Log empty content skipped
+     */
+    public function log_empty_content_skipped($post_id, $content_type, $reason = '') {
+        $message = sprintf(
+            'Skipped empty %s content - no API call made. %s',
+            $content_type,
+            $reason
+        );
+        
+        return $this->log_translation_activity(
+            $post_id, 
+            'empty_content_skipped', 
+            'info', 
+            $message, 
+            0,  // No API calls for empty content
+            0
+        );
+    }
+    
+    /**
      * Get translation logs
      */
     public function get_translation_logs($limit = 50, $offset = 0) {

@@ -718,9 +718,150 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
 
     /**
+     * Validate content before translation
+     */
+    private function validate_content_for_translation($content) {
+        if (empty($content) || empty(trim($content))) {
+            return false;
+        }
+        
+        // Remove HTML tags and check if there's actual text content
+        $text_only = strip_tags($content);
+        $text_only = preg_replace('/\s+/', ' ', $text_only);
+        $text_only = trim($text_only);
+        
+        // Check if we have meaningful content (at least 1 character)
+        if (empty($text_only) || strlen($text_only) < 1) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Validate and filter AI response for unwanted comments/apologies
+     */
+    private function validate_and_filter_ai_response($translated_content, $original_content = '') {
+        if (empty($translated_content)) {
+            return array(
+                'valid' => false,
+                'filtered_content' => '',
+                'issues' => array('Empty response')
+            );
+        }
+        
+        $issues = array();
+        $filtered_content = $translated_content;
+        
+        // Common AI apology/comment patterns to detect
+        $invalid_patterns = array(
+            '/I apologize,?\s*but\s*/i',
+            '/I\'m sorry,?\s*but\s*/i',
+            '/I cannot\s+translate\s*/i',
+            '/There is no\s+.*?\s*to translate/i',
+            '/Could you provide\s+.*?\s*to translate/i',
+            '/Please provide\s+.*?\s*to translate/i',
+            '/I don\'t see\s+.*?\s*to translate/i',
+            '/There\'s no\s+.*?\s*within\s+.*?\s*tags/i',
+            '/I need\s+.*?\s*in order to translate/i',
+            '/Here is the translation:?/i',
+            '/The translation is:?/i',
+            '/Translated text:?/i',
+        );
+        
+        // Check for invalid patterns
+        foreach ($invalid_patterns as $pattern) {
+            if (preg_match($pattern, $translated_content)) {
+                $issues[] = 'Contains AI comments/apologies';
+                break;
+            }
+        }
+        
+        // Check if response is just an explanation rather than translation
+        $explanation_patterns = array(
+            '/^(The|This)\s+.*?\s+(means|translates to|is)/i',
+            '/^In\s+\w+,?\s+.*?\s+(means|is)/i',
+            '/^To translate\s+.*?\s+into\s+\w+/i'
+        );
+        
+        foreach ($explanation_patterns as $pattern) {
+            if (preg_match($pattern, $translated_content)) {
+                $issues[] = 'Response is explanation, not direct translation';
+                break;
+            }
+        }
+        
+        // Filter out common prefixes/suffixes that shouldn't be in translations
+        $filter_patterns = array(
+            '/^Here is the translation:?\s*/i',
+            '/^The translation is:?\s*/i',
+            '/^Translated text:?\s*/i',
+            '/^Translation:?\s*/i',
+            '/^In\s+\w+:?\s*/i',
+        );
+        
+        foreach ($filter_patterns as $pattern) {
+            $filtered_content = preg_replace($pattern, '', $filtered_content);
+        }
+        
+        $filtered_content = trim($filtered_content);
+        
+        // Final validation - check if we have actual content
+        if (empty($filtered_content)) {
+            $issues[] = 'No usable content after filtering';
+            return array(
+                'valid' => false,
+                'filtered_content' => '',
+                'issues' => $issues
+            );
+        }
+        
+        // Check if the filtered content is suspiciously similar to common error messages
+        $error_indicators = array(
+            'no text', 'no content', 'empty', 'missing', 'cannot find',
+            'please provide', 'could you provide', 'I need'
+        );
+        
+        $lower_content = strtolower($filtered_content);
+        foreach ($error_indicators as $indicator) {
+            if (strpos($lower_content, $indicator) !== false && strlen($filtered_content) < 100) {
+                $issues[] = 'Response appears to be an error message';
+                return array(
+                    'valid' => false,
+                    'filtered_content' => $filtered_content,
+                    'issues' => $issues
+                );
+            }
+        }
+        
+        $is_valid = empty($issues);
+        
+        return array(
+            'valid' => $is_valid,
+            'filtered_content' => $filtered_content,
+            'issues' => $issues
+        );
+    }
+    
+    /**
      * Translate with cache check and retry mechanism
      */
     private function translate_with_cache_and_retry($content, $source_lang, $target_lang, $retry_attempts = 3, $context = array()) {
+        // Validate content first - skip empty content
+        if (!$this->validate_content_for_translation($content)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Skipping empty/invalid content - no API call made");
+            }
+            return array(
+                'success' => true,
+                'translated_content' => $content, // Return original if empty
+                'from_cache' => false,
+                'api_calls' => 0,
+                'skipped' => true,
+                'skip_reason' => 'Empty or invalid content'
+            );
+        }
+        
         // Check cache first
         $cached = $this->get_cached_translation($content, $source_lang, $target_lang);
         if ($cached) {
@@ -732,11 +873,33 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
 
-        // Translate with retry
+        // Translate with retry and response validation
         for ($i = 0; $i < $retry_attempts; $i++) {
             $result = $this->translate_content($content, $source_lang, $target_lang, $context);
+            
             if ($result['success']) {
-                return $result;
+                // Validate and filter the AI response
+                $validation = $this->validate_and_filter_ai_response($result['translated_content'], $content);
+                
+                if ($validation['valid']) {
+                    // Use filtered content
+                    $result['translated_content'] = $validation['filtered_content'];
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Valid translation received and filtered");
+                    }
+                    return $result;
+                } else {
+                    // Log invalid response
+                    $issues_text = implode(', ', $validation['issues']);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Invalid AI response (attempt " . ($i + 1) . "): " . $issues_text);
+                        error_log("Nexus AI WP Translator: Response content: " . substr($result['translated_content'], 0, 200));
+                    }
+                    
+                    // Continue to retry if this was an invalid response
+                    $result['success'] = false;
+                    $result['message'] = 'Invalid AI response: ' . $issues_text;
+                }
             }
 
             if ($i < $retry_attempts - 1) {
