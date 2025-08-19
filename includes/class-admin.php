@@ -425,7 +425,25 @@ class Nexus_AI_WP_Translator_Admin {
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        $target_languages_raw = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+        
+        // Ensure target_languages is an array (fix for string conversion issue)
+        if (is_string($target_languages_raw)) {
+            // Handle serialized string or comma-separated values
+            if (is_serialized($target_languages_raw)) {
+                $target_languages = maybe_unserialize($target_languages_raw);
+            } else {
+                // Fallback: split by comma if it's a comma-separated string
+                $target_languages = array_map('trim', explode(',', $target_languages_raw));
+            }
+        } else {
+            $target_languages = $target_languages_raw;
+        }
+
+        // Ensure we have an array
+        if (!is_array($target_languages)) {
+            $target_languages = array('es', 'fr', 'de'); // fallback to default
+        }
         $auto_redirect = get_option('nexus_ai_wp_translator_auto_redirect', true);
         $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
