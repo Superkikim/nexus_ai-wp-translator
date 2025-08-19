@@ -77,6 +77,10 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-seo-optimizer.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-scheduler.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-analytics.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-memory.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-custom-fields-translator.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-workflow-manager.php';
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-error-handler.php';
 
         // Load manager classes that depend on base classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
@@ -164,6 +168,30 @@ class Nexus_AI_WP_Translator_Plugin {
                 error_log('Nexus AI WP Translator: [INIT] Initializing analytics');
             }
             Nexus_AI_WP_Translator_Analytics::get_instance();
+
+            // Initialize translation memory
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing translation memory');
+            }
+            Nexus_AI_WP_Translator_Translation_Memory::get_instance();
+
+            // Initialize custom fields translator
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing custom fields translator');
+            }
+            Nexus_AI_WP_Translator_Custom_Fields_Translator::get_instance();
+
+            // Initialize workflow manager
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing workflow manager');
+            }
+            Nexus_AI_WP_Translator_Workflow_Manager::get_instance();
+
+            // Initialize error handler
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: [INIT] Initializing error handler');
+            }
+            Nexus_AI_WP_Translator_Error_Handler::get_instance();
             
             // Mark as initialized only after successful completion
             $initialized = true;
