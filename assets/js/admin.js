@@ -1263,7 +1263,7 @@ var NexusAIWPTranslatorAdmin = {
             var selectedPosts = [];
 
             // Get selected posts
-            button.closest('.nexus-ai-wp-bulk-actions-container').siblings('table').find('.select-post-checkbox:checked').each(function() {
+            button.closest('.nexus-ai-wp-bulk-actions-container').next('table').find('.select-post-checkbox:checked').each(function() {
                 selectedPosts.push({
                     id: $(this).data('post-id'),
                     title: $(this).closest('tr').find('td:nth-child(2) strong a').text(),
