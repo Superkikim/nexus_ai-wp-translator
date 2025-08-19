@@ -43,6 +43,7 @@ var NexusAIWPTranslatorAdmin = {
         this.initBulkActions();
         this.initProgressDialog();
         this.initBulkActionsInterface();
+        this.initQualityAssessmentInterface();
         
         // Load models on page load if API key exists
         var apiKey = $('#nexus_ai_wp_translator_api_key').val();
@@ -1674,6 +1675,165 @@ var NexusAIWPTranslatorAdmin = {
 
         // Store interval for cleanup
         this.progressInterval = progressInterval;
+    },
+
+    /**
+     * Initialize quality assessment interface
+     */
+    initQualityAssessmentInterface: function() {
+        console.log('NexusAI Debug: Initializing quality assessment interface');
+
+        // Handle quality details button clicks
+        $(document).on('click', '.nexus-ai-wp-quality-details', function() {
+            var button = $(this);
+            var postId = button.data('post-id');
+
+            console.log('NexusAI Debug: Quality details requested for post:', postId);
+
+            NexusAIWPTranslatorAdmin.showQualityDetailsDialog(postId);
+        });
+    },
+
+    /**
+     * Show quality details dialog
+     */
+    showQualityDetailsDialog: function(postId) {
+        var self = this;
+
+        // Get quality assessment data
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_get_quality_details',
+            post_id: postId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                self.displayQualityDetailsDialog(response.data);
+            } else {
+                alert('Failed to load quality details: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while loading quality details.');
+        });
+    },
+
+    /**
+     * Display quality details dialog
+     */
+    displayQualityDetailsDialog: function(qualityData) {
+        var dialogHtml =
+            '<div id="nexus-ai-wp-quality-dialog" class="nexus-ai-wp-quality-dialog-overlay">' +
+                '<div class="nexus-ai-wp-quality-dialog">' +
+                    '<div class="nexus-ai-wp-quality-dialog-header">' +
+                        '<h3>Translation Quality Assessment</h3>' +
+                        '<button type="button" class="nexus-ai-wp-quality-dialog-close">&times;</button>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-quality-dialog-body">' +
+                        '<div class="nexus-ai-wp-quality-overview">' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.grade + '</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Overall Grade</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.overall_score + '%</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Overall Score</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.completeness_score + '%</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Completeness</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.consistency_score + '%</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Consistency</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.structure_score + '%</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Structure</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-quality-metric">' +
+                                '<div class="nexus-ai-wp-quality-metric-value">' + qualityData.length_score + '%</div>' +
+                                '<div class="nexus-ai-wp-quality-metric-label">Length</div>' +
+                            '</div>' +
+                        '</div>';
+
+        // Add issues section
+        if (qualityData.issues && qualityData.issues.length > 0) {
+            dialogHtml +=
+                '<div class="nexus-ai-wp-quality-section">' +
+                    '<h4>Issues Found</h4>' +
+                    '<ul class="nexus-ai-wp-quality-issues">';
+
+            qualityData.issues.forEach(function(issue) {
+                dialogHtml += '<li>' + issue + '</li>';
+            });
+
+            dialogHtml += '</ul></div>';
+        }
+
+        // Add suggestions section
+        if (qualityData.suggestions && qualityData.suggestions.length > 0) {
+            dialogHtml +=
+                '<div class="nexus-ai-wp-quality-section">' +
+                    '<h4>Suggestions for Improvement</h4>' +
+                    '<ul class="nexus-ai-wp-quality-suggestions">';
+
+            qualityData.suggestions.forEach(function(suggestion) {
+                dialogHtml += '<li>' + suggestion + '</li>';
+            });
+
+            dialogHtml += '</ul></div>';
+        }
+
+        // Add metrics section
+        if (qualityData.metrics) {
+            dialogHtml +=
+                '<div class="nexus-ai-wp-quality-section">' +
+                    '<h4>Translation Metrics</h4>' +
+                    '<div class="nexus-ai-wp-quality-metrics-grid">' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.original_word_count + '</strong>' +
+                            '<span>Original Words</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.translated_word_count + '</strong>' +
+                            '<span>Translated Words</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.original_char_count + '</strong>' +
+                            '<span>Original Characters</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.translated_char_count + '</strong>' +
+                            '<span>Translated Characters</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.html_tags_original + '</strong>' +
+                            '<span>Original HTML Tags</span>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-quality-metrics-item">' +
+                            '<strong>' + qualityData.metrics.html_tags_translated + '</strong>' +
+                            '<span>Translated HTML Tags</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        dialogHtml +=
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        // Add dialog to page
+        $('body').append(dialogHtml);
+        $('#nexus-ai-wp-quality-dialog').css('display', 'flex');
+
+        // Handle close events
+        $(document).on('click', '#nexus-ai-wp-quality-dialog .nexus-ai-wp-quality-dialog-close, #nexus-ai-wp-quality-dialog', function(e) {
+            if (e.target === this) {
+                $('#nexus-ai-wp-quality-dialog').remove();
+            }
+        });
     }
 };
 

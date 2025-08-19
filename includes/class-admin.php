@@ -76,6 +76,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_bulk_clear_cache_posts', array($this, 'ajax_bulk_clear_cache_posts'));
         add_action('wp_ajax_nexus_ai_wp_resume_translation', array($this, 'ajax_resume_translation'));
         add_action('wp_ajax_nexus_ai_wp_get_progress', array($this, 'ajax_get_progress'));
+        add_action('wp_ajax_nexus_ai_wp_get_quality_details', array($this, 'ajax_get_quality_details'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -314,6 +315,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '<th>' . __('Title', 'nexus-ai-wp-translator') . '</th>';
         $output .= '<th>' . __('Language', 'nexus-ai-wp-translator') . '</th>';
         $output .= '<th>' . __('Translations', 'nexus-ai-wp-translator') . '</th>';
+        $output .= '<th>' . __('Quality', 'nexus-ai-wp-translator') . '</th>';
         $output .= '<th>' . __('Actions', 'nexus-ai-wp-translator') . '</th>';
         $output .= '</tr>';
         $output .= '</thead>';
@@ -344,6 +346,32 @@ class Nexus_AI_WP_Translator_Admin {
                 $output .= __('None', 'nexus-ai-wp-translator');
             }
             $output .= '</td>';
+
+            // Quality assessment column
+            $output .= '<td>';
+            $quality_assessment = get_post_meta($post->ID, '_nexus_ai_wp_translator_quality_assessment', true);
+            if ($quality_assessment && is_array($quality_assessment)) {
+                $grade = $quality_assessment['grade'];
+                $score = $quality_assessment['overall_score'];
+                $grade_class = $this->get_quality_grade_class($grade);
+
+                $output .= '<div class="nexus-ai-wp-quality-badge ' . $grade_class . '" title="Quality Score: ' . $score . '%">';
+                $output .= '<span class="grade">' . esc_html($grade) . '</span>';
+                $output .= '<span class="score">' . $score . '%</span>';
+                $output .= '</div>';
+
+                if (!empty($quality_assessment['issues'])) {
+                    $output .= '<button type="button" class="button button-small nexus-ai-wp-quality-details" ';
+                    $output .= 'data-post-id="' . $post->ID . '" ';
+                    $output .= 'title="' . __('View quality details', 'nexus-ai-wp-translator') . '">';
+                    $output .= __('Details', 'nexus-ai-wp-translator');
+                    $output .= '</button>';
+                }
+            } else {
+                $output .= '<span class="nexus-ai-wp-no-quality">' . __('N/A', 'nexus-ai-wp-translator') . '</span>';
+            }
+            $output .= '</td>';
+
             $output .= '<td>';
 
             // Check for resumable translations
@@ -1010,5 +1038,51 @@ class Nexus_AI_WP_Translator_Admin {
         }
 
         wp_send_json_success($progress_data);
+    }
+
+    /**
+     * Get CSS class for quality grade
+     */
+    private function get_quality_grade_class($grade) {
+        $grade_classes = array(
+            'A+' => 'grade-a-plus',
+            'A' => 'grade-a',
+            'A-' => 'grade-a-minus',
+            'B+' => 'grade-b-plus',
+            'B' => 'grade-b',
+            'B-' => 'grade-b-minus',
+            'C+' => 'grade-c-plus',
+            'C' => 'grade-c',
+            'C-' => 'grade-c-minus',
+            'D' => 'grade-d',
+            'F' => 'grade-f'
+        );
+
+        return isset($grade_classes[$grade]) ? $grade_classes[$grade] : 'grade-unknown';
+    }
+
+    /**
+     * AJAX: Get quality assessment details
+     */
+    public function ajax_get_quality_details() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_id = intval($_POST['post_id']);
+
+        if (!$post_id) {
+            wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+        }
+
+        $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
+
+        if (!$quality_assessment || !is_array($quality_assessment)) {
+            wp_send_json_error(__('No quality assessment found', 'nexus-ai-wp-translator'));
+        }
+
+        wp_send_json_success($quality_assessment);
     }
 }

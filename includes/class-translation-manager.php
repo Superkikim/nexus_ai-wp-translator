@@ -12,6 +12,7 @@ class Nexus_AI_WP_Translator_Manager {
     private static $instance = null;
     private $db;
     private $api_handler;
+    private $quality_assessor;
     private $processing_posts = array(); // Prevent infinite loops
     private $trashing_posts = array(); // Prevent infinite loops in trash operations
     
@@ -25,7 +26,8 @@ class Nexus_AI_WP_Translator_Manager {
     private function __construct() {
         $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
-        
+        $this->quality_assessor = new Nexus_AI_WP_Translator_Quality_Assessor();
+
         $this->init_hooks();
     }
     
@@ -417,11 +419,23 @@ class Nexus_AI_WP_Translator_Manager {
         // Clear translation cache after successful post creation
         $this->api_handler->clear_post_translation_cache($source_post_id, array($target_lang));
 
+        // Perform quality assessment
+        $quality_assessment = $this->assess_translation_quality(
+            $source_post->post_content,
+            $translation_result['content'],
+            $source_lang,
+            $target_lang
+        );
+
+        // Store quality assessment as post meta
+        update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id} and cleared cache");
+            error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id}, quality score: {$quality_assessment['overall_score']}");
         }
 
         $translation_result['translated_post_id'] = $translated_post_id;
+        $translation_result['quality_assessment'] = $quality_assessment;
         return $translation_result;
     }
     
@@ -1000,5 +1014,17 @@ class Nexus_AI_WP_Translator_Manager {
             }
             wp_send_json_error(__('Linking failed: ', 'nexus-ai-wp-translator') . $e->getMessage());
         }
+    }
+
+    /**
+     * Assess translation quality
+     */
+    private function assess_translation_quality($original_content, $translated_content, $source_lang, $target_lang) {
+        return $this->quality_assessor->assess_translation_quality(
+            $original_content,
+            $translated_content,
+            $source_lang,
+            $target_lang
+        );
     }
 }

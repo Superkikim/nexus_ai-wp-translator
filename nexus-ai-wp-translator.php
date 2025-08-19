@@ -72,7 +72,8 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-database.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-settings.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-api-handler.php';
-        
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-quality-assessor.php';
+
         // Load manager classes that depend on base classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
         

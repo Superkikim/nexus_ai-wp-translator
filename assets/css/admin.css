@@ -1052,3 +1052,222 @@
 .nexus-ai-wp-progress-dialog .resumed-indicator:before {
     content: "⟲ ";
 }
+
+/* Quality Assessment Styling */
+.nexus-ai-wp-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.nexus-ai-wp-quality-badge .grade {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.nexus-ai-wp-quality-badge .score {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* Grade-specific colors */
+.nexus-ai-wp-quality-badge.grade-a-plus,
+.nexus-ai-wp-quality-badge.grade-a {
+    background: #4caf50;
+    color: white;
+}
+
+.nexus-ai-wp-quality-badge.grade-a-minus,
+.nexus-ai-wp-quality-badge.grade-b-plus {
+    background: #8bc34a;
+    color: white;
+}
+
+.nexus-ai-wp-quality-badge.grade-b,
+.nexus-ai-wp-quality-badge.grade-b-minus {
+    background: #ffc107;
+    color: #333;
+}
+
+.nexus-ai-wp-quality-badge.grade-c-plus,
+.nexus-ai-wp-quality-badge.grade-c {
+    background: #ff9800;
+    color: white;
+}
+
+.nexus-ai-wp-quality-badge.grade-c-minus,
+.nexus-ai-wp-quality-badge.grade-d {
+    background: #f44336;
+    color: white;
+}
+
+.nexus-ai-wp-quality-badge.grade-f {
+    background: #d32f2f;
+    color: white;
+}
+
+.nexus-ai-wp-quality-details {
+    font-size: 11px !important;
+    padding: 2px 6px !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+}
+
+.nexus-ai-wp-no-quality {
+    color: #666;
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* Quality Details Dialog */
+.nexus-ai-wp-quality-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+}
+
+.nexus-ai-wp-quality-dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.nexus-ai-wp-quality-dialog-header {
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nexus-ai-wp-quality-dialog-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.nexus-ai-wp-quality-dialog-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-ai-wp-quality-dialog-close:hover {
+    color: #333;
+}
+
+.nexus-ai-wp-quality-dialog-body {
+    padding: 20px;
+}
+
+.nexus-ai-wp-quality-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.nexus-ai-wp-quality-metric {
+    text-align: center;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+.nexus-ai-wp-quality-metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.nexus-ai-wp-quality-metric-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nexus-ai-wp-quality-section {
+    margin-bottom: 20px;
+}
+
+.nexus-ai-wp-quality-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.nexus-ai-wp-quality-issues,
+.nexus-ai-wp-quality-suggestions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nexus-ai-wp-quality-issues li {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    color: #856404;
+}
+
+.nexus-ai-wp-quality-suggestions li {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    color: #0c5460;
+}
+
+.nexus-ai-wp-quality-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.nexus-ai-wp-quality-metrics-item {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.nexus-ai-wp-quality-metrics-item strong {
+    display: block;
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.nexus-ai-wp-quality-metrics-item span {
+    font-size: 12px;
+    color: #666;
+}
