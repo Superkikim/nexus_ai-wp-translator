@@ -327,16 +327,52 @@ class Nexus_AI_WP_Translator_Manager {
             return $translation_result;
         }
         
+        // Determine post status based on settings
+        $save_as_draft = get_option('nexus_ai_wp_translator_save_as_draft', false);
+        $post_status = $save_as_draft ? 'draft' : $source_post->post_status;
+
+        // Handle translated categories and tags
+        $translated_categories = array();
+        $translated_tags = array();
+
+        // Create translated categories with language prefix
+        if (!empty($translation_result['categories'])) {
+            foreach ($translation_result['categories'] as $translated_cat_name) {
+                $cat_slug = $target_lang . '_' . sanitize_title($translated_cat_name);
+
+                // Check if category exists, create if not
+                $existing_cat = get_category_by_slug($cat_slug);
+                if (!$existing_cat) {
+                    $cat_id = wp_insert_category(array(
+                        'cat_name' => $translated_cat_name,
+                        'category_nicename' => $cat_slug
+                    ));
+                    if (!is_wp_error($cat_id)) {
+                        $translated_categories[] = $cat_id;
+                    }
+                } else {
+                    $translated_categories[] = $existing_cat->term_id;
+                }
+            }
+        }
+
+        // Use translated tags or fallback to original
+        if (!empty($translation_result['tags'])) {
+            $translated_tags = $translation_result['tags'];
+        } else {
+            $translated_tags = wp_get_post_tags($source_post_id, array('fields' => 'names'));
+        }
+
         // Create new post
         $translated_post_data = array(
             'post_title' => $translation_result['title'],
             'post_content' => $translation_result['content'],
             'post_excerpt' => $translation_result['excerpt'],
-            'post_status' => $source_post->post_status,
+            'post_status' => $post_status,
             'post_type' => $source_post->post_type,
             'post_author' => $source_post->post_author,
-            'post_category' => wp_get_post_categories($source_post_id),
-            'tags_input' => wp_get_post_tags($source_post_id, array('fields' => 'names')),
+            'post_category' => !empty($translated_categories) ? $translated_categories : wp_get_post_categories($source_post_id),
+            'tags_input' => $translated_tags,
             'meta_input' => array(
                 '_nexus_ai_wp_translator_language' => $target_lang,
                 '_nexus_ai_wp_translator_source_post' => $source_post_id,
@@ -372,7 +408,14 @@ class Nexus_AI_WP_Translator_Manager {
         if (!get_post_meta($source_post_id, '_nexus_ai_wp_translator_language', true)) {
             update_post_meta($source_post_id, '_nexus_ai_wp_translator_language', $source_lang);
         }
-        
+
+        // Clear translation cache after successful post creation
+        $this->api_handler->clear_post_translation_cache($source_post_id, array($target_lang));
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id} and cleared cache");
+        }
+
         $translation_result['translated_post_id'] = $translated_post_id;
         return $translation_result;
     }

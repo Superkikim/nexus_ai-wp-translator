@@ -148,7 +148,26 @@ if (!defined('ABSPATH')) {
                             </fieldset>
                         </td>
                     </tr>
-                    
+
+                    <tr>
+                        <th scope="row"><?php _e('Translation Status', 'nexus-ai-wp-translator'); ?></th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox"
+                                           id="nexus_ai_wp_translator_save_as_draft"
+                                           name="nexus_ai_wp_translator_save_as_draft"
+                                           value="1"
+                                           <?php checked(get_option('nexus_ai_wp_translator_save_as_draft', false)); ?> />
+                                    <?php _e('Save translations as drafts instead of publishing immediately', 'nexus-ai-wp-translator'); ?>
+                                </label>
+                                <p class="description">
+                                    <?php _e('When enabled, translated posts will be saved as drafts for review before publishing. When disabled, translations will be published immediately with the same status as the source post.', 'nexus-ai-wp-translator'); ?>
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+
                     <tr>
                         <th scope="row"><?php _e('SEO Friendly URLs', 'nexus-ai-wp-translator'); ?></th>
                         <td>

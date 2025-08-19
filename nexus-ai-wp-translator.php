@@ -182,7 +182,8 @@ class Nexus_AI_WP_Translator_Plugin {
             'retry_attempts' => 3,
             'cache_translations' => true,
             'seo_friendly_urls' => true,
-            'auto_redirect' => true // Auto-redirect to translated content
+            'auto_redirect' => true, // Auto-redirect to translated content
+            'save_as_draft' => false // Publish translations immediately by default
         );
         
         foreach ($default_options as $key => $value) {

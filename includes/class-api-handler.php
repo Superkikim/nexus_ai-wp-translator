@@ -555,9 +555,6 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
 
         $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
-        $content = $post->post_content;
-        $title = $post->post_title;
-        $excerpt = $post->post_excerpt;
 
         if (!$target_languages) {
             $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
@@ -568,11 +565,29 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
 
         foreach ($target_languages as $target_lang) {
-            // Clear cache for title, content, and excerpt
-            $this->clear_cached_translation($title, $source_lang, $target_lang);
-            $this->clear_cached_translation($content, $source_lang, $target_lang);
-            if (!empty($excerpt)) {
-                $this->clear_cached_translation($excerpt, $source_lang, $target_lang);
+            // Clear cache for title
+            $this->clear_cached_translation($post->post_title, $source_lang, $target_lang);
+
+            // Clear cache for content blocks
+            $content_blocks = $this->split_content_into_blocks($post->post_content);
+            foreach ($content_blocks as $block) {
+                $this->clear_cached_translation($block['content'], $source_lang, $target_lang);
+            }
+
+            // Clear cache for excerpt
+            if (!empty($post->post_excerpt)) {
+                $this->clear_cached_translation($post->post_excerpt, $source_lang, $target_lang);
+            }
+
+            // Clear cache for categories and tags
+            $categories = wp_get_post_categories($post_id, array('fields' => 'names'));
+            foreach ($categories as $category) {
+                $this->clear_cached_translation($category, $source_lang, $target_lang);
+            }
+
+            $tags = wp_get_post_tags($post_id, array('fields' => 'names'));
+            foreach ($tags as $tag) {
+                $this->clear_cached_translation($tag, $source_lang, $target_lang);
             }
         }
 
@@ -580,9 +595,87 @@ class Nexus_AI_WP_Translator_API_Handler {
             error_log("Nexus AI WP Translator: Cleared all cached translations for post {$post_id}");
         }
     }
+
+    /**
+     * Split content into translatable blocks
+     */
+    public function split_content_into_blocks($content) {
+        $blocks = array();
+
+        // Check if content contains Gutenberg blocks
+        if (has_blocks($content)) {
+            // Parse Gutenberg blocks
+            $parsed_blocks = parse_blocks($content);
+
+            foreach ($parsed_blocks as $index => $block) {
+                if (!empty($block['blockName']) && !empty($block['innerHTML'])) {
+                    // Extract text content from block HTML
+                    $text_content = $this->extract_text_from_block($block);
+
+                    if (!empty(trim($text_content))) {
+                        $blocks[] = array(
+                            'type' => 'gutenberg_block',
+                            'block_name' => $block['blockName'],
+                            'content' => $text_content,
+                            'original_html' => $block['innerHTML'],
+                            'attributes' => $block['attrs'] ?? array(),
+                            'index' => $index
+                        );
+                    }
+                }
+            }
+        } else {
+            // Classic editor content - split by paragraphs
+            $blocks = $this->split_classic_content($content);
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * Extract translatable text from Gutenberg block
+     */
+    private function extract_text_from_block($block) {
+        $html = $block['innerHTML'];
+
+        // Remove script and style tags completely
+        $html = preg_replace('/<(script|style)[^>]*>.*?<\/\1>/is', '', $html);
+
+        // Extract text content while preserving some structure
+        $text = strip_tags($html, '<p><br><h1><h2><h3><h4><h5><h6><li><strong><em><b><i>');
+
+        // Clean up whitespace
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim($text);
+
+        return $text;
+    }
+
+    /**
+     * Split classic editor content into blocks
+     */
+    private function split_classic_content($content) {
+        $blocks = array();
+
+        // Split by double line breaks (paragraphs)
+        $paragraphs = preg_split('/\n\s*\n/', $content);
+
+        foreach ($paragraphs as $index => $paragraph) {
+            $paragraph = trim($paragraph);
+            if (!empty($paragraph)) {
+                $blocks[] = array(
+                    'type' => 'classic_paragraph',
+                    'content' => $paragraph,
+                    'index' => $index
+                );
+            }
+        }
+
+        return $blocks;
+    }
     
     /**
-     * Translate post content with retry mechanism
+     * Translate post content with block-by-block approach and caching
      */
     public function translate_post_content($post_id, $target_lang) {
         $post = get_post($post_id);
@@ -592,78 +685,190 @@ class Nexus_AI_WP_Translator_API_Handler {
                 'message' => __('Post not found', 'nexus-ai-wp-translator')
             );
         }
-        
+
         $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
-        $content = $post->post_content;
-        $title = $post->post_title;
-        $excerpt = $post->post_excerpt;
-        
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
-        $results = array();
-        
+
+        // Use new block-by-block translation method
+        return $this->translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts);
+    }
+
+    /**
+     * Translate with cache check and retry mechanism
+     */
+    private function translate_with_cache_and_retry($content, $source_lang, $target_lang, $retry_attempts = 3) {
         // Check cache first
-        $cached_content = $this->get_cached_translation($content, $source_lang, $target_lang);
-        $cached_title = $this->get_cached_translation($title, $source_lang, $target_lang);
-        
-        if ($cached_content && $cached_title) {
+        $cached = $this->get_cached_translation($content, $source_lang, $target_lang);
+        if ($cached) {
             return array(
                 'success' => true,
-                'title' => $cached_title,
-                'content' => $cached_content,
-                'excerpt' => $excerpt ? $this->get_cached_translation($excerpt, $source_lang, $target_lang) : '',
-                'from_cache' => true
+                'translated_content' => $cached,
+                'from_cache' => true,
+                'api_calls' => 0
             );
         }
-        
-        // Translate title
+
+        // Translate with retry
         for ($i = 0; $i < $retry_attempts; $i++) {
-            $title_result = $this->translate_content($title, $source_lang, $target_lang);
-            if ($title_result['success']) {
-                $results['title'] = $title_result['translated_content'];
-                break;
+            $result = $this->translate_content($content, $source_lang, $target_lang);
+            if ($result['success']) {
+                return $result;
             }
-            
-            if ($i === $retry_attempts - 1) {
-                return array(
-                    'success' => false,
-                    'message' => __('Failed to translate title: ', 'nexus-ai-wp-translator') . $title_result['message']
+
+            if ($i < $retry_attempts - 1) {
+                sleep(1); // Wait before retry
+            }
+        }
+
+        return $result; // Return last failed result
+    }
+
+    /**
+     * Translate post content block by block with progress tracking
+     */
+    public function translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts = 3) {
+        $results = array(
+            'success' => false,
+            'title' => '',
+            'content' => '',
+            'excerpt' => '',
+            'categories' => array(),
+            'tags' => array(),
+            'progress' => array(),
+            'total_blocks' => 0,
+            'completed_blocks' => 0,
+            'api_calls' => 0
+        );
+
+        // Step 1: Translate title
+        $results['progress'][] = array('step' => 'title', 'status' => 'processing');
+        $title_result = $this->translate_with_cache_and_retry($post->post_title, $source_lang, $target_lang, $retry_attempts);
+
+        if (!$title_result['success']) {
+            $results['progress'][] = array('step' => 'title', 'status' => 'failed', 'message' => $title_result['message']);
+            return $results;
+        }
+
+        $results['title'] = $title_result['translated_content'];
+        $results['api_calls'] += $title_result['api_calls'];
+        $results['progress'][] = array('step' => 'title', 'status' => 'completed');
+
+        // Step 2: Split and translate content blocks
+        $content_blocks = $this->split_content_into_blocks($post->post_content);
+        $results['total_blocks'] = count($content_blocks) + 1; // +1 for title
+        $results['completed_blocks'] = 1; // Title completed
+
+        $translated_blocks = array();
+
+        foreach ($content_blocks as $block) {
+            $results['progress'][] = array(
+                'step' => 'content_block',
+                'status' => 'processing',
+                'block_type' => $block['type'],
+                'block_index' => $block['index']
+            );
+
+            $block_result = $this->translate_with_cache_and_retry($block['content'], $source_lang, $target_lang, $retry_attempts);
+
+            if (!$block_result['success']) {
+                $results['progress'][] = array(
+                    'step' => 'content_block',
+                    'status' => 'failed',
+                    'message' => $block_result['message'],
+                    'block_index' => $block['index']
                 );
+                return $results;
             }
-            
-            sleep(1); // Wait before retry
+
+            // Store translated block with structure info
+            $translated_blocks[] = array(
+                'original' => $block,
+                'translated_content' => $block_result['translated_content']
+            );
+
+            $results['api_calls'] += $block_result['api_calls'];
+            $results['completed_blocks']++;
+            $results['progress'][] = array(
+                'step' => 'content_block',
+                'status' => 'completed',
+                'block_index' => $block['index']
+            );
         }
-        
-        // Translate content
-        for ($i = 0; $i < $retry_attempts; $i++) {
-            $content_result = $this->translate_content($content, $source_lang, $target_lang);
-            if ($content_result['success']) {
-                $results['content'] = $content_result['translated_content'];
-                break;
+
+        // Reconstruct content from translated blocks
+        $results['content'] = $this->reconstruct_content_from_blocks($translated_blocks, $post->post_content);
+
+        // Step 3: Translate excerpt if exists
+        if (!empty($post->post_excerpt)) {
+            $results['progress'][] = array('step' => 'excerpt', 'status' => 'processing');
+            $excerpt_result = $this->translate_with_cache_and_retry($post->post_excerpt, $source_lang, $target_lang, $retry_attempts);
+
+            if ($excerpt_result['success']) {
+                $results['excerpt'] = $excerpt_result['translated_content'];
+                $results['api_calls'] += $excerpt_result['api_calls'];
+                $results['progress'][] = array('step' => 'excerpt', 'status' => 'completed');
+            } else {
+                $results['progress'][] = array('step' => 'excerpt', 'status' => 'failed', 'message' => $excerpt_result['message']);
             }
-            
-            if ($i === $retry_attempts - 1) {
-                return array(
-                    'success' => false,
-                    'message' => __('Failed to translate content: ', 'nexus-ai-wp-translator') . $content_result['message']
-                );
+        }
+
+        // Step 4: Translate categories
+        $categories = wp_get_post_categories($post->ID, array('fields' => 'names'));
+        if (!empty($categories)) {
+            $results['progress'][] = array('step' => 'categories', 'status' => 'processing');
+            foreach ($categories as $category) {
+                $cat_result = $this->translate_with_cache_and_retry($category, $source_lang, $target_lang, $retry_attempts);
+                if ($cat_result['success']) {
+                    $results['categories'][] = $cat_result['translated_content'];
+                    $results['api_calls'] += $cat_result['api_calls'];
+                }
             }
-            
-            sleep(1); // Wait before retry
+            $results['progress'][] = array('step' => 'categories', 'status' => 'completed');
         }
-        
-        // Translate excerpt if exists
-        if (!empty($excerpt)) {
-            $excerpt_result = $this->translate_content($excerpt, $source_lang, $target_lang);
-            $results['excerpt'] = $excerpt_result['success'] ? $excerpt_result['translated_content'] : '';
-        } else {
-            $results['excerpt'] = '';
+
+        // Step 5: Translate tags
+        $tags = wp_get_post_tags($post->ID, array('fields' => 'names'));
+        if (!empty($tags)) {
+            $results['progress'][] = array('step' => 'tags', 'status' => 'processing');
+            foreach ($tags as $tag) {
+                $tag_result = $this->translate_with_cache_and_retry($tag, $source_lang, $target_lang, $retry_attempts);
+                if ($tag_result['success']) {
+                    $results['tags'][] = $tag_result['translated_content'];
+                    $results['api_calls'] += $tag_result['api_calls'];
+                }
+            }
+            $results['progress'][] = array('step' => 'tags', 'status' => 'completed');
         }
-        
+
         $results['success'] = true;
-        $results['api_calls'] = isset($content_result['api_calls']) ? $content_result['api_calls'] + 1 : 2;
-        $results['processing_time'] = (isset($title_result['processing_time']) ? $title_result['processing_time'] : 0) + 
-                                    (isset($content_result['processing_time']) ? $content_result['processing_time'] : 0);
-        
         return $results;
+    }
+
+    /**
+     * Reconstruct content from translated blocks
+     */
+    private function reconstruct_content_from_blocks($translated_blocks, $original_content) {
+        if (empty($translated_blocks)) {
+            return $original_content;
+        }
+
+        // For now, simple reconstruction - join translated content
+        // TODO: Improve to maintain original structure better
+        $reconstructed = '';
+
+        foreach ($translated_blocks as $block_data) {
+            $original = $block_data['original'];
+            $translated = $block_data['translated_content'];
+
+            if ($original['type'] === 'gutenberg_block') {
+                // Try to maintain block structure
+                $reconstructed .= "\n\n" . $translated;
+            } else {
+                // Classic content
+                $reconstructed .= "\n\n" . $translated;
+            }
+        }
+
+        return trim($reconstructed);
     }
 }
