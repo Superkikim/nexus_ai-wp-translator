@@ -305,6 +305,26 @@ Technical content:
                 'is_default' => false,
                 'created_at' => time(),
                 'updated_at' => time()
+            ),
+            'meta_description' => array(
+                'id' => 'meta_description',
+                'name' => __('Meta Descriptions', 'nexus-ai-wp-translator'),
+                'description' => __('For SEO meta descriptions', 'nexus-ai-wp-translator'),
+                'content_types' => array('meta_description'),
+                'prompt' => 'Translate this SEO meta description from {source_lang} to {target_lang}. Keep it concise, compelling, and under 160 characters. Maintain the marketing appeal and key information. OUTPUT ONLY THE TRANSLATION.
+
+Meta description:
+{content}',
+                'settings' => array(
+                    'tone' => 'compelling',
+                    'formality' => 'professional',
+                    'target_audience' => 'search_users',
+                    'character_limit' => 160,
+                    'seo_optimized' => true
+                ),
+                'is_default' => false,
+                'created_at' => time(),
+                'updated_at' => time()
             )
         );
         

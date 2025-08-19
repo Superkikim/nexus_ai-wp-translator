@@ -13,6 +13,7 @@ class Nexus_AI_WP_Translator_Manager {
     private $db;
     private $api_handler;
     private $quality_assessor;
+    private $seo_optimizer;
     private $processing_posts = array(); // Prevent infinite loops
     private $trashing_posts = array(); // Prevent infinite loops in trash operations
     
@@ -27,6 +28,7 @@ class Nexus_AI_WP_Translator_Manager {
         $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
         $this->quality_assessor = new Nexus_AI_WP_Translator_Quality_Assessor();
+        $this->seo_optimizer = Nexus_AI_WP_Translator_SEO_Optimizer::get_instance();
 
         $this->init_hooks();
     }
@@ -429,6 +431,9 @@ class Nexus_AI_WP_Translator_Manager {
 
         // Store quality assessment as post meta
         update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
+
+        // Translate and add meta descriptions for SEO
+        $this->seo_optimizer->add_translated_meta_description($translated_post_id, $source_post_id, $target_lang);
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id}, quality score: {$quality_assessment['overall_score']}");
