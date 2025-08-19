@@ -490,6 +490,25 @@ var NexusAIWPTranslatorAdmin = {
             // Start translation with progress dialog
             NexusAIWPTranslatorAdmin.startTranslationWithProgress(postId, postTitle, targetLanguages, button);
         });
+
+        // Resume translation trigger
+        $(document).on('click', '.resume-translation-btn', function() {
+            console.log('NexusAI Debug: Resume translation button clicked');
+
+            var button = $(this);
+            var postId = button.data('post-id');
+            var postTitle = button.data('post-title');
+            var resumableLanguages = button.data('resumable-languages').split(',');
+
+            console.log('NexusAI Debug: Resume for post ID:', postId, 'Languages:', resumableLanguages);
+
+            if (!confirm('Resume failed translations for: ' + resumableLanguages.join(', ') + '?')) {
+                return;
+            }
+
+            // Start resume process with progress dialog
+            NexusAIWPTranslatorAdmin.startResumeTranslation(postId, postTitle, resumableLanguages, button);
+        });
         
         // Translation status check
         $(document).on('click', '#nexus-ai-wp-get-translation-status', function() {
@@ -1447,6 +1466,94 @@ var NexusAIWPTranslatorAdmin = {
 
         // Perform bulk cache clear
         this.performBulkClearCache(selectedPosts);
+    },
+
+    /**
+     * Start resume translation with progress dialog
+     */
+    startResumeTranslation: function(postId, postTitle, resumableLanguages, button) {
+        console.log('NexusAI Debug: Starting resume translation');
+
+        // Show progress dialog
+        this.showProgressDialog(postTitle + ' (Resume)', resumableLanguages);
+
+        // Disable the resume button
+        button.prop('disabled', true).text('Resuming...');
+
+        // Start the resume process
+        this.performResumeTranslation(postId, resumableLanguages, button);
+    },
+
+    /**
+     * Perform resume translation
+     */
+    performResumeTranslation: function(postId, resumableLanguages, button) {
+        var self = this;
+
+        console.log('NexusAI Debug: Starting AJAX resume translation request');
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_resume_translation',
+            post_id: postId,
+            target_languages: resumableLanguages,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            console.log('NexusAI Debug: Resume translation response:', response);
+
+            if (response.success) {
+                self.handleTranslationSuccess(response, button);
+            } else {
+                self.handleTranslationError(response.message || 'Unknown error', button);
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.log('NexusAI Debug: Resume translation failed:', error);
+            self.handleTranslationError('Network error: ' + error, button);
+        });
+
+        // Simulate progress updates for resume
+        this.simulateResumeProgress();
+    },
+
+    /**
+     * Simulate resume progress updates
+     */
+    simulateResumeProgress: function() {
+        var self = this;
+        var progress = 25; // Start at 25% since we're resuming
+        var steps = ['title', 'content', 'excerpt', 'categories', 'tags', 'creating'];
+        var currentStep = 1; // Start from content since title might be done
+
+        // Mark title as completed
+        this.updateStepStatus('title', 'completed');
+        this.updateStepStatus('content', 'processing');
+
+        var progressInterval = setInterval(function() {
+            progress += Math.random() * 15 + 10; // Faster progress for resume
+
+            if (progress > 100) progress = 100;
+
+            // Update progress bar
+            $('#nexus-ai-wp-progress-bar').css('width', progress + '%');
+            $('#nexus-ai-wp-progress-percentage').text(Math.round(progress) + '%');
+
+            // Update current step
+            if (currentStep < steps.length && progress > (currentStep + 1) * 16) {
+                self.updateStepStatus(steps[currentStep], 'completed');
+                currentStep++;
+                if (currentStep < steps.length) {
+                    self.updateStepStatus(steps[currentStep], 'processing');
+                }
+            }
+
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+            }
+        }, 600); // Faster interval for resume
+
+        // Store interval for cleanup
+        this.progressInterval = progressInterval;
     }
 };
 

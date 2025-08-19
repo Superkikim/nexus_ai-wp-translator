@@ -74,6 +74,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_bulk_unlink_posts', array($this, 'ajax_bulk_unlink_posts'));
         add_action('wp_ajax_nexus_ai_wp_bulk_delete_posts', array($this, 'ajax_bulk_delete_posts'));
         add_action('wp_ajax_nexus_ai_wp_bulk_clear_cache_posts', array($this, 'ajax_bulk_clear_cache_posts'));
+        add_action('wp_ajax_nexus_ai_wp_resume_translation', array($this, 'ajax_resume_translation'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -343,6 +344,20 @@ class Nexus_AI_WP_Translator_Admin {
             }
             $output .= '</td>';
             $output .= '<td>';
+
+            // Check for resumable translations
+            $resumable_languages = $this->get_resumable_translations($post->ID);
+
+            if (!empty($resumable_languages)) {
+                $output .= '<button type="button" class="button button-secondary resume-translation-btn" ';
+                $output .= 'data-post-id="' . $post->ID . '" ';
+                $output .= 'data-post-title="' . esc_attr($post->post_title) . '" ';
+                $output .= 'data-resumable-languages="' . esc_attr(implode(',', $resumable_languages)) . '" ';
+                $output .= 'title="' . sprintf(__('Resume failed translations to: %s', 'nexus-ai-wp-translator'), implode(', ', $resumable_languages)) . '">';
+                $output .= __('Resume', 'nexus-ai-wp-translator');
+                $output .= '</button> ';
+            }
+
             $output .= '<button type="button" class="button button-primary translate-post-btn" ';
             $output .= 'data-post-id="' . $post->ID . '" ';
             $output .= 'data-post-title="' . esc_attr($post->post_title) . '">';
@@ -890,6 +905,84 @@ class Nexus_AI_WP_Translator_Admin {
         wp_send_json_success(sprintf(
             __('Successfully cleared cache for %d posts', 'nexus-ai-wp-translator'),
             $cleared_count
+        ));
+    }
+
+    /**
+     * Get resumable translations for a post
+     */
+    private function get_resumable_translations($post_id) {
+        $resumable_languages = array();
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+
+        foreach ($target_languages as $lang) {
+            if ($this->api_handler->has_partial_translation_cache($post_id, $lang)) {
+                $resumable_languages[] = $lang;
+            }
+        }
+
+        return $resumable_languages;
+    }
+
+    /**
+     * AJAX: Resume translation
+     */
+    public function ajax_resume_translation() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_id = intval($_POST['post_id']);
+        $target_languages = array_map('sanitize_text_field', $_POST['target_languages']);
+
+        if (!$post_id || empty($target_languages)) {
+            wp_send_json_error(__('Invalid parameters', 'nexus-ai-wp-translator'));
+        }
+
+        $results = array();
+        $success_count = 0;
+        $error_count = 0;
+
+        foreach ($target_languages as $target_lang) {
+            // Resume translation for this language
+            $result = $this->api_handler->translate_post_content($post_id, $target_lang);
+
+            if ($result['success']) {
+                // Create the translated post
+                $translation_result = $this->translation_manager->create_translated_post($post_id, $target_lang);
+
+                if ($translation_result['success']) {
+                    $success_count++;
+                    $results[] = array(
+                        'language' => $target_lang,
+                        'status' => 'success',
+                        'post_id' => $translation_result['translated_post_id']
+                    );
+                } else {
+                    $error_count++;
+                    $results[] = array(
+                        'language' => $target_lang,
+                        'status' => 'error',
+                        'message' => $translation_result['message']
+                    );
+                }
+            } else {
+                $error_count++;
+                $results[] = array(
+                    'language' => $target_lang,
+                    'status' => 'error',
+                    'message' => $result['message']
+                );
+            }
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(__('Resume completed: %d successful, %d failed', 'nexus-ai-wp-translator'), $success_count, $error_count),
+            'success_count' => $success_count,
+            'error_count' => $error_count,
+            'results' => $results
         ));
     }
 }

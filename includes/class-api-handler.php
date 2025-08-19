@@ -726,7 +726,7 @@ class Nexus_AI_WP_Translator_API_Handler {
     /**
      * Translate post content block by block with progress tracking
      */
-    public function translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts = 3) {
+    public function translate_post_content_by_blocks($post, $source_lang, $target_lang, $retry_attempts = 3, $resume = false) {
         $results = array(
             'success' => false,
             'title' => '',
@@ -737,8 +737,19 @@ class Nexus_AI_WP_Translator_API_Handler {
             'progress' => array(),
             'total_blocks' => 0,
             'completed_blocks' => 0,
-            'api_calls' => 0
+            'api_calls' => 0,
+            'resumed' => false
         );
+
+        // Check for partial translation cache if resuming
+        if ($resume) {
+            $partial_cache = $this->get_partial_translation_cache($post->ID, $target_lang);
+            if ($partial_cache) {
+                $results = array_merge($results, $partial_cache);
+                $results['resumed'] = true;
+                $results['progress'][] = array('step' => 'resume', 'status' => 'completed', 'message' => 'Resumed from cached progress');
+            }
+        }
 
         // Step 1: Translate title
         $results['progress'][] = array('step' => 'title', 'status' => 'processing');
@@ -777,6 +788,13 @@ class Nexus_AI_WP_Translator_API_Handler {
                     'message' => $block_result['message'],
                     'block_index' => $block['index']
                 );
+
+                // Save partial results for resume functionality
+                $results['partial_failure'] = true;
+                $results['failed_at_block'] = $block['index'];
+                $results['translated_blocks'] = $translated_blocks;
+                $this->save_partial_translation_cache($post->ID, $target_lang, $results);
+
                 return $results;
             }
 
@@ -841,6 +859,10 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
 
         $results['success'] = true;
+
+        // Clear partial translation cache on successful completion
+        $this->clear_partial_translation_cache($post->ID, $target_lang);
+
         return $results;
     }
 
@@ -870,5 +892,67 @@ class Nexus_AI_WP_Translator_API_Handler {
         }
 
         return trim($reconstructed);
+    }
+
+    /**
+     * Get partial translation cache for a post
+     */
+    public function get_partial_translation_cache($post_id, $target_lang) {
+        $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $target_lang;
+        $cached = get_transient($cache_key);
+
+        if ($cached && is_array($cached)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Found partial translation cache for post {$post_id} -> {$target_lang}");
+            }
+            return $cached;
+        }
+
+        return false;
+    }
+
+    /**
+     * Save partial translation cache
+     */
+    public function save_partial_translation_cache($post_id, $target_lang, $partial_results) {
+        $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $target_lang;
+
+        // Cache for 24 hours
+        $cached = set_transient($cache_key, $partial_results, 24 * HOUR_IN_SECONDS);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Saved partial translation cache for post {$post_id} -> {$target_lang}");
+        }
+
+        return $cached;
+    }
+
+    /**
+     * Clear partial translation cache
+     */
+    public function clear_partial_translation_cache($post_id, $target_lang = null) {
+        if ($target_lang) {
+            $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $target_lang;
+            delete_transient($cache_key);
+        } else {
+            // Clear all partial caches for this post
+            $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
+            foreach ($target_languages as $lang) {
+                $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $lang;
+                delete_transient($cache_key);
+            }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Cleared partial translation cache for post {$post_id}");
+        }
+    }
+
+    /**
+     * Check if post has partial translation cache
+     */
+    public function has_partial_translation_cache($post_id, $target_lang) {
+        $cache_key = 'nexus_ai_wp_partial_translation_' . $post_id . '_' . $target_lang;
+        return get_transient($cache_key) !== false;
     }
 }

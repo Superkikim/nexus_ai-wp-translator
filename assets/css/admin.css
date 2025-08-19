@@ -1015,3 +1015,40 @@
 .nexus-ai-wp-language-checkboxes input[type="checkbox"] {
     margin: 0;
 }
+
+/* Resume Translation Button */
+.resume-translation-btn {
+    background: #ff9500 !important;
+    border-color: #ff9500 !important;
+    color: #fff !important;
+    position: relative;
+}
+
+.resume-translation-btn:hover {
+    background: #e6850e !important;
+    border-color: #e6850e !important;
+}
+
+.resume-translation-btn:before {
+    content: "⟲ ";
+    font-weight: bold;
+}
+
+.resume-translation-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Resume indicator in progress dialog */
+.nexus-ai-wp-progress-dialog .resumed-indicator {
+    background: #ff9500;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.nexus-ai-wp-progress-dialog .resumed-indicator:before {
+    content: "⟲ ";
+}
