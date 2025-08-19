@@ -73,20 +73,22 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize tab switching functionality
      */
     initTabSwitching: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing tab switching');
-        jQuery('.nav-tab').on('click', function(e) {
+        $('.nav-tab').on('click', function(e) {
             e.preventDefault();
             
-            var target = jQuery(this).attr('href');
+            var target = $(this).attr('href');
             console.log('NexusAI Debug: Tab clicked:', target);
             
             // Update nav tabs
-            jQuery('.nav-tab').removeClass('nav-tab-active');
-            jQuery(this).addClass('nav-tab-active');
+            $('.nav-tab').removeClass('nav-tab-active');
+            $(this).addClass('nav-tab-active');
             
             // Update tab content
-            jQuery('.tab-content').removeClass('active');
-            jQuery(target).addClass('active');
+            $('.tab-content').removeClass('active');
+            $(target).addClass('active');
             
             // Save active tab in localStorage
             localStorage.setItem('nexus_ai_wp_translator_active_tab', target);
@@ -94,9 +96,9 @@ var NexusAIWPTranslatorAdmin = {
         
         // Restore active tab from localStorage
         var activeTab = localStorage.getItem('nexus_ai_wp_translator_active_tab');
-        if (activeTab && jQuery(activeTab).length) {
+        if (activeTab && $(activeTab).length) {
             console.log('NexusAI Debug: Restoring active tab:', activeTab);
-            jQuery('.nav-tab[href="' + activeTab + '"]').click();
+            $('.nav-tab[href="' + activeTab + '"]').click();
         }
     },
     
@@ -184,6 +186,8 @@ var NexusAIWPTranslatorAdmin = {
      * Auto-save API key
      */
     autoSaveApiKey: function(apiKey, callback) {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Auto-saving API key');
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -283,6 +287,8 @@ var NexusAIWPTranslatorAdmin = {
      * Load available models after successful API test
      */
     loadAvailableModels: function(callback) {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Starting to load available models');
         
         var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
@@ -371,6 +377,8 @@ var NexusAIWPTranslatorAdmin = {
      * Set default models in dropdown
      */
     setDefaultModels: function(modelSelect, currentSelection) {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Setting default models, current selection:', currentSelection);
         
         var defaultModels = [
@@ -394,6 +402,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize settings save functionality
      */
     initSettingsSave: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing settings save');
         
         $('#nexus-ai-wp-save-settings').on('click', function() {
@@ -466,6 +476,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize translation actions
      */
     initTranslationActions: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing translation actions');
         
         // Manual translation trigger
@@ -611,6 +623,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize status refresh functionality
      */
     initStatusRefresh: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing status refresh');
         
         $('#nexus-ai-wp-refresh-stats').on('click', function() {
