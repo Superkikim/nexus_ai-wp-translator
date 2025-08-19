@@ -391,8 +391,16 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= 'data-post-id="' . $post->ID . '" ';
             $output .= 'data-post-title="' . esc_attr($post->post_title) . '">';
             $output .= __('Translate', 'nexus-ai-wp-translator');
-            $output .= '</button>';
-            $output .= ' <a href="' . get_edit_post_link($post->ID) . '" class="button">' . __('Edit', 'nexus-ai-wp-translator') . '</a>';
+            $output .= '</button> ';
+
+            $output .= '<button type="button" class="button add-to-queue-btn" ';
+            $output .= 'data-post-id="' . $post->ID . '" ';
+            $output .= 'data-post-title="' . esc_attr($post->post_title) . '" ';
+            $output .= 'title="' . __('Add to translation queue', 'nexus-ai-wp-translator') . '">';
+            $output .= __('Queue', 'nexus-ai-wp-translator');
+            $output .= '</button> ';
+
+            $output .= '<a href="' . get_edit_post_link($post->ID) . '" class="button">' . __('Edit', 'nexus-ai-wp-translator') . '</a>';
             $output .= '</td>';
             $output .= '</tr>';
         }

@@ -44,6 +44,7 @@ var NexusAIWPTranslatorAdmin = {
         this.initProgressDialog();
         this.initBulkActionsInterface();
         this.initQualityAssessmentInterface();
+        this.initTranslationQueueInterface();
         
         // Load models on page load if API key exists
         var apiKey = $('#nexus_ai_wp_translator_api_key').val();
@@ -509,6 +510,19 @@ var NexusAIWPTranslatorAdmin = {
 
             // Start resume process with progress dialog
             NexusAIWPTranslatorAdmin.startResumeTranslation(postId, postTitle, resumableLanguages, button);
+        });
+
+        // Add to queue trigger
+        $(document).on('click', '.add-to-queue-btn', function() {
+            console.log('NexusAI Debug: Add to queue button clicked');
+
+            var button = $(this);
+            var postId = button.data('post-id');
+            var postTitle = button.data('post-title');
+
+            console.log('NexusAI Debug: Add to queue for post ID:', postId);
+
+            NexusAIWPTranslatorAdmin.showAddToQueueDialog(postId, postTitle);
         });
         
         // Translation status check
@@ -1833,6 +1847,388 @@ var NexusAIWPTranslatorAdmin = {
             if (e.target === this) {
                 $('#nexus-ai-wp-quality-dialog').remove();
             }
+        });
+    },
+
+    /**
+     * Initialize translation queue interface
+     */
+    initTranslationQueueInterface: function() {
+        console.log('NexusAI Debug: Initializing translation queue interface');
+
+        // Auto-refresh queue when tab is active
+        this.queueRefreshInterval = null;
+
+        // Handle tab switching
+        $(document).on('click', '.nav-tab[href="#queue-tab"]', function() {
+            NexusAIWPTranslatorAdmin.loadQueueData();
+            NexusAIWPTranslatorAdmin.startQueueAutoRefresh();
+        });
+
+        // Handle other tab switching (stop auto-refresh)
+        $(document).on('click', '.nav-tab:not([href="#queue-tab"])', function() {
+            NexusAIWPTranslatorAdmin.stopQueueAutoRefresh();
+        });
+
+        // Queue control buttons
+        $(document).on('click', '#refresh-queue-btn', function() {
+            NexusAIWPTranslatorAdmin.loadQueueData();
+        });
+
+        $(document).on('click', '#pause-queue-btn', function() {
+            NexusAIWPTranslatorAdmin.pauseQueue();
+        });
+
+        $(document).on('click', '#resume-queue-btn', function() {
+            NexusAIWPTranslatorAdmin.resumeQueue();
+        });
+
+        // Queue filter
+        $(document).on('change', '#queue-status-filter', function() {
+            NexusAIWPTranslatorAdmin.loadQueueData();
+        });
+
+        // Queue item actions
+        $(document).on('click', '.remove-queue-item', function() {
+            var queueId = $(this).data('queue-id');
+            NexusAIWPTranslatorAdmin.removeQueueItem(queueId);
+        });
+
+        $(document).on('click', '.retry-queue-item', function() {
+            var queueId = $(this).data('queue-id');
+            NexusAIWPTranslatorAdmin.retryQueueItem(queueId);
+        });
+    },
+
+    /**
+     * Load queue data
+     */
+    loadQueueData: function() {
+        var self = this;
+        var status = $('#queue-status-filter').val();
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_get_queue_status',
+            status: status,
+            limit: 100,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                self.updateQueueDisplay(response.data);
+            } else {
+                console.log('NexusAI Debug: Failed to load queue data:', response.message);
+            }
+        })
+        .fail(function() {
+            console.log('NexusAI Debug: Network error loading queue data');
+        });
+    },
+
+    /**
+     * Update queue display
+     */
+    updateQueueDisplay: function(data) {
+        // Update statistics
+        $('#queue-pending-count').text(data.statistics.pending || 0);
+        $('#queue-processing-count').text(data.statistics.processing || 0);
+        $('#queue-completed-count').text(data.statistics.completed || 0);
+        $('#queue-failed-count').text(data.statistics.failed || 0);
+
+        // Update pause/resume button
+        if (data.statistics.queue_paused) {
+            $('#pause-queue-btn').hide();
+            $('#resume-queue-btn').show();
+        } else {
+            $('#pause-queue-btn').show();
+            $('#resume-queue-btn').hide();
+        }
+
+        // Update queue items table
+        var tbody = $('#queue-items-tbody');
+        tbody.empty();
+
+        if (data.items && data.items.length > 0) {
+            data.items.forEach(function(item) {
+                var row = self.createQueueItemRow(item);
+                tbody.append(row);
+            });
+        } else {
+            tbody.append('<tr><td colspan="7" class="nexus-ai-wp-queue-empty"><h3>No queue items found</h3><p>The translation queue is empty.</p></td></tr>');
+        }
+    },
+
+    /**
+     * Create queue item row
+     */
+    createQueueItemRow: function(item) {
+        var languages = JSON.parse(item.target_languages || '[]');
+        var languageTags = languages.map(function(lang) {
+            return '<span class="queue-language-tag">' + lang + '</span>';
+        }).join('');
+
+        var statusClass = item.status.toLowerCase();
+        var statusBadge = '<span class="queue-status-badge ' + statusClass + '">' + item.status + '</span>';
+
+        var priorityClass = item.priority >= 7 ? 'high' : (item.priority >= 4 ? 'medium' : 'low');
+        var priorityIndicator = '<span class="queue-priority ' + priorityClass + '">' + item.priority + '</span>';
+
+        var scheduledTime = item.scheduled_time ? new Date(item.scheduled_time).toLocaleString() : '-';
+        var isOverdue = item.scheduled_time && new Date(item.scheduled_time) < new Date();
+        var scheduledClass = isOverdue ? 'overdue' : '';
+
+        var actions = '';
+        if (item.status === 'pending' || item.status === 'failed') {
+            actions += '<button type="button" class="button button-small remove-queue-item" data-queue-id="' + item.id + '">Remove</button>';
+        }
+        if (item.status === 'failed') {
+            actions += '<button type="button" class="button button-small retry-queue-item" data-queue-id="' + item.id + '">Retry</button>';
+        }
+
+        var errorMessage = item.error_message ? '<div class="queue-error-message">' + item.error_message + '</div>' : '';
+
+        return '<tr>' +
+            '<td><strong>' + (item.post_title || 'Unknown') + '</strong><br><small>ID: ' + item.post_id + ' | Type: ' + (item.post_type || 'unknown') + '</small></td>' +
+            '<td><div class="queue-languages">' + languageTags + '</div></td>' +
+            '<td>' + priorityIndicator + '</td>' +
+            '<td>' + statusBadge + errorMessage + '</td>' +
+            '<td><span class="queue-scheduled-time ' + scheduledClass + '">' + scheduledTime + '</span></td>' +
+            '<td>' + item.attempts + '/' + item.max_attempts + '</td>' +
+            '<td><div class="queue-item-actions">' + actions + '</div></td>' +
+        '</tr>';
+    },
+
+    /**
+     * Start queue auto-refresh
+     */
+    startQueueAutoRefresh: function() {
+        var self = this;
+
+        if (this.queueRefreshInterval) {
+            clearInterval(this.queueRefreshInterval);
+        }
+
+        this.queueRefreshInterval = setInterval(function() {
+            self.loadQueueData();
+        }, 10000); // Refresh every 10 seconds
+    },
+
+    /**
+     * Stop queue auto-refresh
+     */
+    stopQueueAutoRefresh: function() {
+        if (this.queueRefreshInterval) {
+            clearInterval(this.queueRefreshInterval);
+            this.queueRefreshInterval = null;
+        }
+    },
+
+    /**
+     * Pause queue
+     */
+    pauseQueue: function() {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_pause_queue',
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                $('#pause-queue-btn').hide();
+                $('#resume-queue-btn').show();
+                alert('Queue paused successfully.');
+            } else {
+                alert('Failed to pause queue: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while pausing queue.');
+        });
+    },
+
+    /**
+     * Resume queue
+     */
+    resumeQueue: function() {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_resume_queue',
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                $('#pause-queue-btn').show();
+                $('#resume-queue-btn').hide();
+                alert('Queue resumed successfully.');
+            } else {
+                alert('Failed to resume queue: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while resuming queue.');
+        });
+    },
+
+    /**
+     * Remove queue item
+     */
+    removeQueueItem: function(queueId) {
+        if (!confirm('Are you sure you want to remove this item from the queue?')) {
+            return;
+        }
+
+        var self = this;
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_remove_from_queue',
+            queue_id: queueId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                self.loadQueueData(); // Refresh the queue
+            } else {
+                alert('Failed to remove item: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while removing item.');
+        });
+    },
+
+    /**
+     * Retry queue item
+     */
+    retryQueueItem: function(queueId) {
+        var self = this;
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_retry_queue_item',
+            queue_id: queueId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                self.loadQueueData(); // Refresh the queue
+                alert('Item scheduled for retry.');
+            } else {
+                alert('Failed to retry item: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while retrying item.');
+        });
+    },
+
+    /**
+     * Show add to queue dialog
+     */
+    showAddToQueueDialog: function(postId, postTitle) {
+        var dialogHtml =
+            '<div id="nexus-ai-wp-add-to-queue-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
+                '<div class="nexus-ai-wp-bulk-dialog">' +
+                    '<div class="nexus-ai-wp-bulk-dialog-header">' +
+                        '<h3>Add to Translation Queue</h3>' +
+                        '<button type="button" class="nexus-ai-wp-bulk-dialog-close">&times;</button>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-body">' +
+                        '<p><strong>Post:</strong> ' + postTitle + '</p>' +
+                        '<div class="nexus-ai-wp-queue-options">' +
+                            '<div class="nexus-ai-wp-queue-option">' +
+                                '<label>Target Languages:</label>' +
+                                '<div class="nexus-ai-wp-language-checkboxes">' +
+                                    '<label><input type="checkbox" value="es" checked> Spanish (es)</label>' +
+                                    '<label><input type="checkbox" value="fr" checked> French (fr)</label>' +
+                                    '<label><input type="checkbox" value="de" checked> German (de)</label>' +
+                                    '<label><input type="checkbox" value="it"> Italian (it)</label>' +
+                                    '<label><input type="checkbox" value="pt"> Portuguese (pt)</label>' +
+                                    '<label><input type="checkbox" value="ru"> Russian (ru)</label>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-queue-option">' +
+                                '<label for="queue-priority">Priority:</label>' +
+                                '<select id="queue-priority">' +
+                                    '<option value="1">Low (1)</option>' +
+                                    '<option value="3">Low-Medium (3)</option>' +
+                                    '<option value="5" selected>Medium (5)</option>' +
+                                    '<option value="7">High (7)</option>' +
+                                    '<option value="9">Urgent (9)</option>' +
+                                '</select>' +
+                            '</div>' +
+                            '<div class="nexus-ai-wp-queue-option">' +
+                                '<label for="queue-scheduled-time">Schedule for:</label>' +
+                                '<select id="queue-schedule-type">' +
+                                    '<option value="immediate">Immediate</option>' +
+                                    '<option value="custom">Custom Date/Time</option>' +
+                                '</select>' +
+                                '<input type="datetime-local" id="queue-scheduled-time" style="display: none; margin-top: 5px;">' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-footer">' +
+                        '<button type="button" class="button nexus-ai-wp-bulk-dialog-cancel">Cancel</button>' +
+                        '<button type="button" class="button button-primary nexus-ai-wp-add-to-queue-confirm">Add to Queue</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        $('body').append(dialogHtml);
+        $('#nexus-ai-wp-add-to-queue-dialog').css('display', 'flex');
+
+        // Handle schedule type change
+        $('#queue-schedule-type').on('change', function() {
+            if ($(this).val() === 'custom') {
+                $('#queue-scheduled-time').show();
+            } else {
+                $('#queue-scheduled-time').hide();
+            }
+        });
+
+        // Handle dialog events
+        var self = this;
+        $(document).on('click', '#nexus-ai-wp-add-to-queue-dialog .nexus-ai-wp-bulk-dialog-close, #nexus-ai-wp-add-to-queue-dialog .nexus-ai-wp-bulk-dialog-cancel', function() {
+            $('#nexus-ai-wp-add-to-queue-dialog').remove();
+        });
+
+        $(document).on('click', '#nexus-ai-wp-add-to-queue-dialog .nexus-ai-wp-add-to-queue-confirm', function() {
+            var selectedLanguages = [];
+            $('#nexus-ai-wp-add-to-queue-dialog .nexus-ai-wp-language-checkboxes input:checked').each(function() {
+                selectedLanguages.push($(this).val());
+            });
+
+            if (selectedLanguages.length === 0) {
+                alert('Please select at least one target language.');
+                return;
+            }
+
+            var priority = $('#queue-priority').val();
+            var scheduleType = $('#queue-schedule-type').val();
+            var scheduledTime = scheduleType === 'custom' ? $('#queue-scheduled-time').val() : null;
+
+            $('#nexus-ai-wp-add-to-queue-dialog').remove();
+            self.addToQueue(postId, selectedLanguages, priority, scheduledTime);
+        });
+    },
+
+    /**
+     * Add post to queue
+     */
+    addToQueue: function(postId, targetLanguages, priority, scheduledTime) {
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_add_to_queue',
+            post_id: postId,
+            target_languages: targetLanguages,
+            priority: priority,
+            scheduled_time: scheduledTime,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Post added to translation queue successfully!');
+            } else {
+                alert('Failed to add to queue: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while adding to queue.');
         });
     }
 };

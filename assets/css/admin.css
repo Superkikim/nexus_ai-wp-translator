@@ -1271,3 +1271,241 @@
     font-size: 12px;
     color: #666;
 }
+
+/* Translation Queue Styling */
+.nexus-ai-wp-queue-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+.nexus-ai-wp-queue-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.queue-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.queue-stat .stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.queue-stat .stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.nexus-ai-wp-queue-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.nexus-ai-wp-queue-filters {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-queue-filters label {
+    margin-right: 10px;
+    font-weight: 600;
+}
+
+.nexus-ai-wp-queue-table-container {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#queue-items-table {
+    margin: 0;
+}
+
+#queue-items-table th,
+#queue-items-table td {
+    padding: 12px 8px;
+}
+
+.nexus-ai-wp-loading {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Queue Status Badges */
+.queue-status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.queue-status-badge.pending {
+    background: #ffc107;
+    color: #333;
+}
+
+.queue-status-badge.processing {
+    background: #17a2b8;
+    color: white;
+}
+
+.queue-status-badge.completed {
+    background: #28a745;
+    color: white;
+}
+
+.queue-status-badge.failed {
+    background: #dc3545;
+    color: white;
+}
+
+/* Queue Priority Indicators */
+.queue-priority {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+}
+
+.queue-priority.high {
+    background: #dc3545;
+}
+
+.queue-priority.medium {
+    background: #ffc107;
+    color: #333;
+}
+
+.queue-priority.low {
+    background: #6c757d;
+}
+
+/* Queue Item Actions */
+.queue-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.queue-item-actions .button {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: auto;
+    line-height: 1.2;
+}
+
+/* Queue Languages Display */
+.queue-languages {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.queue-language-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #495057;
+    text-transform: uppercase;
+}
+
+/* Queue Error Messages */
+.queue-error-message {
+    color: #dc3545;
+    font-size: 11px;
+    font-style: italic;
+    margin-top: 3px;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+/* Queue Scheduled Time */
+.queue-scheduled-time {
+    font-size: 11px;
+    color: #666;
+}
+
+.queue-scheduled-time.overdue {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Queue Auto-refresh Indicator */
+.nexus-ai-wp-queue-auto-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #666;
+    margin-left: 10px;
+}
+
+.nexus-ai-wp-queue-auto-refresh .spinner {
+    width: 16px;
+    height: 16px;
+}
+
+/* Queue Empty State */
+.nexus-ai-wp-queue-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.nexus-ai-wp-queue-empty h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.nexus-ai-wp-queue-empty p {
+    margin-bottom: 20px;
+}
+
+/* Responsive Queue Table */
+@media (max-width: 768px) {
+    .nexus-ai-wp-queue-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .nexus-ai-wp-queue-stats {
+        justify-content: center;
+    }
+
+    #queue-items-table {
+        font-size: 12px;
+    }
+
+    #queue-items-table th,
+    #queue-items-table td {
+        padding: 8px 4px;
+    }
+
+    .queue-item-actions {
+        flex-direction: column;
+    }
+}
