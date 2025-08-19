@@ -52,6 +52,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'init_settings'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_set_language', array($this, 'ajax_bulk_set_language'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
         
         // Add meta box to post edit screen
@@ -296,6 +297,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '<select id="nexus-ai-wp-bulk-action-' . $post_type . '" class="nexus-ai-wp-bulk-action-select" data-post-type="' . $post_type . '">';
         $output .= '<option value="">' . __('Select Action', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="translate">' . __('Translate', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="set_language">' . __('Set Language', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="link">' . __('Link', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="unlink">' . __('Unlink', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="delete">' . __('Delete', 'nexus-ai-wp-translator') . '</option>';
@@ -330,6 +332,7 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= '<td><input type="checkbox" class="select-post-checkbox" data-post-id="' . $post->ID . '" data-language="' . esc_attr($post_language) . '"></td>';
             $output .= '<td>';
             $output .= '<strong><a href="' . get_edit_post_link($post->ID) . '">' . esc_html($post->post_title) . '</a></strong>';
+            $output .= '<span class="nexus-ai-wp-language-indicator">' . esc_html(strtoupper($post_language)) . '</span>';
             $output .= '<br><small>ID: ' . $post->ID . ' | ' . get_the_date('Y-m-d H:i', $post->ID) . '</small>';
             $output .= '</td>';
             $output .= '<td><code>' . esc_html($post_language) . '</code></td>';
@@ -1092,5 +1095,76 @@ class Nexus_AI_WP_Translator_Admin {
         }
 
         wp_send_json_success($quality_assessment);
+    }
+
+    /**
+     * AJAX: Bulk set language
+     */
+    public function ajax_bulk_set_language() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_ids = array_map('intval', $_POST['post_ids']);
+        $language = sanitize_text_field($_POST['language']);
+
+        if (empty($post_ids) || empty($language)) {
+            wp_send_json_error(__('Invalid parameters', 'nexus-ai-wp-translator'));
+        }
+
+        $updated_count = 0;
+        $errors = array();
+
+        foreach ($post_ids as $post_id) {
+            // Verify user can edit this post
+            if (!current_user_can('edit_post', $post_id)) {
+                $errors[] = sprintf(__('Permission denied for post ID %d', 'nexus-ai-wp-translator'), $post_id);
+                continue;
+            }
+
+            // Set the language meta
+            $result = update_post_meta($post_id, '_nexus_ai_wp_translator_language', $language);
+
+            if ($result !== false) {
+                $updated_count++;
+
+                // Log the language change
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    $post_title = get_the_title($post_id);
+                    error_log("Nexus AI WP Translator: Set language '{$language}' for post '{$post_title}' (ID: {$post_id})");
+                }
+            } else {
+                $errors[] = sprintf(__('Failed to update post ID %d', 'nexus-ai-wp-translator'), $post_id);
+            }
+        }
+
+        if ($updated_count > 0) {
+            $message = sprintf(
+                _n(
+                    'Language set successfully for %d post.',
+                    'Language set successfully for %d posts.',
+                    $updated_count,
+                    'nexus-ai-wp-translator'
+                ),
+                $updated_count
+            );
+
+            if (!empty($errors)) {
+                $message .= ' ' . sprintf(__('However, %d errors occurred.', 'nexus-ai-wp-translator'), count($errors));
+            }
+
+            wp_send_json_success(array(
+                'message' => $message,
+                'updated_count' => $updated_count,
+                'errors' => $errors
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => __('No posts were updated.', 'nexus-ai-wp-translator'),
+                'errors' => $errors
+            ));
+        }
     }
 }

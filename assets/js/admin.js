@@ -1289,6 +1289,9 @@ var NexusAIWPTranslatorAdmin = {
                 case 'translate':
                     NexusAIWPTranslatorAdmin.handleBulkTranslate(selectedPosts);
                     break;
+                case 'set_language':
+                    NexusAIWPTranslatorAdmin.handleBulkSetLanguage(selectedPosts);
+                    break;
                 case 'link':
                     NexusAIWPTranslatorAdmin.handleBulkLink(selectedPosts);
                     break;
@@ -1330,6 +1333,16 @@ var NexusAIWPTranslatorAdmin = {
                 applyButton.prop('disabled', true);
             }
         });
+    },
+
+    /**
+     * Handle bulk set language action
+     */
+    handleBulkSetLanguage: function(selectedPosts) {
+        console.log('NexusAI Debug: Handling bulk set language');
+
+        // Show language selection dialog
+        this.showBulkSetLanguageDialog(selectedPosts);
     },
 
     /**
@@ -2229,6 +2242,129 @@ var NexusAIWPTranslatorAdmin = {
         })
         .fail(function() {
             alert('Network error occurred while adding to queue.');
+        });
+    },
+
+    /**
+     * Show bulk set language dialog
+     */
+    showBulkSetLanguageDialog: function(selectedPosts) {
+        var dialogHtml =
+            '<div id="nexus-ai-wp-set-language-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
+                '<div class="nexus-ai-wp-bulk-dialog">' +
+                    '<div class="nexus-ai-wp-bulk-dialog-header">' +
+                        '<h3>Set Language for Selected Posts</h3>' +
+                        '<button type="button" class="nexus-ai-wp-bulk-dialog-close">&times;</button>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-body">' +
+                        '<p><strong>Selected Posts:</strong> ' + selectedPosts.length + ' items</p>' +
+                        '<div class="nexus-ai-wp-language-selection">' +
+                            '<label for="bulk-set-language">Select Language:</label>' +
+                            '<select id="bulk-set-language" class="nexus-ai-wp-language-select">' +
+                                '<option value="">Choose a language...</option>' +
+                                '<option value="en">English (en)</option>' +
+                                '<option value="es">Spanish (es)</option>' +
+                                '<option value="fr">French (fr)</option>' +
+                                '<option value="de">German (de)</option>' +
+                                '<option value="it">Italian (it)</option>' +
+                                '<option value="pt">Portuguese (pt)</option>' +
+                                '<option value="ru">Russian (ru)</option>' +
+                                '<option value="ja">Japanese (ja)</option>' +
+                                '<option value="ko">Korean (ko)</option>' +
+                                '<option value="zh">Chinese (zh)</option>' +
+                                '<option value="ar">Arabic (ar)</option>' +
+                                '<option value="hi">Hindi (hi)</option>' +
+                                '<option value="nl">Dutch (nl)</option>' +
+                                '<option value="sv">Swedish (sv)</option>' +
+                                '<option value="da">Danish (da)</option>' +
+                                '<option value="no">Norwegian (no)</option>' +
+                                '<option value="fi">Finnish (fi)</option>' +
+                                '<option value="pl">Polish (pl)</option>' +
+                                '<option value="tr">Turkish (tr)</option>' +
+                                '<option value="cs">Czech (cs)</option>' +
+                                '<option value="hu">Hungarian (hu)</option>' +
+                                '<option value="ro">Romanian (ro)</option>' +
+                                '<option value="bg">Bulgarian (bg)</option>' +
+                                '<option value="hr">Croatian (hr)</option>' +
+                                '<option value="sk">Slovak (sk)</option>' +
+                                '<option value="sl">Slovenian (sl)</option>' +
+                                '<option value="et">Estonian (et)</option>' +
+                                '<option value="lv">Latvian (lv)</option>' +
+                                '<option value="lt">Lithuanian (lt)</option>' +
+                                '<option value="mt">Maltese (mt)</option>' +
+                                '<option value="ga">Irish (ga)</option>' +
+                                '<option value="cy">Welsh (cy)</option>' +
+                            '</select>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-language-note">' +
+                            '<p><em>Note: This will set the source language for the selected posts. This helps the translation system understand what language the content is written in.</em></p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-footer">' +
+                        '<button type="button" class="button nexus-ai-wp-bulk-dialog-cancel">Cancel</button>' +
+                        '<button type="button" class="button button-primary nexus-ai-wp-set-language-confirm" disabled>Set Language</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        $('body').append(dialogHtml);
+        $('#nexus-ai-wp-set-language-dialog').css('display', 'flex');
+
+        // Enable/disable confirm button based on language selection
+        $('#bulk-set-language').on('change', function() {
+            var confirmButton = $('.nexus-ai-wp-set-language-confirm');
+            if ($(this).val()) {
+                confirmButton.prop('disabled', false);
+            } else {
+                confirmButton.prop('disabled', true);
+            }
+        });
+
+        // Handle dialog events
+        var self = this;
+        $(document).on('click', '#nexus-ai-wp-set-language-dialog .nexus-ai-wp-bulk-dialog-close, #nexus-ai-wp-set-language-dialog .nexus-ai-wp-bulk-dialog-cancel', function() {
+            $('#nexus-ai-wp-set-language-dialog').remove();
+        });
+
+        $(document).on('click', '#nexus-ai-wp-set-language-dialog .nexus-ai-wp-set-language-confirm', function() {
+            var selectedLanguage = $('#bulk-set-language').val();
+
+            if (!selectedLanguage) {
+                alert('Please select a language.');
+                return;
+            }
+
+            $('#nexus-ai-wp-set-language-dialog').remove();
+            self.performBulkSetLanguage(selectedPosts, selectedLanguage);
+        });
+    },
+
+    /**
+     * Perform bulk set language
+     */
+    performBulkSetLanguage: function(selectedPosts, language) {
+        var postIds = selectedPosts.map(function(post) {
+            return post.id;
+        });
+
+        console.log('NexusAI Debug: Setting language', language, 'for posts:', postIds);
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_bulk_set_language',
+            post_ids: postIds,
+            language: language,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Language set successfully for ' + postIds.length + ' posts.');
+                location.reload(); // Refresh to show updated language
+            } else {
+                alert('Failed to set language: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while setting language.');
         });
     }
 };
