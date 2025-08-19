@@ -1247,18 +1247,12 @@ var NexusAIWPTranslatorAdmin = {
         // Update selection count when checkboxes change
         $(document).on('change', '.select-post-checkbox, .select-all-checkbox', function() {
             NexusAIWPTranslatorAdmin.updateBulkSelectionCount();
+            NexusAIWPTranslatorAdmin.updateBulkActionButtons();
         });
 
         // Enable/disable apply button when action is selected
         $(document).on('change', '.nexus-ai-wp-bulk-action-select', function() {
-            var applyButton = $(this).siblings('.nexus-ai-wp-bulk-action-apply');
-            var selectedCount = $(this).closest('.nexus-ai-wp-bulk-actions-container').siblings('table').find('.select-post-checkbox:checked').length;
-
-            if ($(this).val() && selectedCount > 0) {
-                applyButton.prop('disabled', false);
-            } else {
-                applyButton.prop('disabled', true);
-            }
+            NexusAIWPTranslatorAdmin.updateBulkActionButtons();
         });
 
         // Handle bulk action apply
@@ -1330,6 +1324,24 @@ var NexusAIWPTranslatorAdmin = {
                 }
             } else {
                 countSpan.removeClass('has-selection');
+                applyButton.prop('disabled', true);
+            }
+        });
+    },
+
+    /**
+     * Update bulk action buttons state
+     */
+    updateBulkActionButtons: function() {
+        $('.nexus-ai-wp-bulk-actions-container').each(function() {
+            var container = $(this);
+            var selectedCount = container.siblings('table').find('.select-post-checkbox:checked').length;
+            var applyButton = container.find('.nexus-ai-wp-bulk-action-apply');
+            var actionSelect = container.find('.nexus-ai-wp-bulk-action-select');
+
+            if (selectedCount > 0 && actionSelect.val()) {
+                applyButton.prop('disabled', false);
+            } else {
                 applyButton.prop('disabled', true);
             }
         });
@@ -1578,6 +1590,106 @@ var NexusAIWPTranslatorAdmin = {
 
         // Show link dialog to select source post
         this.showBulkLinkDialog(selectedPosts);
+    },
+
+    /**
+     * Show bulk link dialog
+     */
+    showBulkLinkDialog: function(selectedPosts) {
+        var dialogHtml =
+            '<div id="nexus-ai-wp-link-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
+                '<div class="nexus-ai-wp-bulk-dialog">' +
+                    '<div class="nexus-ai-wp-bulk-dialog-header">' +
+                        '<h3>Link Selected Posts</h3>' +
+                        '<button type="button" class="nexus-ai-wp-bulk-dialog-close">&times;</button>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-body">' +
+                        '<p><strong>Selected Posts:</strong> ' + selectedPosts.length + ' items</p>' +
+                        '<div class="nexus-ai-wp-link-explanation">' +
+                            '<p>This will create translation relationships between the selected posts. Choose one post as the source (original) and the others will be linked as translations of that post.</p>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-source-selection">' +
+                            '<label for="bulk-link-source">Select Source Post:</label>' +
+                            '<select id="bulk-link-source" class="nexus-ai-wp-source-select">' +
+                                '<option value="">Choose source post...</option>';
+
+        selectedPosts.forEach(function(post) {
+            dialogHtml += '<option value="' + post.id + '">' + post.title + ' (ID: ' + post.id + ')</option>';
+        });
+
+        dialogHtml +=
+                            '</select>' +
+                        '</div>' +
+                        '<div class="nexus-ai-wp-link-note">' +
+                            '<p><em>Note: The source post will be considered the original, and all other selected posts will be linked as translations of it.</em></p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="nexus-ai-wp-bulk-dialog-footer">' +
+                        '<button type="button" class="button nexus-ai-wp-bulk-dialog-cancel">Cancel</button>' +
+                        '<button type="button" class="button button-primary nexus-ai-wp-link-confirm" disabled>Link Posts</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        $('body').append(dialogHtml);
+        $('#nexus-ai-wp-link-dialog').css('display', 'flex');
+
+        // Enable/disable confirm button based on source selection
+        $('#bulk-link-source').on('change', function() {
+            var confirmButton = $('.nexus-ai-wp-link-confirm');
+            if ($(this).val()) {
+                confirmButton.prop('disabled', false);
+            } else {
+                confirmButton.prop('disabled', true);
+            }
+        });
+
+        // Handle dialog events
+        var self = this;
+        $(document).on('click', '#nexus-ai-wp-link-dialog .nexus-ai-wp-bulk-dialog-close, #nexus-ai-wp-link-dialog .nexus-ai-wp-bulk-dialog-cancel', function() {
+            $('#nexus-ai-wp-link-dialog').remove();
+        });
+
+        $(document).on('click', '#nexus-ai-wp-link-dialog .nexus-ai-wp-link-confirm', function() {
+            var sourcePostId = $('#bulk-link-source').val();
+
+            if (!sourcePostId) {
+                alert('Please select a source post.');
+                return;
+            }
+
+            $('#nexus-ai-wp-link-dialog').remove();
+            self.performBulkLink(selectedPosts, sourcePostId);
+        });
+    },
+
+    /**
+     * Perform bulk link
+     */
+    performBulkLink: function(selectedPosts, sourcePostId) {
+        var postIds = selectedPosts.map(function(post) {
+            return post.id;
+        });
+
+        console.log('NexusAI Debug: Linking posts:', postIds, 'with source:', sourcePostId);
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_bulk_link_posts',
+            post_ids: postIds,
+            source_post_id: sourcePostId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Posts linked successfully.');
+                location.reload(); // Refresh to show updated state
+            } else {
+                alert('Failed to link posts: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while linking posts.');
+        });
     },
 
     /**
@@ -2365,6 +2477,90 @@ var NexusAIWPTranslatorAdmin = {
         })
         .fail(function() {
             alert('Network error occurred while setting language.');
+        });
+    },
+
+    /**
+     * Perform bulk unlink
+     */
+    performBulkUnlink: function(selectedPosts) {
+        var postIds = selectedPosts.map(function(post) {
+            return post.id;
+        });
+
+        console.log('NexusAI Debug: Unlinking posts:', postIds);
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_bulk_unlink_posts',
+            post_ids: postIds,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Posts unlinked successfully.');
+                location.reload(); // Refresh to show updated state
+            } else {
+                alert('Failed to unlink posts: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while unlinking posts.');
+        });
+    },
+
+    /**
+     * Perform bulk delete
+     */
+    performBulkDelete: function(selectedPosts) {
+        var postIds = selectedPosts.map(function(post) {
+            return post.id;
+        });
+
+        console.log('NexusAI Debug: Deleting posts:', postIds);
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_bulk_delete_posts',
+            post_ids: postIds,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Posts deleted successfully.');
+                location.reload(); // Refresh to show updated state
+            } else {
+                alert('Failed to delete posts: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while deleting posts.');
+        });
+    },
+
+    /**
+     * Perform bulk clear cache
+     */
+    performBulkClearCache: function(selectedPosts) {
+        var postIds = selectedPosts.map(function(post) {
+            return post.id;
+        });
+
+        console.log('NexusAI Debug: Clearing cache for posts:', postIds);
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_bulk_clear_cache_posts',
+            post_ids: postIds,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('Translation cache cleared successfully.');
+                // No need to reload for cache clear
+            } else {
+                alert('Failed to clear cache: ' + (response.message || 'Unknown error'));
+            }
+        })
+        .fail(function() {
+            alert('Network error occurred while clearing cache.');
         });
     }
 };

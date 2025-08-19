@@ -1573,3 +1573,142 @@
     background-color: #fff3e0;
     color: #f57c00;
 }
+
+/* Bulk Link Dialog Styling */
+.nexus-ai-wp-source-selection {
+    margin: 20px 0;
+}
+
+.nexus-ai-wp-source-selection label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.nexus-ai-wp-source-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+}
+
+.nexus-ai-wp-source-select:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.nexus-ai-wp-link-explanation {
+    margin: 15px 0;
+    padding: 12px;
+    background-color: #f0f6fc;
+    border-left: 4px solid #0073aa;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-link-explanation p {
+    margin: 0;
+    font-size: 13px;
+    color: #555;
+}
+
+.nexus-ai-wp-link-note {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.nexus-ai-wp-link-note p {
+    margin: 0;
+    font-size: 13px;
+    color: #856404;
+}
+
+.nexus-ai-wp-link-note em {
+    font-style: normal;
+    color: #856404;
+}
+
+/* Bulk Selection Count Styling */
+.nexus-ai-wp-bulk-selection-count {
+    margin-left: 10px;
+    font-size: 13px;
+    color: #666;
+}
+
+.nexus-ai-wp-bulk-selection-count.has-selection {
+    color: #0073aa;
+    font-weight: 600;
+}
+
+/* Action Buttons Explanation */
+.nexus-ai-wp-action-explanation {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.nexus-ai-wp-action-explanation h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 16px;
+}
+
+.nexus-ai-wp-action-buttons-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.nexus-ai-wp-action-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e1e1e1;
+}
+
+.nexus-ai-wp-action-button-demo {
+    flex-shrink: 0;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.nexus-ai-wp-action-description {
+    flex: 1;
+}
+
+.nexus-ai-wp-action-description strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 14px;
+}
+
+.nexus-ai-wp-action-description p {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .nexus-ai-wp-action-buttons-info {
+        grid-template-columns: 1fr;
+    }
+
+    .nexus-ai-wp-action-info {
+        flex-direction: column;
+        text-align: center;
+    }
+}

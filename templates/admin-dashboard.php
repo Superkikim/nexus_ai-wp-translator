@@ -24,6 +24,28 @@ if (!defined('ABSPATH')) {
         <!-- Articles Tab -->
         <div id="articles-tab" class="tab-content active">
             <h2><?php _e('Articles to Translate', 'nexus-ai-wp-translator'); ?></h2>
+
+            <!-- Action Buttons Explanation -->
+            <div class="nexus-ai-wp-action-explanation">
+                <h3><?php _e('Action Buttons Explained', 'nexus-ai-wp-translator'); ?></h3>
+                <div class="nexus-ai-wp-action-buttons-info">
+                    <div class="nexus-ai-wp-action-info">
+                        <span class="nexus-ai-wp-action-button-demo button button-primary"><?php _e('Translate', 'nexus-ai-wp-translator'); ?></span>
+                        <div class="nexus-ai-wp-action-description">
+                            <strong><?php _e('Immediate Translation', 'nexus-ai-wp-translator'); ?></strong>
+                            <p><?php _e('Starts translation immediately in your browser. You can see real-time progress and the translation completes right away. Best for single posts or when you want to monitor the process.', 'nexus-ai-wp-translator'); ?></p>
+                        </div>
+                    </div>
+                    <div class="nexus-ai-wp-action-info">
+                        <span class="nexus-ai-wp-action-button-demo button"><?php _e('Queue', 'nexus-ai-wp-translator'); ?></span>
+                        <div class="nexus-ai-wp-action-description">
+                            <strong><?php _e('Background Translation', 'nexus-ai-wp-translator'); ?></strong>
+                            <p><?php _e('Adds the post to the translation queue for background processing. Translations happen automatically via cron jobs. Best for bulk operations or when you want to schedule translations for later.', 'nexus-ai-wp-translator'); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="articles-list">
                 <?php echo $this->render_posts_list('post'); ?>
             </div>
@@ -49,26 +71,9 @@ if (!defined('ABSPATH')) {
                 updateLinkButtonState();
             });
             
-            // Link Selected Items button - we need to add this button to the UI
-            if ($('.nexus-ai-wp-content-tabs .tab-content.active #articles-list').length > 0) {
-                var linkButton = $('<button id="link-selected-items-btn" class="button" style="margin-top: 10px; margin-bottom: 10px;" disabled>Select at least 2 items to link</button>');
-                $('.nexus-ai-wp-content-tabs .tab-content.active #articles-list').before(linkButton);
-            }
-            
-            // Link Selected Items button
-            $('#link-selected-items-btn').on('click', function() {
-                linkSelectedItems();
-            });
-            
             function updateLinkButtonState() {
-                var selectedCount = $('.select-post-checkbox:checked').length;
-                var linkButton = $('#link-selected-items-btn');
-                
-                if (selectedCount >= 2) {
-                    linkButton.prop('disabled', false).text('Link Selected Items');
-                } else {
-                    linkButton.prop('disabled', true).text('Select at least 2 items to link');
-                }
+                // This function is kept for compatibility but no longer used
+                // The bulk actions interface handles all actions now
             }
             
             function linkSelectedItems() {
