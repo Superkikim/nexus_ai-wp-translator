@@ -75,15 +75,17 @@ class Nexus_AI_WP_Translator_Plugin {
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-quality-assessor.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-templates.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-seo-optimizer.php';
+
+        // Load manager classes that depend on base classes
+        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
+
+        // Load advanced feature classes that depend on manager classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-scheduler.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-analytics.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-memory.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-custom-fields-translator.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-workflow-manager.php';
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-error-handler.php';
-
-        // Load manager classes that depend on base classes
-        require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-translation-manager.php';
         
         // Load UI classes
         require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-admin.php';

@@ -13,6 +13,7 @@ class Nexus_AI_WP_Translator_Custom_Fields_Translator {
     
     private static $instance = null;
     private $api_handler;
+    private $db;
     private $supported_fields;
     
     public static function get_instance() {
@@ -24,6 +25,7 @@ class Nexus_AI_WP_Translator_Custom_Fields_Translator {
     
     private function __construct() {
         $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
+        $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->init_supported_fields();
         $this->init_hooks();
     }
