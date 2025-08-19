@@ -27,6 +27,8 @@ var NexusAIWPTranslatorAdmin = {
     initialized: false,
     
     init: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         if (this.initialized) {
             console.log('NexusAI Debug: Admin already initialized, skipping');
             return;
@@ -72,19 +74,19 @@ var NexusAIWPTranslatorAdmin = {
      */
     initTabSwitching: function() {
         console.log('NexusAI Debug: Initializing tab switching');
-        $('.nav-tab').on('click', function(e) {
+        jQuery('.nav-tab').on('click', function(e) {
             e.preventDefault();
             
-            var target = $(this).attr('href');
+            var target = jQuery(this).attr('href');
             console.log('NexusAI Debug: Tab clicked:', target);
             
             // Update nav tabs
-            $('.nav-tab').removeClass('nav-tab-active');
-            $(this).addClass('nav-tab-active');
+            jQuery('.nav-tab').removeClass('nav-tab-active');
+            jQuery(this).addClass('nav-tab-active');
             
             // Update tab content
-            $('.tab-content').removeClass('active');
-            $(target).addClass('active');
+            jQuery('.tab-content').removeClass('active');
+            jQuery(target).addClass('active');
             
             // Save active tab in localStorage
             localStorage.setItem('nexus_ai_wp_translator_active_tab', target);
@@ -92,9 +94,9 @@ var NexusAIWPTranslatorAdmin = {
         
         // Restore active tab from localStorage
         var activeTab = localStorage.getItem('nexus_ai_wp_translator_active_tab');
-        if (activeTab && $(activeTab).length) {
+        if (activeTab && jQuery(activeTab).length) {
             console.log('NexusAI Debug: Restoring active tab:', activeTab);
-            $('.nav-tab[href="' + activeTab + '"]').click();
+            jQuery('.nav-tab[href="' + activeTab + '"]').click();
         }
     },
     
@@ -102,6 +104,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize API testing functionality
      */
     initApiTesting: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing API testing');
         
         // Test API connection
@@ -201,6 +205,8 @@ var NexusAIWPTranslatorAdmin = {
      * Auto-save selected model
      */
     autoSaveModel: function(model) {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Auto-saving model:', model);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -226,6 +232,8 @@ var NexusAIWPTranslatorAdmin = {
      * Perform API test
      */
     performApiTest: function(button, apiKey, resultDiv) {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Starting API test with key length:', apiKey.length);
         console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
         console.log('NexusAI Debug: Nonce:', nexus_ai_wp_translator_ajax.nonce);
@@ -635,6 +643,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize bulk actions
      */
     initBulkActions: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing bulk actions');
 
         $('#cleanup-orphaned').on('click', function() {
@@ -670,6 +680,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize progress dialog event handlers
      */
     initProgressDialog: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing progress dialog');
 
         // Progress dialog close button
@@ -2569,19 +2581,29 @@ var NexusAIWPTranslatorAdmin = {
 window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
 console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
 
-(function($) {
+// Initialize when document is ready with proper jQuery scoping
+jQuery(document).ready(function($) {
     'use strict';
     
     console.log('NexusAI Debug: JavaScript function wrapper started');
+    console.log('NexusAI Debug: Document ready, initializing admin interface');
     
-    // Initialize when document is ready
-    $(document).ready(function() {
-        console.log('NexusAI Debug: Document ready, initializing admin interface');
-        if (window.NexusAIWPTranslatorAdmin) {
-            window.NexusAIWPTranslatorAdmin.init();
-        } else {
-            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
-        }
-    });
-    
-})(jQuery);
+    if (window.NexusAIWPTranslatorAdmin) {
+        window.NexusAIWPTranslatorAdmin.init();
+    } else {
+        console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+    }
+});
+
+// Check for auto translation when everything is loaded
+jQuery(window).on('load', function() {
+    if (window.NexusAIWPTranslatorAdmin && typeof window.NexusAIWPTranslatorAdmin.checkAutoTranslation === 'function') {
+        setTimeout(function() {
+            try {
+                window.NexusAIWPTranslatorAdmin.checkAutoTranslation();
+            } catch(error) {
+                console.log('NexusAI Debug: Auto translation check failed:', error);
+            }
+        }, 1500);
+    }
+});
