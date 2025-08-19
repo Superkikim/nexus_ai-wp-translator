@@ -332,7 +332,6 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= '<td><input type="checkbox" class="select-post-checkbox" data-post-id="' . $post->ID . '" data-language="' . esc_attr($post_language) . '"></td>';
             $output .= '<td>';
             $output .= '<strong><a href="' . get_edit_post_link($post->ID) . '">' . esc_html($post->post_title) . '</a></strong>';
-            $output .= '<span class="nexus-ai-wp-language-indicator">' . esc_html(strtoupper($post_language)) . '</span>';
             $output .= '<br><small>ID: ' . $post->ID . ' | ' . get_the_date('Y-m-d H:i', $post->ID) . '</small>';
             $output .= '</td>';
             $output .= '<td><code>' . esc_html($post_language) . '</code></td>';

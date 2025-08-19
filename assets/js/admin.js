@@ -1310,7 +1310,7 @@ var NexusAIWPTranslatorAdmin = {
     updateBulkSelectionCount: function() {
         $('.nexus-ai-wp-bulk-actions-container').each(function() {
             var container = $(this);
-            var selectedCount = container.siblings('table').find('.select-post-checkbox:checked').length;
+            var selectedCount = container.next('table').find('.select-post-checkbox:checked').length;
             var countSpan = container.find('.nexus-ai-wp-bulk-selection-count');
             var applyButton = container.find('.nexus-ai-wp-bulk-action-apply');
             var actionSelect = container.find('.nexus-ai-wp-bulk-action-select');
@@ -1335,7 +1335,7 @@ var NexusAIWPTranslatorAdmin = {
     updateBulkActionButtons: function() {
         $('.nexus-ai-wp-bulk-actions-container').each(function() {
             var container = $(this);
-            var selectedCount = container.siblings('table').find('.select-post-checkbox:checked').length;
+            var selectedCount = container.next('table').find('.select-post-checkbox:checked').length;
             var applyButton = container.find('.nexus-ai-wp-bulk-action-apply');
             var actionSelect = container.find('.nexus-ai-wp-bulk-action-select');
 
