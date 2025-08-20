@@ -86,6 +86,9 @@ if (!defined('ABSPATH')) {
                             <label><?php _e('Available Languages', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
+                            <p class="description">
+                                <?php _e('Select languages to enable for translation. Posts can be translated into any of the selected languages.', 'nexus-ai-wp-translator'); ?>
+                            </p>
                             <fieldset>
                                 <?php foreach ($languages as $code => $name): ?>
                                     <label>
@@ -97,9 +100,6 @@ if (!defined('ABSPATH')) {
                                     </label><br>
                                 <?php endforeach; ?>
                             </fieldset>
-                            <p class="description">
-                                <?php _e('Select languages to enable for translation. Posts can be translated into any of the selected languages.', 'nexus-ai-wp-translator'); ?>
-                            </p>
                         </td>
                     </tr>
                 </table>
