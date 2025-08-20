@@ -96,7 +96,7 @@ if (!defined('ABSPATH')) {
                             </button>
                             <p class="description">
                                 <?php _e('Select the Claude AI model to use for translations.', 'nexus-ai-wp-translator'); ?>
-                                <br><strong><?php _e('Recommendation: claude-3-opus-20240229 provides the best translation quality.', 'nexus-ai-wp-translator'); ?></strong>
+                                <br><strong><?php _e('Recommendation: Claude Sonnet 4 provides the best translation quality.', 'nexus-ai-wp-translator'); ?></strong>
                             </p>
                         </td>
                     </tr>

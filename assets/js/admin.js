@@ -335,10 +335,13 @@ var NexusAIWPTranslatorAdmin = {
                 console.log('NexusAI Debug: Models received successfully:', response.models);
                 modelSelect.empty();
                 
+                // Add "Select model" placeholder first
+                modelSelect.append('<option value="">Select model</option>');
+                
                 // Add models to dropdown
                 var modelCount = 0;
                 $.each(response.models, function(modelId, displayName) {
-                    var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                    var selected = (modelId === currentSelection) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                     console.log('NexusAI Debug: Added model:', modelId, '→', displayName);
                     modelCount++;
@@ -346,13 +349,14 @@ var NexusAIWPTranslatorAdmin = {
                 
                 console.log('NexusAI Debug: Total models added:', modelCount);
             } else {
-                console.log('NexusAI Debug: Failed to get models or no models in response, using fallback');
+                console.log('NexusAI Debug: Failed to get models or no models in response');
                 console.log('NexusAI Debug: Response success:', response.success);
                 console.log('NexusAI Debug: Response models:', response.models);
                 console.log('NexusAI Debug: Full response object:', response);
                 
-                // Fallback to default models if API call fails
-                NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
+                // Show error message instead of default models
+                modelSelect.empty();
+                modelSelect.append('<option value="">Failed to load models - check API key</option>');
             }
         })
         .fail(function(xhr, status, error) {
@@ -363,8 +367,9 @@ var NexusAIWPTranslatorAdmin = {
             console.log('NexusAI Debug: XHR status code:', xhr.status);
             console.log('NexusAI Debug: Full XHR object:', xhr);
             
-            // Fallback to default models if request fails
-            NexusAIWPTranslatorAdmin.setDefaultModels(modelSelect, currentSelection);
+            // Show network error instead of default models
+            modelSelect.empty();
+            modelSelect.append('<option value="">Network error - check connection</option>');
         })
         .always(function() {
             console.log('NexusAI Debug: API test request completed');
@@ -373,30 +378,6 @@ var NexusAIWPTranslatorAdmin = {
         });
     },
     
-    /**
-     * Set default models in dropdown
-     */
-    setDefaultModels: function(modelSelect, currentSelection) {
-        var $ = jQuery; // Ensure $ is available within this method
-        
-        console.log('NexusAI Debug: Setting default models, current selection:', currentSelection);
-        
-        var defaultModels = [
-            {id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Latest)'},
-            {id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet'},
-            {id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku'},
-            {id: 'claude-3-opus-20240229', name: 'Claude 3 Opus'}
-        ];
-        
-        modelSelect.empty();
-        $.each(defaultModels, function(index, model) {
-            var selected = (model.id === currentSelection || (model.id === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
-            modelSelect.append('<option value="' + model.id + '" ' + selected + '>' + model.name + '</option>');
-            console.log('NexusAI Debug: Added default model:', model.id, '→', model.name);
-        });
-        
-        console.log('NexusAI Debug: Default models set complete');
-    },
     
     /**
      * Initialize settings save functionality
