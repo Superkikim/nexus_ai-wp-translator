@@ -266,13 +266,14 @@ jQuery(document).ready(function($) {
             case 1: // No API key, No model
                 console.log('NexusAI Debug: Scenario 1 - No API key, no model');
                 modelRow.hide(); // Keep model field hidden
-                // No auto-testing
+                // No auto-testing, stay on current tab
                 break;
                 
             case 2: // API key exists, No model  
                 console.log('NexusAI Debug: Scenario 2 - API key exists, no model');
                 modelRow.hide(); // Start hidden
-                // Auto-test API key
+                // Switch to API Settings tab and auto-test API key
+                switchToApiSettingsTab();
                 setTimeout(function() {
                     autoTestApiKey(currentApiKey, true); // true = show model field after success
                 }, 500);
@@ -281,12 +282,26 @@ jQuery(document).ready(function($) {
             case 3: // Both API key and model exist
                 console.log('NexusAI Debug: Scenario 3 - Both API key and model exist');
                 modelRow.hide(); // Start hidden
-                // Auto-validate API key and show model field
+                // Switch to API Settings tab and auto-validate API key
+                switchToApiSettingsTab();
                 setTimeout(function() {
                     autoTestApiKey(currentApiKey, true); // true = show model field after success
                 }, 500);
                 break;
         }
+    }
+    
+    // Function to switch to API Settings tab programmatically
+    function switchToApiSettingsTab() {
+        console.log('NexusAI Debug: Switching to API Settings tab for automatic testing');
+        
+        // Update tab navigation
+        $('.nav-tab').removeClass('nav-tab-active');
+        $('a[href="#api-settings"]').addClass('nav-tab-active');
+        
+        // Update tab content
+        $('.tab-content').removeClass('active');
+        $('#api-settings').addClass('active');
     }
     
     
