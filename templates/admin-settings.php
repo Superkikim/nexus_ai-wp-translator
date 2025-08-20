@@ -16,14 +16,40 @@ if (!defined('ABSPATH')) {
         
         <div class="nexus-ai-wp-settings-tabs">
             <nav class="nav-tab-wrapper">
-                <a href="#api-settings" class="nav-tab nav-tab-active"><?php _e('API Settings', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#global-settings" class="nav-tab nav-tab-active"><?php _e('Global Settings', 'nexus-ai-wp-translator'); ?></a>
+                <a href="#api-settings" class="nav-tab"><?php _e('API Settings', 'nexus-ai-wp-translator'); ?></a>
                 <a href="#language-settings" class="nav-tab"><?php _e('Languages', 'nexus-ai-wp-translator'); ?></a>
-                <a href="#behavior-settings" class="nav-tab"><?php _e('Behavior', 'nexus-ai-wp-translator'); ?></a>
                 <a href="#performance-settings" class="nav-tab"><?php _e('Performance', 'nexus-ai-wp-translator'); ?></a>
             </nav>
             
+            <!-- Global Settings Tab -->
+            <div id="global-settings" class="tab-content active">
+                <h2><?php _e('Global Translation Settings', 'nexus-ai-wp-translator'); ?></h2>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Save as draft', 'nexus-ai-wp-translator'); ?></th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox"
+                                           id="nexus_ai_wp_translator_save_as_draft"
+                                           name="nexus_ai_wp_translator_save_as_draft"
+                                           value="1"
+                                           <?php checked(get_option('nexus_ai_wp_translator_save_as_draft', false)); ?> />
+                                    <?php _e('Save translations as drafts instead of publishing immediately', 'nexus-ai-wp-translator'); ?>
+                                </label>
+                                <p class="description">
+                                    <?php _e('When enabled, translated posts will be saved as drafts for review before publishing. When disabled, translations will be published immediately with the same status as the source post.', 'nexus-ai-wp-translator'); ?>
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
             <!-- API Settings Tab -->
-            <div id="api-settings" class="tab-content active">
+            <div id="api-settings" class="tab-content">
                 <h2><?php _e('Nexus AI API Configuration', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
@@ -99,70 +125,6 @@ if (!defined('ABSPATH')) {
                                         <?php echo esc_html($name); ?>
                                     </label><br>
                                 <?php endforeach; ?>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            
-            <!-- Behavior Settings Tab -->
-            <div id="behavior-settings" class="tab-content">
-                <h2><?php _e('Translation Behavior', 'nexus-ai-wp-translator'); ?></h2>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><?php _e('Auto Redirect to Translated Content', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox"
-                                           id="nexus_ai_wp_translator_auto_redirect"
-                                           name="nexus_ai_wp_translator_auto_redirect"
-                                           value="1"
-                                           <?php checked(get_option('nexus_ai_wp_translator_auto_redirect', true)); ?> />
-                                    <?php _e('Automatically redirect users to translated content based on their language preference', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('When enabled, users will be automatically redirected to the translated version of posts/pages based on their user preference (if logged in) or browser language.', 'nexus-ai-wp-translator'); ?>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row"><?php _e('Translation Status', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox"
-                                           id="nexus_ai_wp_translator_save_as_draft"
-                                           name="nexus_ai_wp_translator_save_as_draft"
-                                           value="1"
-                                           <?php checked(get_option('nexus_ai_wp_translator_save_as_draft', false)); ?> />
-                                    <?php _e('Save translations as drafts instead of publishing immediately', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('When enabled, translated posts will be saved as drafts for review before publishing. When disabled, translations will be published immediately with the same status as the source post.', 'nexus-ai-wp-translator'); ?>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row"><?php _e('SEO Friendly URLs', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox" 
-                                           id="nexus_ai_wp_translator_seo_friendly_urls" 
-                                           name="nexus_ai_wp_translator_seo_friendly_urls" 
-                                           value="1" 
-                                           <?php checked($seo_friendly_urls); ?> />
-                                    <?php _e('Enable SEO-friendly URLs for translations', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('URLs will be structured as /language-code/post-slug/ (e.g., /es/my-post/).', 'nexus-ai-wp-translator'); ?>
-                                </p>
                             </fieldset>
                         </td>
                     </tr>
@@ -428,11 +390,6 @@ jQuery(document).ready(function($) {
     
     // Test API connection
     $('#nexus-ai-wp-test-api').on('click', function() {
-        // Save API key first if changed
-        if (apiKeyChanged) {
-            saveApiKey();
-        }
-        
         var button = $(this);
         var apiKey = $('#nexus_ai_wp_translator_api_key').val();
         var resultDiv = $('#api-test-result');
@@ -442,27 +399,32 @@ jQuery(document).ready(function($) {
             return;
         }
         
-        button.prop('disabled', true).text('<?php _e('Testing...', 'claude-translator'); ?>');
-        button.prop('disabled', true).text('Testing...');
-        resultDiv.html('<div class="notice notice-info"><p><?php _e('Testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
+        // Always save settings first, then test
+        console.log('NexusAI Debug: Saving settings before API test...');
+        button.prop('disabled', true).text('<?php _e('Saving & Testing...', 'nexus-ai-wp-translator'); ?>');
+        resultDiv.html('<div class="notice notice-info"><p><?php _e('Saving settings and testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
         
-        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-            action: 'nexus_ai_wp_test_api',
-            api_key: apiKey,
-            nonce: nexus_ai_wp_translator_ajax.nonce
-        }, function(response) {
-            var noticeClass = response.success ? 'notice-success' : 'notice-error';
-            resultDiv.html('<div class="notice ' + noticeClass + '"><p>' + response.message + '</p></div>');
-            
-            // Load models after successful API test
-            if (response.success) {
-                console.log('NexusAI Debug: API test successful, loading models...');
-                loadModels(apiKey);
-            }
-        }).fail(function() {
-            resultDiv.html('<div class="notice notice-error"><p>Connection failed. Please check your API key.</p></div>');
-        }).always(function() {
-            button.prop('disabled', false).text('Test Connection');
+        // First save all current settings
+        dynamicSaveSettings(function() {
+            // Then test API connection
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_test_api',
+                api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            }, function(response) {
+                var noticeClass = response.success ? 'notice-success' : 'notice-error';
+                resultDiv.html('<div class="notice ' + noticeClass + '"><p>' + response.message + '</p></div>');
+                
+                // Load models after successful API test
+                if (response.success) {
+                    console.log('NexusAI Debug: API test successful, loading models...');
+                    loadModels(apiKey);
+                }
+            }).fail(function() {
+                resultDiv.html('<div class="notice notice-error"><p>Connection failed. Please check your API key.</p></div>');
+            }).always(function() {
+                button.prop('disabled', false).text('<?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>');
+            });
         });
     });
     
@@ -581,7 +543,7 @@ jQuery(document).ready(function($) {
     });
     
     // Dynamic save function
-    function dynamicSaveSettings() {
+    function dynamicSaveSettings(callback) {
         var form = $('#nexus-ai-wp-translator-settings-form');
         var formData = form.serialize();
         formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
@@ -590,15 +552,33 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 apiKeyChanged = false;
                 console.log('Settings saved dynamically');
-                // Show brief success feedback for auto-saves
-                showAutoSaveSuccess();
+                // Show brief success feedback for auto-saves (only if no callback)
+                if (!callback) {
+                    showAutoSaveSuccess();
+                }
+                // Execute callback if provided
+                if (typeof callback === 'function') {
+                    callback();
+                }
             } else {
                 console.log('Dynamic save failed:', response);
-                showAutoSaveError();
+                if (!callback) {
+                    showAutoSaveError();
+                }
+                // Still execute callback even if save failed
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         }).fail(function() {
             console.log('Dynamic save request failed');
-            showAutoSaveError();
+            if (!callback) {
+                showAutoSaveError();
+            }
+            // Still execute callback even if save failed
+            if (typeof callback === 'function') {
+                callback();
+            }
         });
     }
     
