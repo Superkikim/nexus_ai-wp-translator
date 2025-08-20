@@ -266,34 +266,122 @@ jQuery(document).ready(function($) {
             case 1: // No API key, No model
                 console.log('NexusAI Debug: Scenario 1 - No API key, no model');
                 modelRow.hide(); // Keep model field hidden
-                // No auto-testing, stay on current tab
+                // No background testing - no API key configured
                 break;
                 
             case 2: // API key exists, No model  
                 console.log('NexusAI Debug: Scenario 2 - API key exists, no model');
                 modelRow.hide(); // Start hidden
-                // Switch to API Settings tab and auto-test API key
-                switchToApiSettingsTab();
-                setTimeout(function() {
-                    autoTestApiKey(currentApiKey, true); // true = show model field after success
-                }, 500);
+                // Perform background API test
+                performBackgroundApiTest(currentApiKey);
                 break;
                 
             case 3: // Both API key and model exist
                 console.log('NexusAI Debug: Scenario 3 - Both API key and model exist');
                 modelRow.hide(); // Start hidden
-                // Switch to API Settings tab and auto-validate API key
-                switchToApiSettingsTab();
-                setTimeout(function() {
-                    autoTestApiKey(currentApiKey, true); // true = show model field after success
-                }, 500);
+                // Perform background API test
+                performBackgroundApiTest(currentApiKey);
                 break;
         }
     }
     
+    // Semaphore management functions
+    function setApiErrorSemaphore(message) {
+        var errorData = {
+            hasError: true,
+            message: message,
+            timestamp: Date.now()
+        };
+        sessionStorage.setItem('nexus_ai_api_error', JSON.stringify(errorData));
+        console.log('NexusAI Debug: API error semaphore set:', errorData);
+    }
+    
+    function getApiErrorSemaphore() {
+        var errorData = sessionStorage.getItem('nexus_ai_api_error');
+        if (errorData) {
+            try {
+                return JSON.parse(errorData);
+            } catch (e) {
+                console.log('NexusAI Debug: Error parsing semaphore data:', e);
+                return null;
+            }
+        }
+        return null;
+    }
+    
+    function clearApiErrorSemaphore() {
+        sessionStorage.removeItem('nexus_ai_api_error');
+        console.log('NexusAI Debug: API error semaphore cleared');
+    }
+    
+    // Background API testing function
+    function performBackgroundApiTest(apiKey) {
+        console.log('NexusAI Debug: Performing background API test');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_test_api',
+            api_key: apiKey,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        }, function(response) {
+            if (response.success) {
+                console.log('NexusAI Debug: Background API test successful');
+                // Clear any existing error semaphore
+                clearApiErrorSemaphore();
+                apiKeyValidated = true;
+                // Load models silently
+                loadModels(apiKey);
+            } else {
+                console.log('NexusAI Debug: Background API test failed:', response.message);
+                // Set error semaphore
+                setApiErrorSemaphore(response.message || 'API connection failed');
+                // Show error popup
+                showApiErrorPopup(response.message || 'API connection failed');
+            }
+        }).fail(function() {
+            console.log('NexusAI Debug: Background API test failed with connection error');
+            var errorMsg = 'Connection failed. Please check your API key and network connection.';
+            setApiErrorSemaphore(errorMsg);
+            showApiErrorPopup(errorMsg);
+        });
+    }
+    
+    // Error popup function
+    function showApiErrorPopup(message) {
+        console.log('NexusAI Debug: Showing API error popup');
+        
+        // Create modal HTML if it doesn't exist
+        if ($('#nexus-api-error-modal').length === 0) {
+            var modalHtml = 
+                '<div id="nexus-api-error-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">' +
+                    '<div style="position: relative; margin: 10% auto; padding: 20px; width: 60%; max-width: 500px; background-color: white; border-radius: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">' +
+                        '<div style="display: flex; align-items: center; margin-bottom: 15px;">' +
+                            '<span class="dashicons dashicons-warning" style="color: #d63638; font-size: 24px; margin-right: 10px;"></span>' +
+                            '<h3 style="margin: 0; color: #d63638;">API Configuration Issue</h3>' +
+                        '</div>' +
+                        '<p id="nexus-api-error-message" style="margin-bottom: 20px; line-height: 1.5;"></p>' +
+                        '<div style="text-align: right;">' +
+                            '<button id="nexus-api-error-ok" class="button button-primary">OK - Go to API Settings</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            $('body').append(modalHtml);
+        }
+        
+        // Set message and show modal
+        $('#nexus-api-error-message').text(message);
+        $('#nexus-api-error-modal').fadeIn(300);
+        
+        // Handle OK button click
+        $('#nexus-api-error-ok').off('click').on('click', function() {
+            $('#nexus-api-error-modal').fadeOut(300);
+            // Switch to API Settings tab
+            switchToApiSettingsTab();
+        });
+    }
+    
     // Function to switch to API Settings tab programmatically
     function switchToApiSettingsTab() {
-        console.log('NexusAI Debug: Switching to API Settings tab for automatic testing');
+        console.log('NexusAI Debug: Switching to API Settings tab');
         
         // Update tab navigation
         $('.nav-tab').removeClass('nav-tab-active');
@@ -302,6 +390,19 @@ jQuery(document).ready(function($) {
         // Update tab content
         $('.tab-content').removeClass('active');
         $('#api-settings').addClass('active');
+        
+        // Check for error semaphore and display message
+        displayApiErrorIfExists();
+    }
+    
+    // Function to display API error if semaphore exists
+    function displayApiErrorIfExists() {
+        var errorData = getApiErrorSemaphore();
+        if (errorData && errorData.hasError) {
+            console.log('NexusAI Debug: Displaying API error from semaphore:', errorData.message);
+            var resultDiv = $('#api-test-result');
+            resultDiv.html('<div class="notice notice-error"><p><strong>API Error:</strong> ' + errorData.message + '</p></div>');
+        }
     }
     
     
@@ -347,14 +448,18 @@ jQuery(document).ready(function($) {
         $('.tab-content').removeClass('active');
         $(target).addClass('active');
         
-        
-        // Auto-test API when opening API Settings tab
-        if (target === '#api-settings' && !apiKeyValidated) {
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-            if (apiKey) {
-                setTimeout(function() {
-                    autoTestApiKey(apiKey);
-                }, 300);
+        // Check for existing error semaphore when entering API Settings tab
+        if (target === '#api-settings') {
+            displayApiErrorIfExists();
+            
+            // Auto-test API when opening API Settings tab (only if not yet validated)
+            if (!apiKeyValidated) {
+                var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+                if (apiKey) {
+                    setTimeout(function() {
+                        autoTestApiKey(apiKey);
+                    }, 300);
+                }
             }
         }
     });
@@ -433,6 +538,9 @@ jQuery(document).ready(function($) {
                 // Load models after successful API test
                 if (response.success) {
                     console.log('NexusAI Debug: API test successful, loading models...');
+                    // Clear any existing error semaphore on successful validation
+                    clearApiErrorSemaphore();
+                    apiKeyValidated = true;
                     loadModels(apiKey);
                 }
             }).fail(function() {
