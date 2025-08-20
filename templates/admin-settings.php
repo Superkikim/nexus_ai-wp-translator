@@ -467,7 +467,10 @@ jQuery(document).ready(function($) {
         console.log('NexusAI Debug: Loading models with API key');
         var modelSelect = $('#nexus_ai_wp_translator_model');
         var modelRow = $('#model-selection-row');
-        var currentSelection = modelSelect.val();
+        
+        // Use server-side data for current selection since the element might be hidden
+        var currentSelection = window.nexusAiServerData ? window.nexusAiServerData.selectedModel : '';
+        console.log('NexusAI Debug: Current selected model from server:', currentSelection);
         
         modelSelect.html('<option value="">Loading models...</option>');
         
@@ -570,4 +573,12 @@ jQuery(document).ready(function($) {
 
 // Start waiting for AJAX variables
 waitForAjaxVars();
+</script>
+
+<script>
+// Pass server-side values to JavaScript
+window.nexusAiServerData = {
+    selectedModel: '<?php echo esc_js($selected_model); ?>',
+    apiKey: '<?php echo esc_js($api_key); ?>'
+};
 </script>
