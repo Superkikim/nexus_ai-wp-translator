@@ -600,18 +600,13 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: API key received for test (length: ' . strlen($api_key) . ')');
         }
         
-        // Temporarily update the API key for testing
-        $old_key = get_option('nexus_ai_wp_translator_api_key');
+        // Save the API key in database and test it
         update_option('nexus_ai_wp_translator_api_key', $api_key);
         
         // Refresh API key in handler
         $this->api_handler->refresh_api_key();
         
         $result = $this->api_handler->test_api_connection();
-        
-        // Restore old key
-        update_option('nexus_ai_wp_translator_api_key', $old_key);
-        $this->api_handler->refresh_api_key();
         
         wp_send_json($result);
     }
@@ -640,8 +635,7 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: API key for models (length: ' . strlen($api_key) . ')');
         }
         
-        // Temporarily update the API key for testing
-        $old_key = get_option('nexus_ai_wp_translator_api_key');
+        // Save the API key in database and get models
         update_option('nexus_ai_wp_translator_api_key', $api_key);
         
         // Refresh API key in handler
@@ -652,10 +646,6 @@ class Nexus_AI_WP_Translator_Admin {
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Get models result: ' . print_r($result, true));
         }
-        
-        // Restore old key
-        update_option('nexus_ai_wp_translator_api_key', $old_key);
-        $this->api_handler->refresh_api_key();
         
         wp_send_json($result);
     }
