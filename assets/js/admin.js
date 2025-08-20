@@ -166,20 +166,7 @@ var NexusAIWPTranslatorAdmin = {
             }
         });
         
-        // API key toggle visibility
-        $('#nexus-ai-wp-toggle-api-key').on('click', function() {
-            console.log('NexusAI Debug: Toggle API key visibility');
-            var input = $('#nexus_ai_wp_translator_api_key');
-            var type = input.attr('type');
-            
-            if (type === 'password') {
-                input.attr('type', 'text');
-                $(this).text('Hide');
-            } else {
-                input.attr('type', 'password');
-                $(this).text('Show');
-            }
-        });
+        // Note: API key toggle is handled in inline script (admin-settings.php) for proper i18n support
     },
     
     /**
