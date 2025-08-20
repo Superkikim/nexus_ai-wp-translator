@@ -51,7 +51,7 @@ if (!defined('ABSPATH')) {
                         </td>
                     </tr>
                     
-                    <tr id="model-selection-row">
+                    <tr id="model-selection-row" style="display: none;">
                         <th scope="row">
                             <label for="nexus_ai_wp_translator_model"><?php _e('AI Model', 'nexus-ai-wp-translator'); ?></label>
                         </th>
@@ -69,7 +69,7 @@ if (!defined('ABSPATH')) {
                                 <?php _e('Refresh Models', 'nexus-ai-wp-translator'); ?>
                             </button>
                             <p class="description">
-                                <?php _e('Select the Claude AI model to use for translations. Test your API connection first to load available models.', 'nexus-ai-wp-translator'); ?>
+                                <?php _e('Select the Claude AI model to use for translations.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
@@ -275,7 +275,7 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
         
-        <p class="submit">
+        <p class="submit" id="form-submit-buttons">
             <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
             <button type="button" id="nexus-ai-wp-save-settings" class="button button-primary">
                 <?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>
@@ -305,8 +305,33 @@ jQuery(document).ready(function($) {
     console.log('NexusAI Debug: Inline script jQuery ready');
     
     var apiKeyChanged = false;
+    var apiKeyValidated = false;
     
-    // Tab switching
+    // Auto-test API key on page load if it exists
+    var existingApiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+    if (existingApiKey) {
+        console.log('NexusAI Debug: Auto-testing existing API key on page load');
+        setTimeout(function() {
+            autoTestApiKey(existingApiKey);
+        }, 500);
+    }
+    
+    // Function to manage save button visibility
+    function manageSaveButtonVisibility(target) {
+        var submitButtons = $('#form-submit-buttons');
+        if (target === '#api-settings') {
+            // Hide save buttons for API Settings tab (dynamic saving is active)
+            submitButtons.hide();
+        } else {
+            // Show save buttons for other tabs
+            submitButtons.show();
+        }
+    }
+    
+    // Initialize save button visibility on page load
+    manageSaveButtonVisibility('#api-settings');
+    
+    // Tab switching with auto-test functionality
     $('.nav-tab').on('click', function(e) {
         e.preventDefault();
         
@@ -317,6 +342,19 @@ jQuery(document).ready(function($) {
         
         $('.tab-content').removeClass('active');
         $(target).addClass('active');
+        
+        // Manage save button visibility
+        manageSaveButtonVisibility(target);
+        
+        // Auto-test API when opening API Settings tab
+        if (target === '#api-settings' && !apiKeyValidated) {
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+            if (apiKey) {
+                setTimeout(function() {
+                    autoTestApiKey(apiKey);
+                }, 300);
+            }
+        }
     });
     
     // Track API key changes
@@ -403,10 +441,32 @@ jQuery(document).ready(function($) {
         });
     });
     
+    // Auto-test API key function (silent test for page load)
+    function autoTestApiKey(apiKey) {
+        console.log('NexusAI Debug: Auto-testing API key silently');
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_test_api',
+            api_key: apiKey,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        }, function(response) {
+            if (response.success) {
+                console.log('NexusAI Debug: Auto-test successful, API key validated');
+                apiKeyValidated = true;
+                loadModels(apiKey);
+            } else {
+                console.log('NexusAI Debug: Auto-test failed');
+            }
+        }).fail(function() {
+            console.log('NexusAI Debug: Auto-test failed with connection error');
+        });
+    }
+    
     // Load models function
     function loadModels(apiKey) {
         console.log('NexusAI Debug: Loading models with API key');
         var modelSelect = $('#nexus_ai_wp_translator_model');
+        var modelRow = $('#model-selection-row');
         var currentSelection = modelSelect.val();
         
         modelSelect.html('<option value="">Loading models...</option>');
@@ -424,13 +484,55 @@ jQuery(document).ready(function($) {
                     var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                 });
+                
+                // Show model selection row after successful load
+                modelRow.show();
+                apiKeyValidated = true;
+                
             } else {
                 // Fallback models
                 modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+                modelRow.show();
+                apiKeyValidated = true;
             }
         }).fail(function() {
             console.log('NexusAI Debug: Failed to load models, using fallback');
             modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+            modelRow.show();
+            apiKeyValidated = true;
+        });
+    }
+    
+    // Dynamic save when model selection changes
+    $('#nexus_ai_wp_translator_model').on('change', function() {
+        if (apiKeyValidated && $(this).val()) {
+            console.log('NexusAI Debug: Model selection changed, saving dynamically');
+            dynamicSaveSettings();
+        }
+    });
+    
+    // Refresh models button
+    $('#nexus-ai-wp-refresh-models').on('click', function() {
+        var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
+        if (apiKey && apiKeyValidated) {
+            console.log('NexusAI Debug: Refreshing models manually');
+            loadModels(apiKey);
+        } else {
+            $('#api-test-result').html('<div class="notice notice-warning"><p><?php _e('Please test your API connection first.', 'nexus-ai-wp-translator'); ?></p></div>');
+        }
+    });
+    
+    // Dynamic save function
+    function dynamicSaveSettings() {
+        var form = $('#nexus-ai-wp-translator-settings-form');
+        var formData = form.serialize();
+        formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
+        
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, formData, function(response) {
+            if (response.success) {
+                apiKeyChanged = false;
+                console.log('Settings saved dynamically');
+            }
         });
     }
     
