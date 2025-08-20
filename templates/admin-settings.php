@@ -255,12 +255,6 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
         
-        <p class="submit" id="form-submit-buttons">
-            <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php _e('Save Changes', 'nexus-ai-wp-translator'); ?>" />
-            <button type="button" id="nexus-ai-wp-save-settings" class="button button-primary">
-                <?php _e('Save Settings (AJAX)', 'nexus-ai-wp-translator'); ?>
-            </button>
-        </p>
     </form>
 </div>
 
@@ -333,20 +327,36 @@ jQuery(document).ready(function($) {
         }
     }
     
-    // Function to manage save button visibility
-    function manageSaveButtonVisibility(target) {
-        var submitButtons = $('#form-submit-buttons');
-        if (target === '#api-settings') {
-            // Hide save buttons for API Settings tab (dynamic saving is active)
-            submitButtons.hide();
-        } else {
-            // Show save buttons for other tabs
-            submitButtons.show();
-        }
+    
+    // Auto-save functionality for all form fields
+    function initAutoSave() {
+        // Handle all checkboxes in the form
+        $('#nexus-ai-wp-translator-settings-form input[type="checkbox"]').on('change', function() {
+            console.log('NexusAI Debug: Checkbox changed, auto-saving:', $(this).attr('name'));
+            dynamicSaveSettings();
+        });
+        
+        // Handle number inputs with debouncing (Performance Settings tab)
+        var saveTimeout;
+        $('#nexus-ai-wp-translator-settings-form input[type="number"]').on('input', function() {
+            var fieldName = $(this).attr('name');
+            console.log('NexusAI Debug: Number input changed:', fieldName);
+            
+            // Clear previous timeout
+            clearTimeout(saveTimeout);
+            
+            // Set new timeout to save after user stops typing (500ms delay)
+            saveTimeout = setTimeout(function() {
+                console.log('NexusAI Debug: Auto-saving after number input change');
+                dynamicSaveSettings();
+            }, 500);
+        });
+        
+        console.log('NexusAI Debug: Auto-save initialized for all form fields');
     }
     
-    // Initialize save button visibility on page load
-    manageSaveButtonVisibility('#api-settings');
+    // Initialize auto-save for all form fields
+    initAutoSave();
     
     // Tab switching with auto-test functionality
     $('.nav-tab').on('click', function(e) {
@@ -360,8 +370,6 @@ jQuery(document).ready(function($) {
         $('.tab-content').removeClass('active');
         $(target).addClass('active');
         
-        // Manage save button visibility
-        manageSaveButtonVisibility(target);
         
         // Auto-test API when opening API Settings tab
         if (target === '#api-settings' && !apiKeyValidated) {
@@ -582,33 +590,38 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 apiKeyChanged = false;
                 console.log('Settings saved dynamically');
+                // Show brief success feedback for auto-saves
+                showAutoSaveSuccess();
+            } else {
+                console.log('Dynamic save failed:', response);
+                showAutoSaveError();
             }
+        }).fail(function() {
+            console.log('Dynamic save request failed');
+            showAutoSaveError();
         });
     }
     
-    // AJAX save settings
-    $('#nexus-ai-wp-save-settings').on('click', function() {
-        var button = $(this);
-        var form = $('#nexus-ai-wp-translator-settings-form');
-        
-        button.prop('disabled', true).text('Saving...');
-        
-        var formData = form.serialize();
-        formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
-        
-        $.post(nexus_ai_wp_translator_ajax.ajax_url, formData, function(response) {
-            if (response.success) {
-                apiKeyChanged = false;
-                $('<div class="notice notice-success is-dismissible"><p>' + response.data + '</p></div>')
-                    .insertAfter('h1').delay(3000).fadeOut();
-            } else {
-                $('<div class="notice notice-error is-dismissible"><p>' + response.data + '</p></div>')
-                    .insertAfter('h1');
-            }
-        }).always(function() {
-            button.prop('disabled', false).text('Save Settings (AJAX)');
-        });
-    });
+    // Show brief auto-save success feedback
+    function showAutoSaveSuccess() {
+        var feedback = $('#auto-save-feedback');
+        if (feedback.length === 0) {
+            $('h1').after('<div id="auto-save-feedback" style="position: fixed; top: 32px; right: 20px; z-index: 9999; background: #00a32a; color: white; padding: 8px 12px; border-radius: 4px; font-size: 13px;"></div>');
+            feedback = $('#auto-save-feedback');
+        }
+        feedback.text('Settings saved').stop(true, true).show().delay(2000).fadeOut();
+    }
+    
+    // Show brief auto-save error feedback
+    function showAutoSaveError() {
+        var feedback = $('#auto-save-feedback');
+        if (feedback.length === 0) {
+            $('h1').after('<div id="auto-save-feedback" style="position: fixed; top: 32px; right: 20px; z-index: 9999; background: #d63638; color: white; padding: 8px 12px; border-radius: 4px; font-size: 13px;"></div>');
+            feedback = $('#auto-save-feedback');
+        }
+        feedback.text('Save failed').stop(true, true).show().delay(3000).fadeOut();
+    }
+    
 });
 }
 
