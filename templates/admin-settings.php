@@ -96,6 +96,7 @@ if (!defined('ABSPATH')) {
                             </button>
                             <p class="description">
                                 <?php _e('Select the Claude AI model to use for translations.', 'nexus-ai-wp-translator'); ?>
+                                <br><strong><?php _e('Recommendation: claude-3-opus-20240229 provides the best translation quality.', 'nexus-ai-wp-translator'); ?></strong>
                             </p>
                         </td>
                     </tr>
@@ -613,29 +614,48 @@ jQuery(document).ready(function($) {
             if (response.success && response.models) {
                 modelSelect.empty();
                 
-                // Add default "Select model" option if no current selection
-                if (!currentSelection) {
-                    modelSelect.append('<option value="">Select model</option>');
-                }
+                // ALWAYS add "Select model" option first - no exceptions
+                var defaultText = currentSelection ? 'Select model' : 'Select model';
+                modelSelect.append('<option value="">' + defaultText + '</option>');
                 
                 $.each(response.models, function(modelId, displayName) {
                     var selected = (modelId === currentSelection) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                 });
                 
+                // If we have a saved model, ensure it stays selected
+                if (currentSelection) {
+                    modelSelect.val(currentSelection);
+                }
+                
                 // Show model selection row after successful load
                 modelRow.show();
                 apiKeyValidated = true;
                 
             } else {
-                // No models available, show error message
-                modelSelect.html('<option value="">No models available</option>');
+                // API failed to return models - show error and preserve saved model if exists
+                modelSelect.empty();
+                modelSelect.append('<option value="">Select model</option>');
+                if (currentSelection) {
+                    // Preserve saved model even if API failed
+                    modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
+                } else {
+                    modelSelect.append('<option value="" disabled>' + (response.message || 'No models available') + '</option>');
+                }
                 modelRow.show();
                 apiKeyValidated = true;
             }
         }).fail(function() {
             console.log('NexusAI Debug: Failed to load models');
-            modelSelect.html('<option value="">Failed to load models</option>');
+            // Connection failed - preserve saved model if exists
+            modelSelect.empty();
+            modelSelect.append('<option value="">Select model</option>');
+            if (currentSelection) {
+                // Preserve saved model even if connection failed
+                modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
+            } else {
+                modelSelect.append('<option value="" disabled>Failed to load models</option>');
+            }
             modelRow.show();
             apiKeyValidated = true;
         });

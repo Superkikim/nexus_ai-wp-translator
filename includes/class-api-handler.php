@@ -106,14 +106,12 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Check if we have a valid response structure
         if (!isset($data['data']) || !is_array($data['data'])) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: No models data in response, using fallback models');
+                error_log('Nexus AI WP Translator: No models data in response, returning empty models array');
             }
-            // Fallback to known models if API doesn't return model list
-            $models = array(
-                'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-                'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
-                'claude-3-haiku-20240307' => 'Claude 3 Haiku',
-                'claude-3-opus-20240229' => 'Claude 3 Opus'
+            // No fallback - return empty models if API doesn't provide them
+            return array(
+                'success' => false,
+                'message' => __('No models available from API. Please check your API key.', 'nexus-ai-wp-translator')
             );
         } else {
             if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -130,16 +128,14 @@ class Nexus_AI_WP_Translator_API_Handler {
                 }
             }
             
-            // If no models found, use fallback
+            // If no models found, return error - no fallback
             if (empty($models)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('Nexus AI WP Translator: No models found in API response, using fallback');
+                    error_log('Nexus AI WP Translator: No models found in API response');
                 }
-                $models = array(
-                    'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-                    'claude-3-sonnet-20240229' => 'Claude 3 Sonnet',
-                    'claude-3-haiku-20240307' => 'Claude 3 Haiku',
-                    'claude-3-opus-20240229' => 'Claude 3 Opus'
+                return array(
+                    'success' => false,
+                    'message' => __('No models found in API response. Please contact support.', 'nexus-ai-wp-translator')
                 );
             }
         }
@@ -292,9 +288,18 @@ class Nexus_AI_WP_Translator_API_Handler {
         
         $start_time = microtime(true);
         
-        // Get model from parameter or settings
+        // Get model from parameter or settings - no fallback
         if (!$model) {
-            $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+            $model = get_option('nexus_ai_wp_translator_model', '');
+        }
+        
+        // Validate that a model is selected
+        if (empty($model)) {
+            error_log('Nexus AI WP Translator: No model selected');
+            return array(
+                'success' => false,
+                'message' => __('No AI model selected. Please select a model in Settings → API Settings.', 'nexus-ai-wp-translator')
+            );
         }
         
         error_log("Nexus AI WP Translator: Using model: " . $model);
