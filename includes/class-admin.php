@@ -423,7 +423,7 @@ class Nexus_AI_WP_Translator_Admin {
         }
         $languages = $this->translation_manager->get_available_languages();
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
-        $selected_model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+        $selected_model = get_option('nexus_ai_wp_translator_model', '');
         $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages_raw = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
         
@@ -678,7 +678,7 @@ class Nexus_AI_WP_Translator_Admin {
         
         // Validate and sanitize input data
         $api_key = isset($_POST['nexus_ai_wp_translator_api_key']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_api_key']) : '';
-        $model = isset($_POST['nexus_ai_wp_translator_model']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_model']) : 'claude-3-5-sonnet-20241022';
+        $model = isset($_POST['nexus_ai_wp_translator_model']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_model']) : '';
         
         // Debug: Log what model we're trying to save
         error_log('Nexus AI WP Translator: Attempting to save model: "' . $model . '"');
