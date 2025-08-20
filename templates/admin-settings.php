@@ -307,13 +307,50 @@ jQuery(document).ready(function($) {
     var apiKeyChanged = false;
     var apiKeyValidated = false;
     
-    // Auto-test API key on page load if it exists
-    var existingApiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-    if (existingApiKey) {
-        console.log('NexusAI Debug: Auto-testing existing API key on page load');
-        setTimeout(function() {
-            autoTestApiKey(existingApiKey);
-        }, 500);
+    // Determine current scenario based on server-side data
+    var currentApiKey = window.nexusAiServerData ? window.nexusAiServerData.apiKey : '';
+    var currentModel = window.nexusAiServerData ? window.nexusAiServerData.selectedModel : '';
+    var currentScenario = 1; // Default: No API key, No model
+    
+    if (currentApiKey && currentModel) {
+        currentScenario = 3; // Both API key and model exist
+    } else if (currentApiKey && !currentModel) {
+        currentScenario = 2; // API key exists, no model
+    }
+    
+    console.log('NexusAI Debug: Detected scenario:', currentScenario, 'API key length:', currentApiKey.length, 'Model:', currentModel);
+    
+    // Handle initial state based on scenario
+    handleInitialScenario(currentScenario);
+    
+    function handleInitialScenario(scenario) {
+        var modelRow = $('#model-selection-row');
+        
+        switch(scenario) {
+            case 1: // No API key, No model
+                console.log('NexusAI Debug: Scenario 1 - No API key, no model');
+                modelRow.hide(); // Keep model field hidden
+                // No auto-testing
+                break;
+                
+            case 2: // API key exists, No model  
+                console.log('NexusAI Debug: Scenario 2 - API key exists, no model');
+                modelRow.hide(); // Start hidden
+                // Auto-test API key
+                setTimeout(function() {
+                    autoTestApiKey(currentApiKey, true); // true = show model field after success
+                }, 500);
+                break;
+                
+            case 3: // Both API key and model exist
+                console.log('NexusAI Debug: Scenario 3 - Both API key and model exist');
+                modelRow.hide(); // Start hidden
+                // Auto-validate API key and show model field
+                setTimeout(function() {
+                    autoTestApiKey(currentApiKey, true); // true = show model field after success
+                }, 500);
+                break;
+        }
     }
     
     // Function to manage save button visibility
@@ -442,8 +479,8 @@ jQuery(document).ready(function($) {
     });
     
     // Auto-test API key function (silent test for page load)
-    function autoTestApiKey(apiKey) {
-        console.log('NexusAI Debug: Auto-testing API key silently');
+    function autoTestApiKey(apiKey, showModelField) {
+        console.log('NexusAI Debug: Auto-testing API key silently, showModelField:', showModelField);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_test_api',
@@ -453,12 +490,31 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 console.log('NexusAI Debug: Auto-test successful, API key validated');
                 apiKeyValidated = true;
-                loadModels(apiKey);
+                if (showModelField) {
+                    loadModels(apiKey);
+                }
             } else {
                 console.log('NexusAI Debug: Auto-test failed');
+                // For scenario 3, if validation fails, revert to scenario 2 behavior
+                if (currentScenario === 3) {
+                    console.log('NexusAI Debug: Scenario 3 validation failed, reverting to scenario 2 behavior');
+                    // Clear the saved model since API key is invalid
+                    if (window.nexusAiServerData) {
+                        window.nexusAiServerData.selectedModel = '';
+                    }
+                    $('#model-selection-row').hide();
+                }
             }
         }).fail(function() {
             console.log('NexusAI Debug: Auto-test failed with connection error');
+            // For scenario 3, if validation fails, revert to scenario 2 behavior
+            if (currentScenario === 3) {
+                console.log('NexusAI Debug: Scenario 3 validation failed with connection error, reverting to scenario 2 behavior');
+                if (window.nexusAiServerData) {
+                    window.nexusAiServerData.selectedModel = '';
+                }
+                $('#model-selection-row').hide();
+            }
         });
     }
     
