@@ -516,6 +516,11 @@ jQuery(document).ready(function($) {
     $('#nexus_ai_wp_translator_model').on('change', function() {
         if (apiKeyValidated && $(this).val()) {
             console.log('NexusAI Debug: Model selection changed, saving dynamically');
+            // Update our local tracking of selected model
+            if (window.nexusAiServerData) {
+                window.nexusAiServerData.selectedModel = $(this).val();
+                console.log('NexusAI Debug: Updated selectedModel to:', $(this).val());
+            }
             dynamicSaveSettings();
         }
     });
