@@ -527,9 +527,6 @@ jQuery(document).ready(function($) {
         // Use server-side data for current selection since the element might be hidden
         var currentSelection = window.nexusAiServerData ? window.nexusAiServerData.selectedModel : '';
         console.log('NexusAI Debug: Current selected model from server:', currentSelection);
-        console.log('NexusAI Debug: Current selection type:', typeof currentSelection);
-        console.log('NexusAI Debug: Current selection length:', currentSelection ? currentSelection.length : 'null/undefined');
-        console.log('NexusAI Debug: window.nexusAiServerData:', window.nexusAiServerData);
         
         modelSelect.html('<option value="">Loading models...</option>');
         
@@ -543,42 +540,21 @@ jQuery(document).ready(function($) {
             if (response.success && response.models) {
                 modelSelect.empty();
                 
-                console.log('NexusAI Debug: Processing', Object.keys(response.models).length, 'models from API response');
-                console.log('NexusAI Debug: Available model IDs:', Object.keys(response.models));
-                
                 // Add default "Select model" option if no current selection
                 if (!currentSelection) {
-                    console.log('NexusAI Debug: No currentSelection, adding default "Select model" option');
                     modelSelect.append('<option value="">Select model</option>');
                 }
                 
-                var foundMatch = false;
                 $.each(response.models, function(modelId, displayName) {
-                    console.log('NexusAI Debug: Processing model - ID:', modelId, 'Display:', displayName);
-                    console.log('NexusAI Debug: Comparing "' + modelId + '" === "' + currentSelection + '"');
-                    
-                    var isMatch = (modelId === currentSelection);
-                    var selected = isMatch ? 'selected' : '';
-                    
-                    console.log('NexusAI Debug: Match result:', isMatch, 'Selected attribute:', selected);
-                    
-                    if (isMatch) {
-                        foundMatch = true;
-                        console.log('NexusAI Debug: *** FOUND MATCHING MODEL - Setting as selected ***');
-                    }
-                    
+                    var selected = (modelId === currentSelection) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                 });
-                
-                console.log('NexusAI Debug: Final result - Found match for currentSelection:', foundMatch);
-                console.log('NexusAI Debug: Final select element HTML:', modelSelect.html());
                 
                 // Show model selection row after successful load
                 modelRow.show();
                 apiKeyValidated = true;
                 
             } else {
-                console.log('NexusAI Debug: API response failed or no models in response');
                 // No models available, show error message
                 modelSelect.html('<option value="">No models available</option>');
                 modelRow.show();
