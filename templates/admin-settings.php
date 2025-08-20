@@ -98,7 +98,7 @@ if (!defined('ABSPATH')) {
                                 <?php endforeach; ?>
                             </fieldset>
                             <p class="description">
-                                <?php _e('Select the languages you want to be available for translation. The source language for each post will be automatically detected or set at the post level.', 'nexus-ai-wp-translator'); ?>
+                                <?php _e('Select languages to enable for translation. Posts can be translated into any of the selected languages.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>
