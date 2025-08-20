@@ -421,6 +421,9 @@ class Nexus_AI_WP_Translator_Admin {
             return;
         }
         $languages = $this->translation_manager->get_available_languages();
+        // Sort languages alphabetically by name
+        asort($languages);
+        
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', '');
         $target_languages_raw = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
@@ -516,6 +519,8 @@ class Nexus_AI_WP_Translator_Admin {
         $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
         $translations = $this->db->get_post_translations($post->ID);
         $languages = $this->translation_manager->get_available_languages();
+        // Sort languages alphabetically by name
+        asort($languages);
         
         // Get configured settings
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
