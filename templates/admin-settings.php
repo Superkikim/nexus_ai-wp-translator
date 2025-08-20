@@ -496,28 +496,17 @@ jQuery(document).ready(function($) {
     
     // API key toggle
     $('#nexus-ai-wp-toggle-api-key').on('click', function() {
-        console.log('NexusAI Debug: Toggle API key button clicked');
         var input = $('#nexus_ai_wp_translator_api_key');
         var type = input.attr('type');
         var button = $(this);
         
-        console.log('NexusAI Debug: Input found:', input.length > 0, 'Current type:', type);
-        
         if (type === 'password') {
             input.attr('type', 'text');
             button.text('<?php _e('Hide', 'nexus-ai-wp-translator'); ?>');
-            console.log('NexusAI Debug: Changed to text, button text set to Hide');
         } else {
             input.attr('type', 'password');
             button.text('<?php _e('Show', 'nexus-ai-wp-translator'); ?>');
-            console.log('NexusAI Debug: Changed to password, button text set to Show');
         }
-        
-        // Verify the change worked
-        setTimeout(function() {
-            var newType = input.attr('type');
-            console.log('NexusAI Debug: Verified type after change:', newType);
-        }, 100);
     });
     
     // Test API connection
