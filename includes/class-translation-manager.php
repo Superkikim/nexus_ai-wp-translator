@@ -981,7 +981,8 @@ class Nexus_AI_WP_Translator_Manager {
             'fi' => __('Finnish', 'nexus-ai-wp-translator'),
             'pl' => __('Polish', 'nexus-ai-wp-translator'),
             'cs' => __('Czech', 'nexus-ai-wp-translator'),
-            'hu' => __('Hungarian', 'nexus-ai-wp-translator')
+            'hu' => __('Hungarian', 'nexus-ai-wp-translator'),
+            'uk' => __('Ukrainian', 'nexus-ai-wp-translator')
         );
     }
     
