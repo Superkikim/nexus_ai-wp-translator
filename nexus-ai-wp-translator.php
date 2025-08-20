@@ -234,7 +234,6 @@ class Nexus_AI_WP_Translator_Plugin {
         // Set default options
         $default_options = array(
             'api_key' => '',
-            'source_language' => 'en',
             'target_languages' => array('es', 'fr', 'de'),
             'throttle_limit' => 100, // Increased default limit
             'throttle_period' => 3600, // 1 hour
@@ -272,7 +271,6 @@ function nexus_ai_wp_translator_uninstall() {
     $options = array(
         'nexus_ai_wp_translator_api_key',
         'nexus_ai_wp_translator_model',
-        'nexus_ai_wp_translator_source_language',
         'nexus_ai_wp_translator_target_languages',
         'nexus_ai_wp_translator_auto_translate',
         'nexus_ai_wp_translator_throttle_limit',

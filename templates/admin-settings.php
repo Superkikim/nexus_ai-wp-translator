@@ -78,47 +78,27 @@ if (!defined('ABSPATH')) {
             
             <!-- Language Settings Tab -->
             <div id="language-settings" class="tab-content">
-                <h2><?php _e('Language Configuration', 'nexus-ai-wp-translator'); ?></h2>
+                <h2><?php _e('Available Translation Languages', 'nexus-ai-wp-translator'); ?></h2>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row">
-                            <label for="nexus_ai_wp_translator_source_language"><?php _e('Source Language', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <select id="nexus_ai_wp_translator_source_language" name="nexus_ai_wp_translator_source_language">
-                                <?php foreach ($languages as $code => $name): ?>
-                                    <option value="<?php echo esc_attr($code); ?>" <?php selected($source_language, $code); ?>>
-                                        <?php echo esc_html($name); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <p class="description">
-                                <?php _e('The primary language of your content.', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <th scope="row">
-                            <label><?php _e('Target Languages', 'nexus-ai-wp-translator'); ?></label>
+                            <label><?php _e('Available Languages', 'nexus-ai-wp-translator'); ?></label>
                         </th>
                         <td>
                             <fieldset>
                                 <?php foreach ($languages as $code => $name): ?>
-                                    <?php if ($code !== $source_language): ?>
-                                        <label>
-                                            <input type="checkbox" 
-                                                   name="nexus_ai_wp_translator_target_languages[]" 
-                                                   value="<?php echo esc_attr($code); ?>" 
-                                                   <?php checked(in_array($code, $target_languages)); ?> />
-                                            <?php echo esc_html($name); ?>
-                                        </label><br>
-                                    <?php endif; ?>
+                                    <label>
+                                        <input type="checkbox" 
+                                               name="nexus_ai_wp_translator_target_languages[]" 
+                                               value="<?php echo esc_attr($code); ?>" 
+                                               <?php checked(in_array($code, $target_languages)); ?> />
+                                        <?php echo esc_html($name); ?>
+                                    </label><br>
                                 <?php endforeach; ?>
                             </fieldset>
                             <p class="description">
-                                <?php _e('Select languages to automatically translate your content into.', 'nexus-ai-wp-translator'); ?>
+                                <?php _e('Select the languages you want to be available for translation. The source language for each post will be automatically detected or set at the post level.', 'nexus-ai-wp-translator'); ?>
                             </p>
                         </td>
                     </tr>

@@ -179,7 +179,6 @@ class Nexus_AI_WP_Translator_Admin {
     public function init_settings() {
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_api_key');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_model');
-        register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_source_language');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_target_languages');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_auto_redirect');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_save_as_draft');
@@ -324,7 +323,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '<tbody>';
         
         foreach ($posts as $post) {
-            $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+            $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: 'auto';
             $translations = $this->db->get_post_translations($post->ID);
             $translation_count = count($translations);
             
@@ -424,7 +423,6 @@ class Nexus_AI_WP_Translator_Admin {
         $languages = $this->translation_manager->get_available_languages();
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', '');
-        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages_raw = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
         
         // Ensure target_languages is an array (fix for string conversion issue)
@@ -520,12 +518,11 @@ class Nexus_AI_WP_Translator_Admin {
         $languages = $this->translation_manager->get_available_languages();
         
         // Get configured settings
-        $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
         
-        // If post language is not set, default to source language
+        // If post language is not set, default to 'auto' (auto-detect)
         if (empty($post_language)) {
-            $post_language = $source_language;
+            $post_language = 'auto';
         }
         
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
@@ -684,7 +681,6 @@ class Nexus_AI_WP_Translator_Admin {
         error_log('Nexus AI WP Translator: Attempting to save model: "' . $model . '"');
         error_log('Nexus AI WP Translator: Model POST data: ' . print_r($_POST['nexus_ai_wp_translator_model'] ?? 'NOT SET', true));
         
-        $source_language = isset($_POST['nexus_ai_wp_translator_source_language']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_source_language']) : 'en';
         $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
         $auto_redirect = isset($_POST['nexus_ai_wp_translator_auto_redirect']) ? true : false;
         $save_as_draft = isset($_POST['nexus_ai_wp_translator_save_as_draft']) ? true : false;
@@ -697,7 +693,6 @@ class Nexus_AI_WP_Translator_Admin {
         $settings = array(
             'api_key' => $api_key,
             'model' => $model,
-            'source_language' => $source_language,
             'target_languages' => $target_languages,
             'auto_redirect' => $auto_redirect,
             'save_as_draft' => $save_as_draft,

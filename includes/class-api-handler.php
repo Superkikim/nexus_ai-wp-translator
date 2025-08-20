@@ -572,7 +572,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
 
-        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: 'auto';
         
         error_log("Nexus AI WP Translator: Starting complete post translation using " . ($use_streaming ? 'streaming' : 'standard') . " approach");
 
@@ -976,7 +976,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             return;
         }
 
-        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: 'auto';
 
         if (!$target_languages) {
             $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
@@ -1119,7 +1119,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
 
-        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: 'auto';
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
 
         // Use new block-by-block translation method

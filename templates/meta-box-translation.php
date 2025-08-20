@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php printf(__('Current source language: %s', 'nexus-ai-wp-translator'), $languages[$source_language] ?? $source_language); ?>
+            <?php _e('Select the language of this post. Use "Auto-detect" if unsure - the language will be detected during translation.', 'nexus-ai-wp-translator'); ?>
         </p>
     </div>
     
