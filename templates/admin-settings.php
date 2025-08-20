@@ -480,8 +480,14 @@ jQuery(document).ready(function($) {
             
             if (response.success && response.models) {
                 modelSelect.empty();
+                
+                // Add default "Select model" option if no current selection
+                if (!currentSelection) {
+                    modelSelect.append('<option value="">Select model</option>');
+                }
+                
                 $.each(response.models, function(modelId, displayName) {
-                    var selected = (modelId === currentSelection || (modelId === 'claude-3-5-sonnet-20241022' && !currentSelection)) ? 'selected' : '';
+                    var selected = (modelId === currentSelection) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                 });
                 
@@ -490,14 +496,14 @@ jQuery(document).ready(function($) {
                 apiKeyValidated = true;
                 
             } else {
-                // Fallback models
-                modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+                // No models available, show error message
+                modelSelect.html('<option value="">No models available</option>');
                 modelRow.show();
                 apiKeyValidated = true;
             }
         }).fail(function() {
-            console.log('NexusAI Debug: Failed to load models, using fallback');
-            modelSelect.html('<option value="claude-3-5-sonnet-20241022" selected>Claude 3.5 Sonnet (Latest)</option>');
+            console.log('NexusAI Debug: Failed to load models');
+            modelSelect.html('<option value="">Failed to load models</option>');
             modelRow.show();
             apiKeyValidated = true;
         });
