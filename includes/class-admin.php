@@ -78,6 +78,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_resume_translation', array($this, 'ajax_resume_translation'));
         add_action('wp_ajax_nexus_ai_wp_get_progress', array($this, 'ajax_get_progress'));
         add_action('wp_ajax_nexus_ai_wp_get_quality_details', array($this, 'ajax_get_quality_details'));
+        add_action('wp_ajax_nexus_ai_wp_reassess_quality', array($this, 'ajax_reassess_quality'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -1358,5 +1359,72 @@ class Nexus_AI_WP_Translator_Admin {
                 'errors' => $errors
             ));
         }
+    }
+
+    /**
+     * AJAX: Reassess quality for a translated post
+     */
+    public function ajax_reassess_quality() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_id = intval($_POST['post_id']);
+
+        if (!$post_id) {
+            wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+        }
+
+        // Check if quality assessment is enabled
+        $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+
+        if (!$use_llm_quality) {
+            wp_send_json_error(__('Quality assessment is disabled in settings', 'nexus-ai-wp-translator'));
+        }
+
+        // Find the source post for this translation
+        $source_post_id = get_post_meta($post_id, '_nexus_ai_wp_translator_source_post_id', true);
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_source_language', true);
+        $target_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
+
+        if (!$source_post_id || !$source_lang || !$target_lang) {
+            wp_send_json_error(__('Could not find translation relationship data', 'nexus-ai-wp-translator'));
+        }
+
+        // Perform PHP-only quality assessment for reassessment
+        if (!class_exists('Nexus_AI_WP_Translator_Quality_Assessor')) {
+            require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-quality-assessor.php';
+        }
+
+        $source_post = get_post($source_post_id);
+        $translated_post = get_post($post_id);
+
+        if (!$source_post || !$translated_post) {
+            wp_send_json_error(__('Could not load post content', 'nexus-ai-wp-translator'));
+        }
+
+        $php_assessor = new Nexus_AI_WP_Translator_Quality_Assessor();
+        $quality_assessment = $php_assessor->assess_translation_quality(
+            $source_post->post_content,
+            $translated_post->post_content,
+            $source_lang,
+            $target_lang
+        );
+
+        // Add reassessment metadata
+        $quality_assessment['assessment_type'] = 'php_reassessment';
+        $quality_assessment['assessment_date'] = current_time('mysql');
+        $quality_assessment['post_id'] = $post_id;
+        $quality_assessment['source_post_id'] = $source_post_id;
+
+        // Update the quality assessment
+        update_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
+
+        wp_send_json_success(array(
+            'message' => __('Quality assessment updated successfully', 'nexus-ai-wp-translator'),
+            'quality_data' => $quality_assessment
+        ));
     }
 }

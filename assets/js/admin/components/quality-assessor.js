@@ -319,8 +319,17 @@
             })
             .done(function(response) {
                 if (response.success) {
-                    // Refresh the dialog with new data
-                    NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
+                    // Update dialog with new data
+                    if (response.data && response.data.quality_data) {
+                        NexusAIWPTranslatorQualityAssessor.displayQualityDetailsDialog(response.data.quality_data);
+                    } else {
+                        // Refresh the dialog with new data
+                        NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
+                    }
+
+                    // Show success message
+                    var successMsg = response.data && response.data.message ? response.data.message : 'Quality reassessed successfully';
+                    console.debug('[Nexus Translator]: ' + successMsg);
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to reassess quality';
                     alert('Error: ' + errorMsg);
