@@ -40,7 +40,7 @@ if (!defined('ABSPATH')) {
                                     <?php _e('Use LLM Quality Assessment (Recommended)', 'nexus-ai-wp-translator'); ?>
                                 </label>
                                 <p class="description">
-                                    <?php _e('Let Claude assess translation quality during the translation process. More accurate and contextually aware than PHP-based assessment. Adds ~8% to API costs but eliminates false positives and provides better quality metrics.', 'nexus-ai-wp-translator'); ?>
+                                    <?php _e('During translation, an assesment of the quality of the translation is performed, allowing you to decide if review is required before publishing.\n\n Beware this adds ~8% to API costs but eliminates false positives and provides better quality metrics.', 'nexus-ai-wp-translator'); ?>
                                 </p>
                             </fieldset>
                         </td>
