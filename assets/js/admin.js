@@ -964,6 +964,14 @@
      * Dismiss auto translation popup
      */
     dismissAutoTranslation: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in dismissAutoTranslation');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         console.log('NexusAI Debug: Dismissing auto translation popup');
 
         var postId = this.getPostId();
@@ -1502,6 +1510,14 @@
      * Show bulk translate dialog
      */
     showBulkTranslateDialog: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showBulkTranslateDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var dialogHtml =
             '<div id="nexus-ai-wp-bulk-translate-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
                 '<div class="nexus-ai-wp-bulk-dialog">' +
@@ -1553,6 +1569,13 @@
      * Initialize bulk dialog events
      */
     initBulkDialogEvents: function(dialogId, selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initBulkDialogEvents');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
         var self = this;
 
         // Close dialog
@@ -1594,6 +1617,14 @@
      * Show bulk translation progress
      */
     showBulkTranslationProgress: function(selectedPosts, targetLanguages) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showBulkTranslationProgress');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var progressHtml =
             '<div id="nexus-ai-wp-bulk-progress-dialog" class="nexus-ai-wp-progress-overlay">' +
                 '<div class="nexus-ai-wp-progress-dialog">' +
@@ -1696,6 +1727,14 @@
      * Complete bulk translation
      */
     completeBulkTranslation: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in completeBulkTranslation');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         // Update progress to 100%
         $('#nexus-ai-wp-bulk-progress-dialog .nexus-ai-wp-progress-bar').css('width', '100%');
         $('#nexus-ai-wp-bulk-progress-dialog .nexus-ai-wp-progress-percentage').text('100%');
@@ -1727,6 +1766,14 @@
      * Show bulk link dialog
      */
     showBulkLinkDialog: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showBulkLinkDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var dialogHtml =
             '<div id="nexus-ai-wp-link-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
                 '<div class="nexus-ai-wp-bulk-dialog">' +
@@ -1798,6 +1845,14 @@
      * Perform bulk link
      */
     performBulkLink: function(selectedPosts, sourcePostId) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in performBulkLink');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postIds = selectedPosts.map(function(post) {
             return post.id;
         });
@@ -2196,6 +2251,13 @@
      * Load queue data
      */
     loadQueueData: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in loadQueueData');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
         var self = this;
         var status = $('#queue-status-filter').val();
 
@@ -2319,6 +2381,14 @@
      * Pause queue
      */
     pauseQueue: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in pauseQueue');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_pause_queue',
             nonce: nexus_ai_wp_translator_ajax.nonce
@@ -2341,6 +2411,14 @@
      * Resume queue
      */
     resumeQueue: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in resumeQueue');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_resume_queue',
             nonce: nexus_ai_wp_translator_ajax.nonce
@@ -2367,6 +2445,13 @@
             return;
         }
 
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in removeQueueItem');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
         var self = this;
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -2390,6 +2475,13 @@
      * Retry queue item
      */
     retryQueueItem: function(queueId) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in retryQueueItem');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
         var self = this;
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
@@ -2414,6 +2506,14 @@
      * Show add to queue dialog
      */
     showAddToQueueDialog: function(postId, postTitle) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showAddToQueueDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var dialogHtml =
             '<div id="nexus-ai-wp-add-to-queue-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
                 '<div class="nexus-ai-wp-bulk-dialog">' +
@@ -2504,6 +2604,14 @@
      * Add post to queue
      */
     addToQueue: function(postId, targetLanguages, priority, scheduledTime) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in addToQueue');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_add_to_queue',
             post_id: postId,
@@ -2528,6 +2636,14 @@
      * Show bulk set language dialog
      */
     showBulkSetLanguageDialog: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showBulkSetLanguageDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var dialogHtml =
             '<div id="nexus-ai-wp-set-language-dialog" class="nexus-ai-wp-bulk-dialog-overlay">' +
                 '<div class="nexus-ai-wp-bulk-dialog">' +
@@ -2622,6 +2738,14 @@
      * Perform bulk set language
      */
     performBulkSetLanguage: function(selectedPosts, language) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in performBulkSetLanguage');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postIds = selectedPosts.map(function(post) {
             return post.id;
         });
@@ -2651,6 +2775,14 @@
      * Perform bulk unlink
      */
     performBulkUnlink: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in performBulkUnlink');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postIds = selectedPosts.map(function(post) {
             return post.id;
         });
@@ -2679,6 +2811,14 @@
      * Perform bulk delete
      */
     performBulkDelete: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in performBulkDelete');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postIds = selectedPosts.map(function(post) {
             return post.id;
         });
@@ -2707,6 +2847,14 @@
      * Perform bulk clear cache
      */
     performBulkClearCache: function(selectedPosts) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in performBulkClearCache');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postIds = selectedPosts.map(function(post) {
             return post.id;
         });
