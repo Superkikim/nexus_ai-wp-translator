@@ -648,7 +648,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             $this->complete_progress($progress_id, true, 'Complete post translation finished');
         }
 
-        return array(
+        $translation_result = array(
             'success' => true,
             'title' => $cleaned_result['data']['title'],
             'content' => $cleaned_result['data']['content'],
@@ -660,6 +660,17 @@ class Nexus_AI_WP_Translator_API_Handler {
             'streaming' => isset($result['streaming']) ? $result['streaming'] : false,
             'interrupted' => isset($result['interrupted']) ? $result['interrupted'] : false
         );
+
+        // Add quality data if present
+        if (isset($cleaned_result['data']['quality'])) {
+            $translation_result['quality'] = $cleaned_result['data']['quality'];
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Passing quality data to translation manager: " . wp_json_encode($cleaned_result['data']['quality']));
+            }
+        }
+
+        return $translation_result;
     }
 
     /**
@@ -765,6 +776,15 @@ class Nexus_AI_WP_Translator_API_Handler {
         // Ensure categories and tags are arrays
         $cleaned_data['categories'] = is_array($cleaned_data['categories']) ? $cleaned_data['categories'] : array();
         $cleaned_data['tags'] = is_array($cleaned_data['tags']) ? $cleaned_data['tags'] : array();
+
+        // Handle quality assessment data if present
+        if (isset($translated_data['quality']) && is_array($translated_data['quality'])) {
+            $cleaned_data['quality'] = $translated_data['quality'];
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Quality data found in translation response: " . wp_json_encode($translated_data['quality']));
+            }
+        }
 
         // Validate content integrity
         if (empty($cleaned_data['content']) && !empty($original_data['content'])) {

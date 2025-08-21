@@ -477,7 +477,7 @@ class Nexus_AI_WP_Translator_Manager {
             update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
 
             // Store translation relationship with quality data in database
-            $this->db->store_translation($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
+            $this->db->store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
         } else {
             // Quality assessment disabled or not available - store translation without quality data
             if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -489,14 +489,15 @@ class Nexus_AI_WP_Translator_Manager {
             }
 
             // Store translation relationship without quality data
-            $this->db->store_translation($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', null);
+            $this->db->store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', null);
         }
 
         // Translate and add meta descriptions for SEO
         $this->seo_optimizer->add_translated_meta_description($translated_post_id, $source_post_id, $target_lang);
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id}, quality score: {$quality_assessment['overall_score']}");
+            $quality_score = (isset($quality_assessment['overall_score'])) ? $quality_assessment['overall_score'] : 'N/A';
+            error_log("Nexus AI WP Translator: Successfully created translated post {$translated_post_id}, quality score: {$quality_score}");
         }
 
         $translation_result['translated_post_id'] = $translated_post_id;
