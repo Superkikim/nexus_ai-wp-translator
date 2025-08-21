@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('NEXUS_AI_WP_TRANSLATOR_VERSION', '1.0.0');
+define('NEXUS_AI_WP_TRANSLATOR_VERSION', '1.0.1');
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_FILE', __FILE__);

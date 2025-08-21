@@ -84,8 +84,14 @@
      * Initialize tab switching functionality
      */
     initTabSwitching: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initTabSwitching');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing tab switching');
         $('.nav-tab').on('click', function(e) {
             e.preventDefault();
@@ -387,8 +393,14 @@
      * Initialize settings save functionality
      */
     initSettingsSave: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initSettingsSave');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing settings save');
         
         $('#nexus-ai-wp-save-settings').on('click', function() {
@@ -614,8 +626,14 @@
      * Initialize status refresh functionality
      */
     initStatusRefresh: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initStatusRefresh');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing status refresh');
         
         $('#nexus-ai-wp-refresh-stats').on('click', function() {
@@ -691,8 +709,14 @@
      * Initialize progress dialog event handlers
      */
     initProgressDialog: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initProgressDialog');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing progress dialog');
 
         // Progress dialog close button
@@ -1927,6 +1951,14 @@
      * Initialize quality assessment interface
      */
     initQualityAssessmentInterface: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initQualityAssessmentInterface');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         console.log('NexusAI Debug: Initializing quality assessment interface');
 
         // Handle quality details button clicks
@@ -2086,6 +2118,14 @@
      * Initialize translation queue interface
      */
     initTranslationQueueInterface: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initTranslationQueueInterface');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         console.log('NexusAI Debug: Initializing translation queue interface');
 
         // Auto-refresh queue when tab is active
