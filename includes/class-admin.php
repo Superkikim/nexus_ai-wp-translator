@@ -214,13 +214,110 @@ class Nexus_AI_WP_Translator_Admin {
         // Enqueue jQuery first to ensure it's available
         wp_enqueue_script('jquery');
         
-        // Force load admin script with high priority
+        // Load modular admin scripts
+        // Core utilities first
         wp_enqueue_script(
-            'nexus-ai-wp-translator-admin',
-            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js',
+            'nexus-ai-wp-translator-admin-core',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/core/admin-core.js',
             array('jquery'),
             NEXUS_AI_WP_TRANSLATOR_VERSION,
-            false  // Load in header to ensure availability for inline scripts
+            false
+        );
+
+        // AJAX handler
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-ajax-handler',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/core/ajax-handler.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        // Components
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-settings-tabs',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/settings-tabs.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-progress-dialog',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/progress-dialog.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-translation-manager',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/translation-manager.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler', 'nexus-ai-wp-translator-progress-dialog'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-bulk-actions',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/bulk-actions.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-quality-assessor',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/quality-assessor.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-meta-box',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/meta-box.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler', 'nexus-ai-wp-translator-progress-dialog'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        // Modules
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-dashboard',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/modules/dashboard.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-queue-manager',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/modules/queue-manager.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
+        // Main coordinator (loads last)
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-admin-main',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/admin-main.js',
+            array(
+                'jquery',
+                'nexus-ai-wp-translator-admin-core',
+                'nexus-ai-wp-translator-ajax-handler',
+                'nexus-ai-wp-translator-settings-tabs',
+                'nexus-ai-wp-translator-progress-dialog',
+                'nexus-ai-wp-translator-translation-manager',
+                'nexus-ai-wp-translator-bulk-actions',
+                'nexus-ai-wp-translator-quality-assessor',
+                'nexus-ai-wp-translator-meta-box',
+                'nexus-ai-wp-translator-dashboard',
+                'nexus-ai-wp-translator-queue-manager'
+            ),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
         );
         
         wp_enqueue_style(
@@ -231,9 +328,9 @@ class Nexus_AI_WP_Translator_Admin {
         );
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            $script_url = NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin.js';
-            $file_exists = file_exists(NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/admin.js') ? 'EXISTS' : 'MISSING';
-            error_log('Nexus AI WP Translator: [SCRIPTS] admin.js enqueued - URL: ' . $script_url . ' - File: ' . $file_exists);
+            $main_script_url = NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/admin-main.js';
+            $file_exists = file_exists(NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/admin/admin-main.js') ? 'EXISTS' : 'MISSING';
+            error_log('Nexus AI WP Translator: [SCRIPTS] Modular admin scripts enqueued - Main: ' . $main_script_url . ' - File: ' . $file_exists);
         }
         
         // Make AJAX variables available globally, not just for the external script
@@ -251,7 +348,7 @@ class Nexus_AI_WP_Translator_Admin {
             )
         );
         
-        wp_localize_script('nexus-ai-wp-translator-admin', 'nexus_ai_wp_translator_ajax', $ajax_data);
+        wp_localize_script('nexus-ai-wp-translator-admin-main', 'nexus_ai_wp_translator_ajax', $ajax_data);
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] AJAX variables localized - URL: ' . admin_url('admin-ajax.php'));

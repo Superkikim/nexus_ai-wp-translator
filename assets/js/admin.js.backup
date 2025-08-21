@@ -1,31 +1,4 @@
-/**
- * Nexus AI WP Translator Admin JavaScript
- */
 
-// Wrap everything in a function to ensure jQuery is available
-(function() {
-    'use strict';
-
-    // Debug: Log when script file is loaded
-    console.debug('[Nexus Translator]: admin.js file loaded');
-    console.debug('[Nexus Translator]: Current URL:', window.location.href);
-    console.debug('[Nexus Translator]: jQuery available:', typeof jQuery !== 'undefined');
-
-    // Check if jQuery is available
-    if (typeof jQuery === 'undefined') {
-        console.error('NexusAI Debug: jQuery is not loaded!');
-        return; // Exit if jQuery is not available
-    } else {
-        console.debug('[Nexus Translator]: jQuery is available');
-    }
-
-    // Check if our localized variables are available
-    if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
-        console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
-        console.debug('[Nexus Translator]: Available global variables:', Object.keys(window));
-    } else {
-        console.debug('[Nexus Translator]: AJAX variables available:', nexus_ai_wp_translator_ajax);
-    }
 
     // Define the admin object immediately when script loads
     var NexusAIWPTranslatorAdmin = {
