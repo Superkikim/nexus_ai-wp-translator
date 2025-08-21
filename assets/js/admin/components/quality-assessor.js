@@ -19,10 +19,23 @@
             console.debug('[Nexus Translator]: Initializing quality assessment interface');
 
             // Handle quality score clicks
-            $(document).on('click', '.nexus-ai-wp-quality-score', function() {
+            $(document).on('click', '.nexus-ai-wp-quality-score', function(e) {
+                e.preventDefault();
                 var postId = $(this).data('post-id');
                 console.debug('[Nexus Translator]: Quality score clicked for post:', postId);
-                
+
+                if (postId) {
+                    NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
+                }
+            });
+
+            // Handle quality details button clicks
+            $(document).on('click', '.nexus-ai-wp-quality-details', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var postId = $(this).data('post-id');
+                console.debug('[Nexus Translator]: Quality details button clicked for post:', postId);
+
                 if (postId) {
                     NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
                 }
@@ -206,6 +219,52 @@
             if (score >= 70) return 'fair';
             if (score >= 60) return 'poor';
             return 'very-poor';
+        },
+
+        /**
+         * Get quality grade letter based on score
+         */
+        getQualityGrade: function(score) {
+            if (score >= 90) return 'A+';
+            if (score >= 85) return 'A';
+            if (score >= 80) return 'A-';
+            if (score >= 75) return 'B+';
+            if (score >= 70) return 'B';
+            if (score >= 65) return 'B-';
+            if (score >= 60) return 'C+';
+            if (score >= 55) return 'C';
+            if (score >= 50) return 'C-';
+            if (score >= 40) return 'D';
+            return 'F';
+        },
+
+        /**
+         * Create enhanced quality display HTML
+         */
+        createQualityDisplay: function(score, postId, showDetails) {
+            showDetails = showDetails !== false; // Default to true
+
+            var grade = this.getQualityGrade(score);
+            var level = this.getQualityLevel(score);
+
+            var html = '<div class="nexus-ai-wp-quality-display nexus-ai-wp-quality-' + level + '">';
+
+            // Grade letter (prominent)
+            html += '<span class="nexus-ai-wp-quality-grade-letter">' + grade + '</span>';
+
+            // Score percentage
+            html += '<span class="nexus-ai-wp-quality-score" data-post-id="' + postId + '">' + Math.round(score) + '%</span>';
+
+            // Details button/link
+            if (showDetails) {
+                html += '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' + postId + '" title="View detailed quality assessment">';
+                html += '<span class="dashicons dashicons-chart-bar"></span>';
+                html += '</button>';
+            }
+
+            html += '</div>';
+
+            return html;
         },
 
         /**

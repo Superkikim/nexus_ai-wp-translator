@@ -680,24 +680,28 @@ class Nexus_AI_WP_Translator_Admin {
 
                     if ($quality_assessment && is_array($quality_assessment) && isset($quality_assessment['overall_score'])) {
                         $score = intval($quality_assessment['overall_score']);
-                        $grade = isset($quality_assessment['overall_grade']) ? $quality_assessment['overall_grade'] : 'N/A';
+                        $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
 
-                        // Determine color based on score
-                        $color_class = '';
+                        // Determine quality level based on score
+                        $quality_level = '';
                         if ($score >= 90) {
-                            $color_class = 'nexus-ai-wp-quality-excellent';
+                            $quality_level = 'excellent';
                         } elseif ($score >= 80) {
-                            $color_class = 'nexus-ai-wp-quality-good';
+                            $quality_level = 'good';
                         } elseif ($score >= 70) {
-                            $color_class = 'nexus-ai-wp-quality-fair';
+                            $quality_level = 'fair';
+                        } elseif ($score >= 60) {
+                            $quality_level = 'poor';
                         } else {
-                            $color_class = 'nexus-ai-wp-quality-poor';
+                            $quality_level = 'very-poor';
                         }
 
-                        echo '<div class="nexus-ai-wp-quality-display ' . $color_class . '">';
-                        echo '<span class="nexus-ai-wp-quality-score">' . $score . '%</span>';
-                        echo '<span class="nexus-ai-wp-quality-grade">(' . esc_html($grade) . ')</span>';
-                        echo '<button type="button" class="nexus-ai-wp-quality-details button button-small" data-post-id="' . $post_id . '" title="' . esc_attr__('View quality details', 'nexus-ai-wp-translator') . '">📊</button>';
+                        echo '<div class="nexus-ai-wp-quality-display nexus-ai-wp-quality-' . $quality_level . '">';
+                        echo '<span class="nexus-ai-wp-quality-grade-letter">' . esc_html($grade) . '</span>';
+                        echo '<span class="nexus-ai-wp-quality-score" data-post-id="' . $post_id . '">' . $score . '%</span>';
+                        echo '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('View detailed quality assessment', 'nexus-ai-wp-translator') . '">';
+                        echo '<span class="dashicons dashicons-chart-bar"></span>';
+                        echo '</button>';
                         echo '</div>';
                     } else {
                         // No quality data available
@@ -1224,6 +1228,23 @@ class Nexus_AI_WP_Translator_Admin {
         );
 
         return isset($grade_classes[$grade]) ? $grade_classes[$grade] : 'grade-unknown';
+    }
+
+    /**
+     * Calculate grade letter from score
+     */
+    private function calculate_grade_from_score($score) {
+        if ($score >= 90) return 'A+';
+        if ($score >= 85) return 'A';
+        if ($score >= 80) return 'A-';
+        if ($score >= 75) return 'B+';
+        if ($score >= 70) return 'B';
+        if ($score >= 65) return 'B-';
+        if ($score >= 60) return 'C+';
+        if ($score >= 55) return 'C';
+        if ($score >= 50) return 'C-';
+        if ($score >= 40) return 'D';
+        return 'F';
     }
 
     /**

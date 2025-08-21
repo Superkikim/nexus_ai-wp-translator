@@ -219,8 +219,11 @@
                     }
                     
                     if (translation.quality_score) {
-                        var qualityLevel = NexusAIWPTranslatorQualityAssessor.getQualityLevel(translation.quality_score);
-                        html += '<span class="quality-score quality-' + qualityLevel + '">' + Math.round(translation.quality_score) + '%</span>';
+                        html += NexusAIWPTranslatorQualityAssessor.createQualityDisplay(
+                            translation.quality_score,
+                            translation.post_id || 0,
+                            true
+                        );
                     }
                     
                     html += '</li>';

@@ -29,6 +29,11 @@
             
             // Initialize dashboard actions
             this.initDashboardActions();
+
+            // Enhance quality displays
+            setTimeout(function() {
+                NexusAIWPTranslatorDashboard.enhanceQualityDisplays();
+            }, 500);
         },
 
         /**
@@ -163,11 +168,16 @@
             .done(function(response) {
                 if (response.success && response.data) {
                     listContainer.html(response.data.html);
-                    
+
                     // Update pagination if provided
                     if (response.data.pagination) {
                         $('#' + postType + 's-pagination').html(response.data.pagination);
                     }
+
+                    // Enhance quality displays in the new content
+                    setTimeout(function() {
+                        NexusAIWPTranslatorDashboard.enhanceQualityDisplays();
+                    }, 100);
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to load posts';
                     listContainer.html('<div class="notice notice-error"><p>' + errorMsg + '</p></div>');
@@ -368,6 +378,31 @@
                 clearInterval(this.statsRefreshInterval);
                 this.statsRefreshInterval = null;
             }
+        },
+
+        /**
+         * Enhance quality displays in post lists
+         */
+        enhanceQualityDisplays: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('enhanceQualityDisplays')) return;
+            var $ = jQuery;
+
+            // Find any old-style quality displays and enhance them
+            $('.nexus-ai-wp-quality-score').each(function() {
+                var $this = $(this);
+                var postId = $this.data('post-id');
+                var scoreText = $this.text();
+                var score = parseInt(scoreText.replace('%', ''));
+
+                if (!isNaN(score) && postId) {
+                    var $parent = $this.closest('.nexus-ai-wp-quality-display');
+                    if ($parent.length && !$parent.find('.nexus-ai-wp-quality-grade-letter').length) {
+                        // This is an old-style display, enhance it
+                        var enhancedHtml = NexusAIWPTranslatorQualityAssessor.createQualityDisplay(score, postId, true);
+                        $parent.replaceWith(enhancedHtml);
+                    }
+                }
+            });
         }
     };
 
