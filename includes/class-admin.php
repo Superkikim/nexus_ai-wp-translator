@@ -448,25 +448,34 @@ class Nexus_AI_WP_Translator_Admin {
             // Quality assessment column
             $output .= '<td>';
             $quality_assessment = get_post_meta($post->ID, '_nexus_ai_wp_translator_quality_assessment', true);
-            if ($quality_assessment && is_array($quality_assessment)) {
-                $grade = $quality_assessment['grade'];
-                $score = $quality_assessment['overall_score'];
+            if ($quality_assessment && is_array($quality_assessment) && isset($quality_assessment['overall_score'])) {
+                $score = intval($quality_assessment['overall_score']);
+                $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
                 $grade_class = $this->get_quality_grade_class($grade);
 
-                $output .= '<div class="nexus-ai-wp-quality-badge ' . $grade_class . '" title="Quality Score: ' . $score . '%">';
-                $output .= '<span class="grade">' . esc_html($grade) . '</span>';
-                $output .= '<span class="score">' . $score . '%</span>';
-                $output .= '</div>';
-
-                if (!empty($quality_assessment['issues'])) {
-                    $output .= '<button type="button" class="button button-small nexus-ai-wp-quality-details" ';
-                    $output .= 'data-post-id="' . $post->ID . '" ';
-                    $output .= 'title="' . __('View quality details', 'nexus-ai-wp-translator') . '">';
-                    $output .= __('Details', 'nexus-ai-wp-translator');
-                    $output .= '</button>';
+                // Determine quality level based on score
+                $quality_level = '';
+                if ($score >= 90) {
+                    $quality_level = 'excellent';
+                } elseif ($score >= 80) {
+                    $quality_level = 'good';
+                } elseif ($score >= 70) {
+                    $quality_level = 'fair';
+                } elseif ($score >= 60) {
+                    $quality_level = 'poor';
+                } else {
+                    $quality_level = 'very-poor';
                 }
+
+                $output .= '<div class="nexus-ai-wp-quality-display nexus-ai-wp-quality-' . $quality_level . '">';
+                $output .= '<span class="nexus-ai-wp-quality-grade-letter">' . esc_html($grade) . '</span>';
+                $output .= '<span class="nexus-ai-wp-quality-score" data-post-id="' . $post->ID . '">' . $score . '%</span>';
+                $output .= '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' . $post->ID . '" title="' . esc_attr__('View detailed quality assessment', 'nexus-ai-wp-translator') . '">';
+                $output .= '<span class="dashicons dashicons-chart-bar"></span>';
+                $output .= '</button>';
+                $output .= '</div>';
             } else {
-                $output .= '<span class="nexus-ai-wp-no-quality">' . __('N/A', 'nexus-ai-wp-translator') . '</span>';
+                $output .= '<span class="nexus-ai-wp-quality-none" title="' . esc_attr__('No quality assessment available', 'nexus-ai-wp-translator') . '">—</span>';
             }
             $output .= '</td>';
 
