@@ -1236,6 +1236,8 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize bulk actions interface
      */
     initBulkActionsInterface: function() {
+        var $ = jQuery; // Ensure $ is available within this method
+        
         console.log('NexusAI Debug: Initializing bulk actions interface');
 
         // Update selection count when checkboxes change
