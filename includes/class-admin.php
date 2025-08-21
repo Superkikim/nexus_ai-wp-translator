@@ -348,7 +348,8 @@ class Nexus_AI_WP_Translator_Admin {
             )
         );
         
-        wp_localize_script('nexus-ai-wp-translator-admin-main', 'nexus_ai_wp_translator_ajax', $ajax_data);
+        // Localize to the core script so it's available to all modules
+        wp_localize_script('nexus-ai-wp-translator-admin-core', 'nexus_ai_wp_translator_ajax', $ajax_data);
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] AJAX variables localized - URL: ' . admin_url('admin-ajax.php'));

@@ -407,7 +407,7 @@
     };
 
     // Cleanup on page unload
-    $(window).on('beforeunload', function() {
+    jQuery(window).on('beforeunload', function() {
         NexusAIWPTranslatorDashboard.cleanup();
     });
 

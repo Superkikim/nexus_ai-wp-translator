@@ -95,6 +95,9 @@
          * Update queue display
          */
         updateQueueDisplay: function(data) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('updateQueueDisplay')) return;
+            var $ = jQuery;
+
             // Update statistics
             $('#queue-pending-count').text(data.statistics.pending || 0);
             $('#queue-processing-count').text(data.statistics.processing || 0);
@@ -132,6 +135,9 @@
          * Create queue item row
          */
         createQueueItemRow: function(item) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('createQueueItemRow')) return '';
+            var $ = jQuery;
+
             var languages = JSON.parse(item.target_languages || '[]');
             var languageTags = languages.map(function(lang) {
                 return '<span class="queue-language-tag">' + lang + '</span>';
