@@ -1976,6 +1976,13 @@
      * Show quality details dialog
      */
     showQualityDetailsDialog: function(postId) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showQualityDetailsDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
         var self = this;
 
         // Get quality assessment data
@@ -2000,6 +2007,14 @@
      * Display quality details dialog
      */
     displayQualityDetailsDialog: function(qualityData) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in displayQualityDetailsDialog');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var dialogHtml =
             '<div id="nexus-ai-wp-quality-dialog" class="nexus-ai-wp-quality-dialog-overlay">' +
                 '<div class="nexus-ai-wp-quality-dialog">' +
