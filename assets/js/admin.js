@@ -2,33 +2,44 @@
  * Nexus AI WP Translator Admin JavaScript
  */
 
-// Debug: Log when script file is loaded
-console.log('NexusAI Debug: admin.js file loaded');
-console.log('NexusAI Debug: Current URL:', window.location.href);
-console.log('NexusAI Debug: jQuery available:', typeof jQuery !== 'undefined');
+// Wrap everything in a function to ensure jQuery is available
+(function() {
+    'use strict';
 
-// Check if jQuery is available
-if (typeof jQuery === 'undefined') {
-    console.error('NexusAI Debug: jQuery is not loaded!');
-} else {
-    console.log('NexusAI Debug: jQuery is available');
-}
+    // Debug: Log when script file is loaded
+    console.log('NexusAI Debug: admin.js file loaded');
+    console.log('NexusAI Debug: Current URL:', window.location.href);
+    console.log('NexusAI Debug: jQuery available:', typeof jQuery !== 'undefined');
 
-// Check if our localized variables are available
-if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
-    console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
-    console.log('NexusAI Debug: Available global variables:', Object.keys(window));
-} else {
-    console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
-}
+    // Check if jQuery is available
+    if (typeof jQuery === 'undefined') {
+        console.error('NexusAI Debug: jQuery is not loaded!');
+        return; // Exit if jQuery is not available
+    } else {
+        console.log('NexusAI Debug: jQuery is available');
+    }
 
-// Define the admin object immediately when script loads
-var NexusAIWPTranslatorAdmin = {
+    // Check if our localized variables are available
+    if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+        console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
+        console.log('NexusAI Debug: Available global variables:', Object.keys(window));
+    } else {
+        console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
+    }
+
+    // Define the admin object immediately when script loads
+    var NexusAIWPTranslatorAdmin = {
     initialized: false,
     
     init: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in init function');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         if (this.initialized) {
             console.log('NexusAI Debug: Admin already initialized, skipping');
             return;
@@ -106,8 +117,14 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize API testing functionality
      */
     initApiTesting: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initApiTesting');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing API testing');
         
         // Test API connection
@@ -444,8 +461,14 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize translation actions
      */
     initTranslationActions: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initTranslationActions');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing translation actions');
         
         // Manual translation trigger
@@ -625,8 +648,14 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize bulk actions
      */
     initBulkActions: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initBulkActions');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing bulk actions');
 
         $('#cleanup-orphaned').on('click', function() {
@@ -704,6 +733,14 @@ var NexusAIWPTranslatorAdmin = {
      * Show global notice after H1
      */
     showGlobalNotice: function(type, message) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in showGlobalNotice');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         console.log('NexusAI Debug: Showing global notice:', type, message);
         var noticeClass = 'notice-' + type;
         var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
@@ -726,6 +763,14 @@ var NexusAIWPTranslatorAdmin = {
      * Get current post ID
      */
     getPostId: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in getPostId');
+            return null;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var postId = $('#post_ID').val();
         if (!postId) {
             var urlParams = new URLSearchParams(window.location.search);
@@ -734,9 +779,45 @@ var NexusAIWPTranslatorAdmin = {
         console.log('NexusAI Debug: Current post ID:', postId);
         return postId;
     },
-    
 
-    
+    /**
+     * Check for auto translation status
+     */
+    checkAutoTranslation: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in checkAutoTranslation');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
+        console.log('NexusAI Debug: Checking for auto translation status');
+
+        var postId = this.getPostId();
+        if (!postId) {
+            console.log('NexusAI Debug: No post ID found, skipping auto translation check');
+            return;
+        }
+
+        $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+            action: 'nexus_ai_wp_get_auto_translation_status',
+            post_id: postId,
+            nonce: nexus_ai_wp_translator_ajax.nonce
+        })
+        .done(function(response) {
+            console.log('NexusAI Debug: Auto translation status response:', response);
+
+            if (response.success && response.data && response.data.has_auto_translation) {
+                NexusAIWPTranslatorAdmin.showAutoTranslationProgress(response.data);
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.log('NexusAI Debug: Auto translation status check failed:', error);
+        });
+    },
+
+
     /**
      * Show auto translation progress popup
      */
@@ -1134,6 +1215,14 @@ var NexusAIWPTranslatorAdmin = {
      * Update step status
      */
     updateStepStatus: function(stepId, status) {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in updateStepStatus');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         var step = $('#step-' + stepId);
         var icon = step.find('.nexus-ai-wp-progress-step-icon');
 
@@ -1236,8 +1325,14 @@ var NexusAIWPTranslatorAdmin = {
      * Initialize bulk actions interface
      */
     initBulkActionsInterface: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in initBulkActionsInterface');
+            return;
+        }
+
         var $ = jQuery; // Ensure $ is available within this method
-        
+
         console.log('NexusAI Debug: Initializing bulk actions interface');
 
         // Update selection count when checkboxes change
@@ -1304,6 +1399,14 @@ var NexusAIWPTranslatorAdmin = {
      * Update bulk selection count
      */
     updateBulkSelectionCount: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in updateBulkSelectionCount');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         $('.nexus-ai-wp-bulk-actions-container').each(function() {
             var container = $(this);
             var selectedCount = container.next('table').find('.select-post-checkbox:checked').length;
@@ -1329,6 +1432,14 @@ var NexusAIWPTranslatorAdmin = {
      * Update bulk action buttons state
      */
     updateBulkActionButtons: function() {
+        // Ensure jQuery is available
+        if (typeof jQuery === 'undefined') {
+            console.error('NexusAI Debug: jQuery not available in updateBulkActionButtons');
+            return;
+        }
+
+        var $ = jQuery; // Ensure $ is available within this method
+
         $('.nexus-ai-wp-bulk-actions-container').each(function() {
             var container = $(this);
             var selectedCount = container.next('table').find('.select-post-checkbox:checked').length;
@@ -2561,33 +2672,35 @@ var NexusAIWPTranslatorAdmin = {
     }
 };
 
-// Make NexusAIWPTranslatorAdmin globally available immediately
-window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
-console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
+    // Make NexusAIWPTranslatorAdmin globally available immediately
+    window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
+    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
 
-// Initialize when document is ready with proper jQuery scoping
-jQuery(document).ready(function($) {
-    'use strict';
-    
-    console.log('NexusAI Debug: JavaScript function wrapper started');
-    console.log('NexusAI Debug: Document ready, initializing admin interface');
-    
-    if (window.NexusAIWPTranslatorAdmin) {
-        window.NexusAIWPTranslatorAdmin.init();
-    } else {
-        console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
-    }
-});
+    // Initialize when document is ready with proper jQuery scoping
+    jQuery(document).ready(function($) {
+        'use strict';
 
-// Check for auto translation when everything is loaded
-jQuery(window).on('load', function() {
-    if (window.NexusAIWPTranslatorAdmin && typeof window.NexusAIWPTranslatorAdmin.checkAutoTranslation === 'function') {
-        setTimeout(function() {
-            try {
-                window.NexusAIWPTranslatorAdmin.checkAutoTranslation();
-            } catch(error) {
-                console.log('NexusAI Debug: Auto translation check failed:', error);
-            }
-        }, 1500);
-    }
-});
+        console.log('NexusAI Debug: JavaScript function wrapper started');
+        console.log('NexusAI Debug: Document ready, initializing admin interface');
+
+        if (window.NexusAIWPTranslatorAdmin) {
+            window.NexusAIWPTranslatorAdmin.init();
+        } else {
+            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+        }
+    });
+
+    // Check for auto translation when everything is loaded
+    jQuery(window).on('load', function() {
+        if (window.NexusAIWPTranslatorAdmin && typeof window.NexusAIWPTranslatorAdmin.checkAutoTranslation === 'function') {
+            setTimeout(function() {
+                try {
+                    window.NexusAIWPTranslatorAdmin.checkAutoTranslation();
+                } catch(error) {
+                    console.log('NexusAI Debug: Auto translation check failed:', error);
+                }
+            }, 1500);
+        }
+    });
+
+})(); // End of wrapper function
