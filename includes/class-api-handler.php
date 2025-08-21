@@ -669,6 +669,9 @@ class Nexus_AI_WP_Translator_API_Handler {
         $source_lang_name = $this->get_language_name($source_lang);
         $target_lang_name = $this->get_language_name($target_lang);
 
+        // Check if LLM quality assessment is enabled
+        $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+
         $prompt = sprintf(
             "You are a professional translator. You will receive a JSON object containing a WordPress post in %s and must translate it to %s.\n\n" .
 
@@ -687,22 +690,41 @@ class Nexus_AI_WP_Translator_API_Handler {
             "- 'content': Translate the full post content, maintaining ALL WordPress blocks and HTML structure\n" .
             "- 'excerpt': Translate the post excerpt if present\n" .
             "- 'categories': Translate category names appropriately for the target language\n" .
-            "- 'tags': Translate tag names appropriately for the target language\n\n" .
+            "- 'tags': Translate tag names appropriately for the target language\n\n",
+            $source_lang_name,
+            $target_lang_name
+        );
 
-            "ABSOLUTELY FORBIDDEN:\n" .
+        // Add quality assessment instructions if enabled
+        if ($use_llm_quality) {
+            $prompt .= "QUALITY ASSESSMENT REQUIREMENT:\n" .
+                "After completing the translation, add a 'quality' object to your JSON response with:\n" .
+                "- overall_score: 0-100 rating of translation quality\n" .
+                "- overall_grade: Letter grade A+ to F based on overall quality\n" .
+                "- completeness: 0-100 (all content fully translated)\n" .
+                "- consistency: 0-100 (language consistency, proper noun handling)\n" .
+                "- structure: 0-100 (HTML/formatting preservation)\n" .
+                "- length: 0-100 (appropriate length for language pair)\n" .
+                "- original_words: word count of original content\n" .
+                "- translated_words: word count of translated content\n" .
+                "- original_characters: character count of original content\n" .
+                "- translated_characters: character count of translated content\n" .
+                "- original_html_tags: HTML tag count in original\n" .
+                "- translated_html_tags: HTML tag count in translation\n" .
+                "- issues: array of identified problems (empty if none)\n" .
+                "- suggestions: array of improvement recommendations (empty if none)\n\n" .
+                "Consider proper nouns, URLs, technical terms, and abbreviations as legitimate when assessing consistency.\n\n";
+        }
+
+        $prompt .= "ABSOLUTELY FORBIDDEN:\n" .
             "- Adding explanations, comments, or meta-text outside the JSON\n" .
             "- Modifying the JSON structure or key names\n" .
             "- Stopping mid-translation or asking for continuation\n" .
             "- Adding phrases like 'Here is the translation:' or similar\n" .
             "- Breaking or corrupting WordPress block structures\n" .
             "- Translating technical attributes, CSS classes, or code elements\n\n" .
-
             "RESPOND WITH ONLY THE TRANSLATED JSON OBJECT:\n\n" .
-            "%s",
-            $source_lang_name,
-            $target_lang_name,
-            $json_content
-        );
+            $json_content;
 
         return $prompt;
     }

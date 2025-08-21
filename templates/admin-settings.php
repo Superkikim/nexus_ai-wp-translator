@@ -28,6 +28,25 @@ if (!defined('ABSPATH')) {
                 
                 <table class="form-table">
                     <tr>
+                        <th scope="row"><?php _e('Quality Assessment Method', 'nexus-ai-wp-translator'); ?></th>
+                        <td>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox"
+                                           id="nexus_ai_wp_translator_use_llm_quality_assessment"
+                                           name="nexus_ai_wp_translator_use_llm_quality_assessment"
+                                           value="1"
+                                           <?php checked(get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true)); ?> />
+                                    <?php _e('Use LLM Quality Assessment (Recommended)', 'nexus-ai-wp-translator'); ?>
+                                </label>
+                                <p class="description">
+                                    <?php _e('Let Claude assess translation quality during the translation process. More accurate and contextually aware than PHP-based assessment. Adds ~8% to API costs but eliminates false positives and provides better quality metrics.', 'nexus-ai-wp-translator'); ?>
+                                </p>
+                            </fieldset>
+                        </td>
+                    </tr>
+
+                    <tr>
                         <th scope="row"><?php _e('Save as draft', 'nexus-ai-wp-translator'); ?></th>
                         <td>
                             <fieldset>

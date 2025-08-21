@@ -264,7 +264,8 @@ class Nexus_AI_WP_Translator_Plugin {
             'translate_excerpts' => true,
             'translate_meta_fields' => array(),
             'exclude_post_types' => array(),
-            'user_role_permissions' => array('administrator', 'editor')
+            'user_role_permissions' => array('administrator', 'editor'),
+            'use_llm_quality_assessment' => true
         );
 
         foreach ($new_options as $key => $default_value) {
@@ -319,7 +320,8 @@ class Nexus_AI_WP_Translator_Plugin {
                 'translate_excerpts' => true, // Fix: Add missing option
                 'translate_meta_fields' => array(), // Fix: Add missing option
                 'exclude_post_types' => array(), // Fix: Add missing option
-                'user_role_permissions' => array('administrator', 'editor') // Fix: Add missing option
+                'user_role_permissions' => array('administrator', 'editor'), // Fix: Add missing option
+                'use_llm_quality_assessment' => true // New: LLM quality assessment (default enabled)
             );
 
             foreach ($default_options as $key => $value) {

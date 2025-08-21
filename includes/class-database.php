@@ -51,13 +51,25 @@ class Nexus_AI_WP_Translator_Database {
             source_language varchar(10) NOT NULL,
             target_language varchar(10) NOT NULL,
             status varchar(20) DEFAULT 'pending',
+            quality_overall_score int(11) DEFAULT NULL,
+            quality_grade varchar(5) DEFAULT NULL,
+            quality_completeness int(11) DEFAULT NULL,
+            quality_consistency int(11) DEFAULT NULL,
+            quality_structure int(11) DEFAULT NULL,
+            quality_length int(11) DEFAULT NULL,
+            quality_issues text DEFAULT NULL,
+            quality_suggestions text DEFAULT NULL,
+            quality_metrics text DEFAULT NULL,
+            quality_source varchar(10) DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY source_post_id (source_post_id),
             KEY translated_post_id (translated_post_id),
             KEY source_language (source_language),
-            KEY target_language (target_language)
+            KEY target_language (target_language),
+            KEY quality_overall_score (quality_overall_score),
+            KEY quality_source (quality_source)
         ) $charset_collate;";
         
         // Logs table
@@ -94,20 +106,64 @@ class Nexus_AI_WP_Translator_Database {
     }
     
     /**
-     * Store translation relationship
+     * Store translation relationship with quality data
      */
-    public function store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, $status = 'completed') {
-        return $this->wpdb->insert(
-            $this->translations_table,
-            array(
-                'source_post_id' => $source_post_id,
-                'translated_post_id' => $translated_post_id,
-                'source_language' => $source_lang,
-                'target_language' => $target_lang,
-                'status' => $status
-            ),
-            array('%d', '%d', '%s', '%s', '%s')
+    public function store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, $status = 'completed', $quality_data = null) {
+        $data = array(
+            'source_post_id' => $source_post_id,
+            'translated_post_id' => $translated_post_id,
+            'source_language' => $source_lang,
+            'target_language' => $target_lang,
+            'status' => $status
         );
+
+        $format = array('%d', '%d', '%s', '%s', '%s');
+
+        // Add quality data if provided
+        if ($quality_data && is_array($quality_data)) {
+            if (isset($quality_data['overall_score'])) {
+                $data['quality_overall_score'] = intval($quality_data['overall_score']);
+                $format[] = '%d';
+            }
+            if (isset($quality_data['overall_grade'])) {
+                $data['quality_grade'] = sanitize_text_field($quality_data['overall_grade']);
+                $format[] = '%s';
+            }
+            if (isset($quality_data['completeness'])) {
+                $data['quality_completeness'] = intval($quality_data['completeness']);
+                $format[] = '%d';
+            }
+            if (isset($quality_data['consistency'])) {
+                $data['quality_consistency'] = intval($quality_data['consistency']);
+                $format[] = '%d';
+            }
+            if (isset($quality_data['structure'])) {
+                $data['quality_structure'] = intval($quality_data['structure']);
+                $format[] = '%d';
+            }
+            if (isset($quality_data['length'])) {
+                $data['quality_length'] = intval($quality_data['length']);
+                $format[] = '%d';
+            }
+            if (isset($quality_data['issues'])) {
+                $data['quality_issues'] = wp_json_encode($quality_data['issues']);
+                $format[] = '%s';
+            }
+            if (isset($quality_data['suggestions'])) {
+                $data['quality_suggestions'] = wp_json_encode($quality_data['suggestions']);
+                $format[] = '%s';
+            }
+            if (isset($quality_data['metrics'])) {
+                $data['quality_metrics'] = wp_json_encode($quality_data['metrics']);
+                $format[] = '%s';
+            }
+            if (isset($quality_data['source'])) {
+                $data['quality_source'] = sanitize_text_field($quality_data['source']);
+                $format[] = '%s';
+            }
+        }
+
+        return $this->wpdb->insert($this->translations_table, $data, $format);
     }
     
     /**
@@ -129,11 +185,44 @@ class Nexus_AI_WP_Translator_Database {
     public function get_translated_post($source_post_id, $target_language) {
         return $this->wpdb->get_row(
             $this->wpdb->prepare(
-                "SELECT * FROM {$this->translations_table} 
+                "SELECT * FROM {$this->translations_table}
                 WHERE source_post_id = %d AND target_language = %s",
                 $source_post_id, $target_language
             )
         );
+    }
+
+    /**
+     * Get quality data for a translation
+     */
+    public function get_translation_quality($post_id) {
+        $result = $this->wpdb->get_row(
+            $this->wpdb->prepare(
+                "SELECT quality_overall_score, quality_grade, quality_completeness,
+                        quality_consistency, quality_structure, quality_length,
+                        quality_issues, quality_suggestions, quality_metrics, quality_source
+                FROM {$this->translations_table}
+                WHERE translated_post_id = %d OR source_post_id = %d
+                ORDER BY created_at DESC LIMIT 1",
+                $post_id, $post_id
+            ),
+            ARRAY_A
+        );
+
+        if ($result) {
+            // Decode JSON fields
+            if ($result['quality_issues']) {
+                $result['quality_issues'] = json_decode($result['quality_issues'], true);
+            }
+            if ($result['quality_suggestions']) {
+                $result['quality_suggestions'] = json_decode($result['quality_suggestions'], true);
+            }
+            if ($result['quality_metrics']) {
+                $result['quality_metrics'] = json_decode($result['quality_metrics'], true);
+            }
+        }
+
+        return $result;
     }
     
     /**

@@ -34,7 +34,8 @@ class Nexus_AI_WP_Translator_Settings {
             'translate_excerpts' => true,
             'translate_meta_fields' => array(),
             'exclude_post_types' => array(),
-            'user_role_permissions' => array('administrator', 'editor')
+            'user_role_permissions' => array('administrator', 'editor'),
+            'use_llm_quality_assessment' => true // New: LLM-based quality assessment
         );
     }
     
