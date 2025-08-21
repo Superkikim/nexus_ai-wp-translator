@@ -243,6 +243,7 @@ jQuery(document).ready(function($) {
     
     var apiKeyChanged = false;
     var apiKeyValidated = false;
+    var modelOperationInProgress = false;
     
     // Determine current scenario based on server-side data
     var currentApiKey = window.nexusAiServerData ? window.nexusAiServerData.apiKey : '';
@@ -592,17 +593,37 @@ jQuery(document).ready(function($) {
         });
     }
     
-    // Load models function
-    function loadModels(apiKey) {
-        console.log('NexusAI Debug: Loading models with API key');
+    // Load models function with improved state management
+    function loadModels(apiKey, preserveCurrentSelection) {
+        if (modelOperationInProgress) {
+            console.log('NexusAI Debug: Model operation in progress, skipping loadModels');
+            return;
+        }
+        
+        modelOperationInProgress = true;
+        console.log('NexusAI Debug: Loading models with API key, preserveCurrentSelection:', preserveCurrentSelection);
+        
         var modelSelect = $('#nexus_ai_wp_translator_model');
         var modelRow = $('#model-selection-row');
+        var refreshButton = $('#nexus-ai-wp-refresh-models');
         
-        // Use server-side data for current selection since the element might be hidden
-        var currentSelection = window.nexusAiServerData ? window.nexusAiServerData.selectedModel : '';
-        console.log('NexusAI Debug: Current selected model from server:', currentSelection);
+        // Get current selection from multiple sources with priority order
+        var currentSelection = '';
+        if (preserveCurrentSelection && modelSelect.val()) {
+            // Use current dropdown value if preserving and available
+            currentSelection = modelSelect.val();
+            console.log('NexusAI Debug: Using current dropdown selection:', currentSelection);
+        } else if (window.nexusAiServerData && window.nexusAiServerData.selectedModel) {
+            // Use server data as fallback
+            currentSelection = window.nexusAiServerData.selectedModel;
+            console.log('NexusAI Debug: Using server data selection:', currentSelection);
+        }
         
-        modelSelect.html('<option value="">Loading models...</option>');
+        console.log('NexusAI Debug: Final current selection for loadModels:', currentSelection);
+        
+        // Disable refresh button during loading
+        refreshButton.prop('disabled', true).text('Loading...');
+        modelSelect.html('<option value="">Loading models...</option>').prop('disabled', true);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_get_models',
@@ -614,18 +635,29 @@ jQuery(document).ready(function($) {
             if (response.success && response.models) {
                 modelSelect.empty();
                 
-                // ALWAYS add "Select model" option first - no exceptions
-                var defaultText = currentSelection ? 'Select model' : 'Select model';
-                modelSelect.append('<option value="">' + defaultText + '</option>');
+                // Add default option
+                modelSelect.append('<option value="">Select model</option>');
                 
+                // Add all models
+                var modelFound = false;
                 $.each(response.models, function(modelId, displayName) {
                     var selected = (modelId === currentSelection) ? 'selected' : '';
+                    if (modelId === currentSelection) {
+                        modelFound = true;
+                    }
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
                 });
                 
-                // If we have a saved model, ensure it stays selected
+                // If current selection exists but wasn't found in API response, preserve it
+                if (currentSelection && !modelFound) {
+                    console.log('NexusAI Debug: Current selection not found in API response, preserving:', currentSelection);
+                    modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
+                }
+                
+                // Ensure selection is set correctly
                 if (currentSelection) {
                     modelSelect.val(currentSelection);
+                    console.log('NexusAI Debug: Set model selection to:', modelSelect.val());
                 }
                 
                 // Show model selection row after successful load
@@ -636,9 +668,11 @@ jQuery(document).ready(function($) {
                 // API failed to return models - show error and preserve saved model if exists
                 modelSelect.empty();
                 modelSelect.append('<option value="">Select model</option>');
+                
                 if (currentSelection) {
                     // Preserve saved model even if API failed
-                    modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
+                    modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (API unavailable)</option>');
+                    modelSelect.val(currentSelection);
                 } else {
                     modelSelect.append('<option value="" disabled>' + (response.message || 'No models available') + '</option>');
                 }
@@ -650,14 +684,22 @@ jQuery(document).ready(function($) {
             // Connection failed - preserve saved model if exists
             modelSelect.empty();
             modelSelect.append('<option value="">Select model</option>');
+            
             if (currentSelection) {
                 // Preserve saved model even if connection failed
-                modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
+                modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (connection failed)</option>');
+                modelSelect.val(currentSelection);
             } else {
                 modelSelect.append('<option value="" disabled>Failed to load models</option>');
             }
             modelRow.show();
             apiKeyValidated = true;
+        }).always(function() {
+            // Re-enable controls
+            modelSelect.prop('disabled', false);
+            refreshButton.prop('disabled', false).text('<?php _e('Refresh Models', 'nexus-ai-wp-translator'); ?>');
+            modelOperationInProgress = false;
+            console.log('NexusAI Debug: Model loading operation completed');
         });
     }
     
@@ -677,34 +719,54 @@ jQuery(document).ready(function($) {
     // Refresh models button
     $('#nexus-ai-wp-refresh-models').on('click', function() {
         var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
-        if (apiKey && apiKeyValidated) {
-            console.log('NexusAI Debug: Refreshing models manually');
-            loadModels(apiKey);
+        if (apiKey && apiKeyValidated && !modelOperationInProgress) {
+            console.log('NexusAI Debug: Refreshing models manually with current selection preservation');
+            // Always preserve current selection when manually refreshing
+            loadModels(apiKey, true);
+        } else if (modelOperationInProgress) {
+            console.log('NexusAI Debug: Refresh models blocked - operation in progress');
         } else {
             $('#api-test-result').html('<div class="notice notice-warning"><p><?php _e('Please test your API connection first.', 'nexus-ai-wp-translator'); ?></p></div>');
         }
     });
     
-    // Dynamic save function
+    // Dynamic save function with improved state synchronization
     function dynamicSaveSettings(callback) {
         var form = $('#nexus-ai-wp-translator-settings-form');
         var formData = form.serialize();
         formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
         
+        // Capture current model selection before save
+        var currentModelValue = $('#nexus_ai_wp_translator_model').val();
+        console.log('NexusAI Debug: Saving settings with model value:', currentModelValue);
+        
         $.post(nexus_ai_wp_translator_ajax.ajax_url, formData, function(response) {
             if (response.success) {
                 apiKeyChanged = false;
-                console.log('Settings saved dynamically');
+                console.log('NexusAI Debug: Settings saved dynamically - synchronizing state');
+                
+                // Update server data to match what was just saved
+                if (window.nexusAiServerData) {
+                    var apiKeyValue = $('#nexus_ai_wp_translator_api_key').val();
+                    window.nexusAiServerData.apiKey = apiKeyValue;
+                    
+                    if (currentModelValue) {
+                        window.nexusAiServerData.selectedModel = currentModelValue;
+                        console.log('NexusAI Debug: Updated server data selectedModel to:', currentModelValue);
+                    }
+                }
+                
                 // Show brief success feedback for auto-saves (only if no callback)
                 if (!callback) {
                     showAutoSaveSuccess();
                 }
+                
                 // Execute callback if provided
                 if (typeof callback === 'function') {
                     callback();
                 }
             } else {
-                console.log('Dynamic save failed:', response);
+                console.log('NexusAI Debug: Dynamic save failed:', response);
                 if (!callback) {
                     showAutoSaveError();
                 }
@@ -714,7 +776,7 @@ jQuery(document).ready(function($) {
                 }
             }
         }).fail(function() {
-            console.log('Dynamic save request failed');
+            console.log('NexusAI Debug: Dynamic save request failed');
             if (!callback) {
                 showAutoSaveError();
             }
