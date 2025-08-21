@@ -13,7 +13,7 @@
          * Auto-save API key
          */
         autoSaveApiKey: function(apiKey, callback) {
-            if (!NexusAIWPTranslatorCore.ensureJQuery('autoSaveApiKey')) return;
+            if (!NexusAIWPTranslatorCore.ensureRequirements('autoSaveApiKey')) return;
             var $ = jQuery;
             
             console.debug('[Nexus Translator]: Auto-saving API key');
@@ -37,7 +37,7 @@
          * Auto-save selected model
          */
         autoSaveModel: function(model) {
-            if (!NexusAIWPTranslatorCore.ensureJQuery('autoSaveModel')) return;
+            if (!NexusAIWPTranslatorCore.ensureRequirements('autoSaveModel')) return;
             var $ = jQuery;
             
             console.debug('[Nexus Translator]: Auto-saving model:', model);
@@ -65,7 +65,7 @@
          * Perform API test
          */
         performApiTest: function(button, apiKey, resultDiv) {
-            if (!NexusAIWPTranslatorCore.ensureJQuery('performApiTest')) return;
+            if (!NexusAIWPTranslatorCore.ensureRequirements('performApiTest')) return;
             var $ = jQuery;
             
             console.debug('[Nexus Translator]: Starting API test with key length:', apiKey.length);

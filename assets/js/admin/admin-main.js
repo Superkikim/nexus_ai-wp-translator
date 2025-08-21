@@ -324,11 +324,14 @@
         console.debug('[Nexus Translator]: JavaScript function wrapper started');
         console.debug('[Nexus Translator]: Document ready, initializing admin interface');
 
-        if (window.NexusAIWPTranslatorAdmin) {
-            window.NexusAIWPTranslatorAdmin.init();
-        } else {
-            console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
-        }
+        // Wait a bit to ensure all scripts are loaded
+        setTimeout(function() {
+            if (window.NexusAIWPTranslatorAdmin) {
+                window.NexusAIWPTranslatorAdmin.init();
+            } else {
+                console.error('NexusAI Debug: NexusAIWPTranslatorAdmin not available in document ready!');
+            }
+        }, 100);
     });
 
 })();

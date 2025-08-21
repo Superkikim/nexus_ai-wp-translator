@@ -113,6 +113,24 @@
         },
 
         /**
+         * Ensure AJAX variables are available
+         */
+        ensureAjaxVars: function(functionName) {
+            if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
+                console.error('NexusAI Debug: AJAX variables not available in ' + functionName);
+                return false;
+            }
+            return true;
+        },
+
+        /**
+         * Ensure both jQuery and AJAX variables are available
+         */
+        ensureRequirements: function(functionName) {
+            return this.ensureJQuery(functionName) && this.ensureAjaxVars(functionName);
+        },
+
+        /**
          * Get language names mapping
          */
         getLanguageNames: function() {
