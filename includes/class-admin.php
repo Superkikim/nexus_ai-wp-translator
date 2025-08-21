@@ -691,33 +691,29 @@ class Nexus_AI_WP_Translator_Admin {
                     $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
 
                     if ($quality_assessment && is_array($quality_assessment)) {
-                        if (isset($quality_assessment['confidence_level'])) {
-                            // New 2-tier system: Show confidence badge
+                        if (isset($quality_assessment['overall_score'])) {
+                            // Detailed assessment completed: Show grade + click for full report
+                            $score = intval($quality_assessment['overall_score']);
+                            $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
+
+                            echo '<div class="nexus-quality-grade-display">';
+                            echo '<button type="button" class="nexus-quality-grade-btn" data-post-id="' . $post_id . '" title="' . esc_attr__('Click to view full quality report', 'nexus-ai-wp-translator') . '">';
+                            echo '<span class="quality-grade">' . esc_html($grade) . '</span>';
+                            echo '<span class="quality-score">' . $score . '%</span>';
+                            echo '</button>';
+                            echo '</div>';
+                        } elseif (isset($quality_assessment['confidence_level'])) {
+                            // Basic assessment only: Show confidence badge + Analyze button
                             $confidence_level = $quality_assessment['confidence_level'];
                             $confidence_reason = $quality_assessment['confidence_reason'] ?? null;
-                            $detailed_available = $quality_assessment['detailed_assessment_available'] ?? true;
 
-                            echo '<div class="nexus-confidence-badge-container">';
+                            echo '<div class="nexus-confidence-display">';
                             echo '<div class="nexus-confidence-badge confidence-' . esc_attr($confidence_level) . '" title="' . esc_attr($confidence_reason ?: 'Confidence: ' . ucfirst($confidence_level)) . '">';
                             echo '<span class="confidence-dot"></span>';
                             echo '<span class="confidence-text">' . esc_html(strtoupper($confidence_level)) . '</span>';
                             echo '</div>';
-
-                            if ($detailed_available) {
-                                echo '<button type="button" class="nexus-detailed-assessment-btn button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('Get detailed quality assessment ($0.05)', 'nexus-ai-wp-translator') . '">';
-                                echo '<span class="dashicons dashicons-analytics"></span>';
-                                echo '</button>';
-                            }
-                            echo '</div>';
-                        } elseif (isset($quality_assessment['overall_score'])) {
-                            // Legacy detailed assessment: Show score
-                            $score = intval($quality_assessment['overall_score']);
-                            $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
-
-                            echo '<div class="nexus-legacy-quality-display">';
-                            echo '<span class="quality-score">' . $score . '%</span>';
-                            echo '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('View detailed quality assessment', 'nexus-ai-wp-translator') . '">';
-                            echo '<span class="dashicons dashicons-chart-bar"></span>';
+                            echo '<button type="button" class="nexus-analyze-btn button button-small" data-post-id="' . $post_id . '">';
+                            echo esc_html__('Analyze', 'nexus-ai-wp-translator');
                             echo '</button>';
                             echo '</div>';
                         }

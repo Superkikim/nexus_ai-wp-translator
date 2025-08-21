@@ -28,12 +28,20 @@
                 }
             });
 
-            // Handle detailed assessment button clicks
-            $(document).on('click', '.nexus-detailed-assessment-btn', function(e) {
+            // Handle "Analyze" button clicks (from confidence badge display)
+            $(document).on('click', '.nexus-analyze-btn', function(e) {
                 e.preventDefault();
                 var postId = $(this).data('post-id');
-                console.debug('[Nexus Translator]: Detailed assessment button clicked for post:', postId);
+                console.debug('[Nexus Translator]: Analyze button clicked for post:', postId);
                 NexusAIWPTranslatorQualityAssessor.showCostConfirmationDialog(postId);
+            });
+
+            // Handle quality grade button clicks (from detailed assessment display)
+            $(document).on('click', '.nexus-quality-grade-btn', function(e) {
+                e.preventDefault();
+                var postId = $(this).data('post-id');
+                console.debug('[Nexus Translator]: Quality grade clicked for post:', postId);
+                NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
             });
 
             // Handle legacy quality score clicks
@@ -166,6 +174,9 @@
                 $('#nexus-detailed-assessment-loading').remove();
 
                 if (response.success) {
+                    // Update the admin interface to show grade instead of badge
+                    NexusAIWPTranslatorQualityAssessor.updateQualityDisplay(postId, response.data.quality_data);
+
                     // Show detailed assessment results
                     NexusAIWPTranslatorQualityAssessor.displayQualityDetailsDialog(response.data.quality_data);
                 } else {
@@ -177,6 +188,34 @@
                 $('#nexus-detailed-assessment-loading').remove();
                 alert('Network error occurred while performing detailed assessment.');
             });
+        },
+
+        /**
+         * Update quality display after detailed assessment
+         */
+        updateQualityDisplay: function(postId, qualityData) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('updateQualityDisplay')) return;
+            var $ = jQuery;
+
+            // Find the confidence display for this post
+            var $confidenceDisplay = $('.nexus-analyze-btn[data-post-id="' + postId + '"]').closest('.nexus-confidence-display');
+
+            if ($confidenceDisplay.length) {
+                var score = qualityData.overall_score || 0;
+                var grade = qualityData.grade || this.getQualityGrade(score);
+
+                // Replace confidence display with grade display
+                var gradeHtml = '<div class="nexus-quality-grade-display">' +
+                    '<button type="button" class="nexus-quality-grade-btn" data-post-id="' + postId + '" title="Click to view full quality report">' +
+                    '<span class="quality-grade">' + grade + '</span>' +
+                    '<span class="quality-score">' + Math.round(score) + '%</span>' +
+                    '</button>' +
+                    '</div>';
+
+                $confidenceDisplay.replaceWith(gradeHtml);
+
+                console.debug('[Nexus Translator]: Updated quality display for post ' + postId + ' to grade ' + grade);
+            }
         },
 
         /**

@@ -2849,6 +2849,110 @@
     min-width: 80px;
 }
 
+/* Quality Display Styles for 2-Tier System */
+
+/* Confidence Display (Basic Assessment) */
+.nexus-confidence-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 80px;
+}
+
+.nexus-analyze-btn {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    height: auto !important;
+    line-height: 1.2 !important;
+    border-radius: 3px !important;
+    background: #0073aa !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nexus-analyze-btn:hover {
+    background: #005a87 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Quality Grade Display (After Analysis) */
+.nexus-quality-grade-display {
+    display: flex;
+    justify-content: center;
+}
+
+.nexus-quality-grade-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+}
+
+.nexus-quality-grade-btn:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.nexus-quality-grade-btn .quality-grade {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    line-height: 1;
+}
+
+.nexus-quality-grade-btn .quality-score {
+    font-size: 11px;
+    color: #666;
+    line-height: 1;
+}
+
+/* Grade-specific colors */
+.nexus-quality-grade-btn .quality-grade {
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: white;
+    background: #666; /* Default */
+}
+
+/* A grades - Green */
+.nexus-quality-grade-btn:has(.quality-score:contains("9")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("8")) .quality-grade {
+    background: #28a745;
+}
+
+/* B grades - Blue */
+.nexus-quality-grade-btn:has(.quality-score:contains("7")) .quality-grade {
+    background: #007bff;
+}
+
+/* C grades - Orange */
+.nexus-quality-grade-btn:has(.quality-score:contains("6")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("5")) .quality-grade {
+    background: #fd7e14;
+}
+
+/* D/F grades - Red */
+.nexus-quality-grade-btn:has(.quality-score:contains("4")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("3")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("2")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("1")) .quality-grade,
+.nexus-quality-grade-btn:has(.quality-score:contains("0")) .quality-grade {
+    background: #dc3545;
+}
+
 /* Responsive adjustments for confidence badges */
 @media (max-width: 782px) {
     .nexus-confidence-badge-container {
@@ -2871,6 +2975,27 @@
         font-size: 14px;
         width: 14px;
         height: 14px;
+    }
+
+    .nexus-confidence-display {
+        min-width: 60px;
+    }
+
+    .nexus-analyze-btn {
+        font-size: 10px !important;
+        padding: 1px 6px !important;
+    }
+
+    .nexus-quality-grade-btn {
+        padding: 4px 6px;
+    }
+
+    .nexus-quality-grade-btn .quality-grade {
+        font-size: 14px;
+    }
+
+    .nexus-quality-grade-btn .quality-score {
+        font-size: 10px;
     }
 }
 
