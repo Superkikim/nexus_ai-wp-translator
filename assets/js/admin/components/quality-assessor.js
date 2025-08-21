@@ -43,6 +43,34 @@
         },
 
         /**
+         * Test dialog display (temporary)
+         */
+        testDialog: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('testDialog')) return;
+            var $ = jQuery;
+
+            var testHtml = '<div id="nexus-test-dialog" class="nexus-ai-wp-dialog-overlay">' +
+                '<div class="nexus-ai-wp-dialog">' +
+                '<div class="nexus-ai-wp-dialog-header">' +
+                '<h3>Test Dialog</h3>' +
+                '<button class="nexus-ai-wp-dialog-close">×</button>' +
+                '</div>' +
+                '<div class="nexus-ai-wp-dialog-content">' +
+                '<p>This is a test dialog to verify CSS is working.</p>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            $('body').append(testHtml);
+
+            $('#nexus-test-dialog .nexus-ai-wp-dialog-close').on('click', function() {
+                $('#nexus-test-dialog').remove();
+            });
+
+            console.debug('[Nexus Translator]: Test dialog created');
+        },
+
+        /**
          * Show quality details dialog
          */
         showQualityDetailsDialog: function(postId) {
@@ -50,6 +78,9 @@
             var $ = jQuery;
 
             console.debug('[Nexus Translator]: Showing quality details for post:', postId);
+
+            // Temporary test - remove this line after testing
+            // this.testDialog(); return;
 
             // Show loading dialog first
             var dialogId = 'nexus-ai-wp-quality-dialog';
@@ -68,21 +99,27 @@
             $('#' + dialogId).remove();
             $('body').append(loadingHtml);
 
+            console.debug('[Nexus Translator]: Loading dialog should now be visible');
+
             // Fetch quality data
+            console.debug('[Nexus Translator]: Making AJAX request for quality details');
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_get_quality_details',
                 post_id: postId,
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
+                console.debug('[Nexus Translator]: Quality details AJAX response:', response);
                 if (response.success && response.data) {
                     NexusAIWPTranslatorQualityAssessor.displayQualityDetailsDialog(response.data);
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to load quality data';
+                    console.debug('[Nexus Translator]: Quality details error:', errorMsg);
                     $('#' + dialogId + ' .nexus-ai-wp-dialog-content').html('<div class="notice notice-error"><p>' + errorMsg + '</p></div>');
                 }
             })
-            .fail(function() {
+            .fail(function(xhr, status, error) {
+                console.debug('[Nexus Translator]: Quality details AJAX failed:', status, error);
                 $('#' + dialogId + ' .nexus-ai-wp-dialog-content').html('<div class="notice notice-error"><p>Network error occurred while loading quality data.</p></div>');
             });
 
