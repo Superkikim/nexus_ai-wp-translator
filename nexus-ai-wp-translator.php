@@ -3,7 +3,7 @@
  * Plugin Name: Nexus AI WP Translator
  * Plugin URI: https://your-domain.com/nexus-ai-wp-translator
  * Description: Automatically translate WordPress posts using Claude AI API with comprehensive management features
- * Version: 1.0.0
+ * Version: 0.2.0-beta
  * Author: Your Name
  * License: GPL v2 or later
  * Text Domain: nexus-ai-wp-translator
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('NEXUS_AI_WP_TRANSLATOR_VERSION', '1.0.1');
+define('NEXUS_AI_WP_TRANSLATOR_VERSION', '0.2.0-beta');
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('NEXUS_AI_WP_TRANSLATOR_PLUGIN_FILE', __FILE__);
@@ -59,7 +59,10 @@ class Nexus_AI_WP_Translator_Plugin {
 
         // Register uninstall hook
         register_uninstall_hook(__FILE__, 'nexus_ai_wp_translator_uninstall');
-        
+
+        // Check for version updates on every load
+        add_action('plugins_loaded', array($this, 'check_version_update'));
+
         // Initialize components
         add_action('init', array($this, 'init_components'));
     }
@@ -216,41 +219,136 @@ class Nexus_AI_WP_Translator_Plugin {
     public function register_widgets() {
         register_widget('Nexus_AI_WP_Translator_Language_Switcher_Widget');
     }
-    
+
     /**
      * Load plugin textdomain
      */
     public function load_textdomain() {
         load_plugin_textdomain('nexus-ai-wp-translator', false, dirname(plugin_basename(__FILE__)) . '/languages');
     }
+
+    /**
+     * Check for version updates and handle them gracefully
+     */
+    public function check_version_update() {
+        $installed_version = get_option('nexus_ai_wp_translator_version', '');
+        $current_version = NEXUS_AI_WP_TRANSLATOR_VERSION;
+
+        // Only run update check if versions differ
+        if (!empty($installed_version) && version_compare($installed_version, $current_version, '<')) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Version update detected - From: '{$installed_version}' To: '{$current_version}'");
+            }
+
+            // Run upgrade routine without resetting existing settings
+            $this->handle_version_upgrade($installed_version, $current_version);
+        }
+    }
+
+    /**
+     * Handle version upgrades without losing settings
+     */
+    private function handle_version_upgrade($from_version, $to_version) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Handling upgrade from {$from_version} to {$to_version}");
+        }
+
+        // Update database tables if needed
+        Nexus_AI_WP_Translator_Database::create_tables();
+
+        // Add any new options that might be missing (without overwriting existing ones)
+        $new_options = array(
+            'model' => '',
+            'auto_translate' => false,
+            'sync_post_status' => true,
+            'translate_excerpts' => true,
+            'translate_meta_fields' => array(),
+            'exclude_post_types' => array(),
+            'user_role_permissions' => array('administrator', 'editor')
+        );
+
+        foreach ($new_options as $key => $default_value) {
+            if (false === get_option('nexus_ai_wp_translator_' . $key)) {
+                add_option('nexus_ai_wp_translator_' . $key, $default_value);
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("Nexus AI WP Translator: Added new option during upgrade: {$key}");
+                }
+            }
+        }
+
+        // Update version number
+        update_option('nexus_ai_wp_translator_version', $to_version);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Upgrade completed to version {$to_version}");
+        }
+    }
     
     /**
      * Plugin activation
      */
     public function activate() {
-        // Create database tables
-        Nexus_AI_WP_Translator_Database::create_tables();
-        
-        // Set default options
-        $default_options = array(
-            'api_key' => '',
-            'target_languages' => array('es', 'fr', 'de'),
-            'throttle_limit' => 100, // Increased default limit
-            'throttle_period' => 3600, // 1 hour
-            'retry_attempts' => 3,
-            'cache_translations' => true,
-            'seo_friendly_urls' => true,
-            'auto_redirect' => true, // Auto-redirect to translated content
-            'save_as_draft' => false // Publish translations immediately by default
-        );
-        
-        foreach ($default_options as $key => $value) {
-            if (false === get_option('nexus_ai_wp_translator_' . $key)) {
-                add_option('nexus_ai_wp_translator_' . $key, $value);
+        // Check if this is a fresh install or an upgrade
+        $installed_version = get_option('nexus_ai_wp_translator_version', '');
+        $current_version = NEXUS_AI_WP_TRANSLATOR_VERSION;
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("Nexus AI WP Translator: Activation - Installed: '{$installed_version}', Current: '{$current_version}'");
+        }
+
+        // Only run full activation on fresh install or major version changes
+        if (empty($installed_version) || version_compare($installed_version, $current_version, '<')) {
+
+            // Create database tables
+            Nexus_AI_WP_Translator_Database::create_tables();
+
+            // Set default options (ONLY if they don't exist - preserve existing settings)
+            $default_options = array(
+                'api_key' => '',
+                'model' => '', // Fix: Add missing model option
+                'target_languages' => array('es', 'fr', 'de'),
+                'auto_translate' => false, // Fix: Add missing auto_translate option
+                'throttle_limit' => 100,
+                'throttle_period' => 3600,
+                'retry_attempts' => 3,
+                'cache_translations' => true,
+                'seo_friendly_urls' => true,
+                'auto_redirect' => true,
+                'save_as_draft' => false,
+                'sync_post_status' => true, // Fix: Add missing option
+                'translate_excerpts' => true, // Fix: Add missing option
+                'translate_meta_fields' => array(), // Fix: Add missing option
+                'exclude_post_types' => array(), // Fix: Add missing option
+                'user_role_permissions' => array('administrator', 'editor') // Fix: Add missing option
+            );
+
+            foreach ($default_options as $key => $value) {
+                // Only add if option doesn't exist (preserves existing settings)
+                if (false === get_option('nexus_ai_wp_translator_' . $key)) {
+                    add_option('nexus_ai_wp_translator_' . $key, $value);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Added default option: {$key}");
+                    }
+                } else {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log("Nexus AI WP Translator: Preserved existing option: {$key}");
+                    }
+                }
+            }
+
+            // Update version number
+            update_option('nexus_ai_wp_translator_version', $current_version);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Activation completed for version {$current_version}");
+            }
+        } else {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Nexus AI WP Translator: Skipping activation - same or newer version already installed");
             }
         }
-        
-        // Flush rewrite rules
+
+        // Always flush rewrite rules on activation
         flush_rewrite_rules();
     }
     
@@ -277,9 +375,18 @@ function nexus_ai_wp_translator_uninstall() {
         'nexus_ai_wp_translator_throttle_period',
         'nexus_ai_wp_translator_retry_attempts',
         'nexus_ai_wp_translator_cache_translations',
-        'nexus_ai_wp_translator_seo_friendly_urls'
+        'nexus_ai_wp_translator_seo_friendly_urls',
+        'nexus_ai_wp_translator_auto_redirect',
+        'nexus_ai_wp_translator_save_as_draft',
+        'nexus_ai_wp_translator_sync_post_status',
+        'nexus_ai_wp_translator_translate_excerpts',
+        'nexus_ai_wp_translator_translate_meta_fields',
+        'nexus_ai_wp_translator_exclude_post_types',
+        'nexus_ai_wp_translator_user_role_permissions',
+        'nexus_ai_wp_translator_field_settings',
+        'nexus_ai_wp_translator_version' // Include version tracking
     );
-    
+
     foreach ($options as $option) {
         delete_option($option);
     }
