@@ -536,6 +536,7 @@ class Nexus_AI_WP_Translator_Admin {
     public function add_posts_columns($columns) {
         $columns['nexus_ai_wp_language'] = __('Language', 'nexus-ai-wp-translator');
         $columns['nexus_ai_wp_translations'] = __('Translations', 'nexus-ai-wp-translator');
+        $columns['nexus_ai_wp_quality'] = __('Quality', 'nexus-ai-wp-translator');
         return $columns;
     }
     
@@ -567,6 +568,44 @@ class Nexus_AI_WP_Translator_Admin {
                     echo sprintf(__('%d/%d completed', 'nexus-ai-wp-translator'), $completed, $count);
                 } else {
                     echo __('None', 'nexus-ai-wp-translator');
+                }
+                break;
+
+            case 'nexus_ai_wp_quality':
+                $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+
+                if (!$use_llm_quality) {
+                    // Quality assessment disabled - show disabled icon
+                    echo '<span class="nexus-ai-wp-quality-disabled" title="' . esc_attr__('Quality assessment disabled', 'nexus-ai-wp-translator') . '">⚪</span>';
+                } else {
+                    // Check for quality assessment data
+                    $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
+
+                    if ($quality_assessment && is_array($quality_assessment) && isset($quality_assessment['overall_score'])) {
+                        $score = intval($quality_assessment['overall_score']);
+                        $grade = isset($quality_assessment['overall_grade']) ? $quality_assessment['overall_grade'] : 'N/A';
+
+                        // Determine color based on score
+                        $color_class = '';
+                        if ($score >= 90) {
+                            $color_class = 'nexus-ai-wp-quality-excellent';
+                        } elseif ($score >= 80) {
+                            $color_class = 'nexus-ai-wp-quality-good';
+                        } elseif ($score >= 70) {
+                            $color_class = 'nexus-ai-wp-quality-fair';
+                        } else {
+                            $color_class = 'nexus-ai-wp-quality-poor';
+                        }
+
+                        echo '<div class="nexus-ai-wp-quality-display ' . $color_class . '">';
+                        echo '<span class="nexus-ai-wp-quality-score">' . $score . '%</span>';
+                        echo '<span class="nexus-ai-wp-quality-grade">(' . esc_html($grade) . ')</span>';
+                        echo '<button type="button" class="nexus-ai-wp-quality-details button button-small" data-post-id="' . $post_id . '" title="' . esc_attr__('View quality details', 'nexus-ai-wp-translator') . '">📊</button>';
+                        echo '</div>';
+                    } else {
+                        // No quality data available
+                        echo '<span class="nexus-ai-wp-quality-none" title="' . esc_attr__('No quality assessment available', 'nexus-ai-wp-translator') . '">—</span>';
+                    }
                 }
                 break;
         }
@@ -1106,10 +1145,17 @@ class Nexus_AI_WP_Translator_Admin {
             wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
         }
 
+        // Check if quality assessment is enabled
+        $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+
+        if (!$use_llm_quality) {
+            wp_send_json_error(__('Quality assessment is disabled in settings', 'nexus-ai-wp-translator'));
+        }
+
         $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
 
         if (!$quality_assessment || !is_array($quality_assessment)) {
-            wp_send_json_error(__('No quality assessment found', 'nexus-ai-wp-translator'));
+            wp_send_json_error(__('No quality assessment found for this post', 'nexus-ai-wp-translator'));
         }
 
         wp_send_json_success($quality_assessment);

@@ -12,7 +12,6 @@ class Nexus_AI_WP_Translator_Manager {
     private static $instance = null;
     private $db;
     private $api_handler;
-    private $quality_assessor;
     private $seo_optimizer;
     private $processing_posts = array(); // Prevent infinite loops
     private $trashing_posts = array(); // Prevent infinite loops in trash operations
@@ -27,7 +26,6 @@ class Nexus_AI_WP_Translator_Manager {
     private function __construct() {
         $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
-        $this->quality_assessor = new Nexus_AI_WP_Translator_Quality_Assessor();
         $this->seo_optimizer = Nexus_AI_WP_Translator_SEO_Optimizer::get_instance();
 
         $this->init_hooks();
@@ -462,40 +460,37 @@ class Nexus_AI_WP_Translator_Manager {
         // Clear translation cache after successful post creation
         $this->api_handler->clear_post_translation_cache($source_post_id, array($target_lang));
 
-        // Check for LLM quality assessment in translation result
+        // Check if LLM quality assessment is enabled and available in translation result
         $quality_assessment = null;
-        $quality_source = 'php'; // Default to PHP assessment
+        $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
 
-        if (isset($translation_result['quality']) && is_array($translation_result['quality'])) {
+        if ($use_llm_quality && isset($translation_result['quality']) && is_array($translation_result['quality'])) {
             // LLM provided quality assessment
             $quality_assessment = $translation_result['quality'];
-            $quality_source = 'llm';
+            $quality_assessment['source'] = 'llm';
 
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log("Nexus AI WP Translator: Using LLM quality assessment: " . wp_json_encode($quality_assessment));
             }
+
+            // Store quality assessment as post meta
+            update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
+
+            // Store translation relationship with quality data in database
+            $this->db->store_translation($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
         } else {
-            // Fall back to PHP quality assessment
-            $quality_assessment = $this->assess_translation_quality(
-                $source_post->post_content,
-                $translation_result['content'],
-                $source_lang,
-                $target_lang
-            );
-
+            // Quality assessment disabled or not available - store translation without quality data
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Using PHP quality assessment");
+                if (!$use_llm_quality) {
+                    error_log("Nexus AI WP Translator: Quality assessment disabled in settings");
+                } else {
+                    error_log("Nexus AI WP Translator: No quality data in LLM response");
+                }
             }
+
+            // Store translation relationship without quality data
+            $this->db->store_translation($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', null);
         }
-
-        // Add quality source to assessment data
-        $quality_assessment['source'] = $quality_source;
-
-        // Store quality assessment as post meta
-        update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
-
-        // Store translation relationship with quality data in database
-        $this->db->store_translation($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
 
         // Translate and add meta descriptions for SEO
         $this->seo_optimizer->add_translated_meta_description($translated_post_id, $source_post_id, $target_lang);
@@ -1199,15 +1194,5 @@ class Nexus_AI_WP_Translator_Manager {
         return delete_transient($cache_key);
     }
 
-    /**
-     * Assess translation quality
-     */
-    private function assess_translation_quality($original_content, $translated_content, $source_lang, $target_lang) {
-        return $this->quality_assessor->assess_translation_quality(
-            $original_content,
-            $translated_content,
-            $source_lang,
-            $target_lang
-        );
-    }
+
 }

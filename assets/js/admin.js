@@ -1995,7 +1995,12 @@
             if (response.success) {
                 self.displayQualityDetailsDialog(response.data);
             } else {
-                alert('Failed to load quality details: ' + (response.message || 'Unknown error'));
+                var message = response.message || 'Unknown error';
+                if (message.includes('disabled in settings')) {
+                    alert('Quality assessment is disabled in plugin settings. Enable it in Global Settings to view quality details.');
+                } else {
+                    alert('Failed to load quality details: ' + message);
+                }
             }
         })
         .fail(function() {

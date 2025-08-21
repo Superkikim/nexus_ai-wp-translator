@@ -1712,3 +1712,67 @@
         text-align: center;
     }
 }
+
+/* Quality Column Styles */
+.nexus-ai-wp-quality-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.nexus-ai-wp-quality-score {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: white;
+    min-width: 35px;
+    text-align: center;
+}
+
+.nexus-ai-wp-quality-grade {
+    font-size: 11px;
+    color: #666;
+}
+
+.nexus-ai-wp-quality-details {
+    padding: 2px 4px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    min-height: auto !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer;
+}
+
+.nexus-ai-wp-quality-details:hover {
+    background: #f0f0f0 !important;
+}
+
+/* Quality Score Colors */
+.nexus-ai-wp-quality-excellent .nexus-ai-wp-quality-score {
+    background-color: #46b450; /* Green */
+}
+
+.nexus-ai-wp-quality-good .nexus-ai-wp-quality-score {
+    background-color: #00a0d2; /* Blue */
+}
+
+.nexus-ai-wp-quality-fair .nexus-ai-wp-quality-score {
+    background-color: #ffb900; /* Orange */
+}
+
+.nexus-ai-wp-quality-poor .nexus-ai-wp-quality-score {
+    background-color: #dc3232; /* Red */
+}
+
+.nexus-ai-wp-quality-disabled,
+.nexus-ai-wp-quality-none {
+    color: #999;
+    font-size: 14px;
+    cursor: help;
+}
+
+.nexus-ai-wp-quality-disabled {
+    opacity: 0.6;
+}
