@@ -18,7 +18,25 @@
 
             console.debug('[Nexus Translator]: Initializing quality assessment interface');
 
-            // Handle quality score clicks
+            // Handle confidence badge clicks (basic assessment)
+            $(document).on('click', '.nexus-confidence-badge', function(e) {
+                e.preventDefault();
+                var postId = $(this).closest('.nexus-confidence-badge-container').find('.nexus-detailed-assessment-btn').data('post-id');
+                if (postId) {
+                    console.debug('[Nexus Translator]: Confidence badge clicked for post:', postId);
+                    NexusAIWPTranslatorQualityAssessor.showBasicAssessmentInfo(postId);
+                }
+            });
+
+            // Handle detailed assessment button clicks
+            $(document).on('click', '.nexus-detailed-assessment-btn', function(e) {
+                e.preventDefault();
+                var postId = $(this).data('post-id');
+                console.debug('[Nexus Translator]: Detailed assessment button clicked for post:', postId);
+                NexusAIWPTranslatorQualityAssessor.showCostConfirmationDialog(postId);
+            });
+
+            // Handle legacy quality score clicks
             $(document).on('click', '.nexus-ai-wp-quality-score', function(e) {
                 e.preventDefault();
                 var postId = $(this).data('post-id');
@@ -29,7 +47,7 @@
                 }
             });
 
-            // Handle quality details button clicks
+            // Handle legacy quality details button clicks
             $(document).on('click', '.nexus-ai-wp-quality-details', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -39,6 +57,125 @@
                 if (postId) {
                     NexusAIWPTranslatorQualityAssessor.showQualityDetailsDialog(postId);
                 }
+            });
+        },
+
+        /**
+         * Show basic assessment info for confidence badge
+         */
+        showBasicAssessmentInfo: function(postId) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('showBasicAssessmentInfo')) return;
+            var $ = jQuery;
+
+            // Find the confidence badge for this post
+            var $badge = $('.nexus-detailed-assessment-btn[data-post-id="' + postId + '"]').siblings('.nexus-confidence-badge');
+            var confidenceLevel = $badge.attr('class').match(/confidence-(\w+)/);
+            var confidenceReason = $badge.attr('title');
+
+            if (confidenceLevel) {
+                var level = confidenceLevel[1].toUpperCase();
+                var message = 'Translation Confidence: ' + level;
+                if (confidenceReason && confidenceReason !== 'Confidence: ' + level) {
+                    message += '\n\n' + confidenceReason;
+                }
+                message += '\n\nClick the analytics button for detailed assessment ($0.05)';
+
+                alert(message);
+            }
+        },
+
+        /**
+         * Show cost confirmation dialog for detailed assessment
+         */
+        showCostConfirmationDialog: function(postId) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('showCostConfirmationDialog')) return;
+            var $ = jQuery;
+
+            var dialogHtml = '<div id="nexus-cost-confirmation" class="nexus-cost-confirmation-overlay">' +
+                '<div class="nexus-cost-confirmation-dialog">' +
+                '<div class="nexus-cost-confirmation-header">' +
+                '<span class="dashicons dashicons-analytics"></span>' +
+                '<h3>Detailed Quality Assessment</h3>' +
+                '</div>' +
+                '<div class="nexus-cost-confirmation-content">' +
+                '<p>Get a comprehensive analysis of your translation quality with specific insights and actionable recommendations.</p>' +
+                '<div class="nexus-cost-amount">$0.05</div>' +
+                '<div class="nexus-cost-features">' +
+                '<h4>What you\'ll get:</h4>' +
+                '<ul>' +
+                '<li>Overall quality score and grade</li>' +
+                '<li>Component analysis (completeness, consistency, structure, length)</li>' +
+                '<li>Specific issues with locations and suggested fixes</li>' +
+                '<li>Actionable improvement recommendations</li>' +
+                '<li>Detailed metrics and content analysis</li>' +
+                '</ul>' +
+                '</div>' +
+                '<p><small>This will make a dedicated API call to analyze your translation in detail.</small></p>' +
+                '</div>' +
+                '<div class="nexus-cost-confirmation-footer">' +
+                '<button type="button" class="button" onclick="NexusAIWPTranslatorQualityAssessor.closeCostConfirmationDialog()">Cancel</button>' +
+                '<button type="button" class="button button-primary" onclick="NexusAIWPTranslatorQualityAssessor.performDetailedAssessment(' + postId + ')">Analyze Translation</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            $('body').append(dialogHtml);
+        },
+
+        /**
+         * Close cost confirmation dialog
+         */
+        closeCostConfirmationDialog: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('closeCostConfirmationDialog')) return;
+            var $ = jQuery;
+
+            $('#nexus-cost-confirmation').remove();
+        },
+
+        /**
+         * Perform detailed assessment
+         */
+        performDetailedAssessment: function(postId) {
+            if (!NexusAIWPTranslatorCore.ensureRequirements('performDetailedAssessment')) return;
+            var $ = jQuery;
+
+            // Close confirmation dialog
+            this.closeCostConfirmationDialog();
+
+            // Show loading dialog
+            var loadingHtml = '<div id="nexus-detailed-assessment-loading" class="nexus-ai-wp-dialog-overlay">' +
+                '<div class="nexus-ai-wp-dialog">' +
+                '<div class="nexus-ai-wp-dialog-header">' +
+                '<h3>Analyzing Translation Quality...</h3>' +
+                '</div>' +
+                '<div class="nexus-ai-wp-dialog-content">' +
+                '<div class="nexus-ai-wp-loading">Performing detailed quality assessment...</div>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            $('body').append(loadingHtml);
+
+            // Make AJAX request for detailed assessment
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_detailed_assessment',
+                post_id: postId,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                $('#nexus-detailed-assessment-loading').remove();
+
+                if (response.success) {
+                    // Show detailed assessment results
+                    NexusAIWPTranslatorQualityAssessor.displayQualityDetailsDialog(response.data.quality_data);
+                } else {
+                    var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to perform detailed assessment';
+                    alert('Error: ' + errorMsg);
+                }
+            })
+            .fail(function() {
+                $('#nexus-detailed-assessment-loading').remove();
+                alert('Network error occurred while performing detailed assessment.');
             });
         },
 

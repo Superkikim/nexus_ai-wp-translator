@@ -79,6 +79,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_progress', array($this, 'ajax_get_progress'));
         add_action('wp_ajax_nexus_ai_wp_get_quality_details', array($this, 'ajax_get_quality_details'));
         add_action('wp_ajax_nexus_ai_wp_reassess_quality', array($this, 'ajax_reassess_quality'));
+        add_action('wp_ajax_nexus_ai_wp_detailed_assessment', array($this, 'ajax_detailed_assessment'));
         
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -689,31 +690,37 @@ class Nexus_AI_WP_Translator_Admin {
                     // Check for quality assessment data
                     $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
 
-                    if ($quality_assessment && is_array($quality_assessment) && isset($quality_assessment['overall_score'])) {
-                        $score = intval($quality_assessment['overall_score']);
-                        $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
+                    if ($quality_assessment && is_array($quality_assessment)) {
+                        if (isset($quality_assessment['confidence_level'])) {
+                            // New 2-tier system: Show confidence badge
+                            $confidence_level = $quality_assessment['confidence_level'];
+                            $confidence_reason = $quality_assessment['confidence_reason'] ?? null;
+                            $detailed_available = $quality_assessment['detailed_assessment_available'] ?? true;
 
-                        // Determine quality level based on score
-                        $quality_level = '';
-                        if ($score >= 90) {
-                            $quality_level = 'excellent';
-                        } elseif ($score >= 80) {
-                            $quality_level = 'good';
-                        } elseif ($score >= 70) {
-                            $quality_level = 'fair';
-                        } elseif ($score >= 60) {
-                            $quality_level = 'poor';
-                        } else {
-                            $quality_level = 'very-poor';
+                            echo '<div class="nexus-confidence-badge-container">';
+                            echo '<div class="nexus-confidence-badge confidence-' . esc_attr($confidence_level) . '" title="' . esc_attr($confidence_reason ?: 'Confidence: ' . ucfirst($confidence_level)) . '">';
+                            echo '<span class="confidence-dot"></span>';
+                            echo '<span class="confidence-text">' . esc_html(strtoupper($confidence_level)) . '</span>';
+                            echo '</div>';
+
+                            if ($detailed_available) {
+                                echo '<button type="button" class="nexus-detailed-assessment-btn button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('Get detailed quality assessment ($0.05)', 'nexus-ai-wp-translator') . '">';
+                                echo '<span class="dashicons dashicons-analytics"></span>';
+                                echo '</button>';
+                            }
+                            echo '</div>';
+                        } elseif (isset($quality_assessment['overall_score'])) {
+                            // Legacy detailed assessment: Show score
+                            $score = intval($quality_assessment['overall_score']);
+                            $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
+
+                            echo '<div class="nexus-legacy-quality-display">';
+                            echo '<span class="quality-score">' . $score . '%</span>';
+                            echo '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('View detailed quality assessment', 'nexus-ai-wp-translator') . '">';
+                            echo '<span class="dashicons dashicons-chart-bar"></span>';
+                            echo '</button>';
+                            echo '</div>';
                         }
-
-                        echo '<div class="nexus-ai-wp-quality-display nexus-ai-wp-quality-' . $quality_level . '">';
-                        echo '<span class="nexus-ai-wp-quality-grade-letter">' . esc_html($grade) . '</span>';
-                        echo '<span class="nexus-ai-wp-quality-score" data-post-id="' . $post_id . '">' . $score . '%</span>';
-                        echo '<button type="button" class="nexus-ai-wp-quality-details button-link" data-post-id="' . $post_id . '" title="' . esc_attr__('View detailed quality assessment', 'nexus-ai-wp-translator') . '">';
-                        echo '<span class="dashicons dashicons-chart-bar"></span>';
-                        echo '</button>';
-                        echo '</div>';
                     } else {
                         // No quality data available
                         echo '<span class="nexus-ai-wp-quality-none" title="' . esc_attr__('No quality assessment available', 'nexus-ai-wp-translator') . '">—</span>';
@@ -1425,6 +1432,62 @@ class Nexus_AI_WP_Translator_Admin {
         wp_send_json_success(array(
             'message' => __('Quality assessment updated successfully', 'nexus-ai-wp-translator'),
             'quality_data' => $quality_assessment
+        ));
+    }
+
+    /**
+     * AJAX: Perform detailed quality assessment
+     */
+    public function ajax_detailed_assessment() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_id = intval($_POST['post_id']);
+
+        if (!$post_id) {
+            wp_send_json_error(__('Invalid post ID', 'nexus-ai-wp-translator'));
+        }
+
+        // Check if quality assessment is enabled
+        $use_quality_assessment = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+
+        if (!$use_quality_assessment) {
+            wp_send_json_error(__('Quality assessment is disabled in settings', 'nexus-ai-wp-translator'));
+        }
+
+        // Find the source post for this translation
+        $source_post_id = get_post_meta($post_id, '_nexus_ai_wp_translator_source_post_id', true);
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_source_language', true);
+        $target_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
+
+        if (!$source_post_id || !$source_lang || !$target_lang) {
+            wp_send_json_error(__('Could not find translation relationship data', 'nexus-ai-wp-translator'));
+        }
+
+        // Get the translation manager to perform detailed assessment
+        if (!$this->translation_manager) {
+            wp_send_json_error(__('Translation manager not available', 'nexus-ai-wp-translator'));
+        }
+
+        // Perform detailed quality assessment
+        $result = $this->translation_manager->perform_detailed_quality_assessment(
+            $source_post_id,
+            $post_id,
+            $source_lang,
+            $target_lang
+        );
+
+        if (!$result['success']) {
+            wp_send_json_error($result['message']);
+        }
+
+        wp_send_json_success(array(
+            'message' => __('Detailed quality assessment completed', 'nexus-ai-wp-translator'),
+            'quality_data' => $result['data'],
+            'cost' => $result['data']['api_cost'] ?? 0.05
         ));
     }
 }

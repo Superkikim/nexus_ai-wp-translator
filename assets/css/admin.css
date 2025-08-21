@@ -2643,6 +2643,237 @@
     }
 }
 
+/* 2-Tier Assessment System Styles */
+.nexus-confidence-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nexus-confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.nexus-confidence-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.confidence-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Green confidence */
+.nexus-confidence-badge.confidence-green {
+    color: #155724;
+    background: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.nexus-confidence-badge.confidence-green .confidence-dot {
+    background: #28a745;
+}
+
+/* Orange confidence */
+.nexus-confidence-badge.confidence-orange {
+    color: #856404;
+    background: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.nexus-confidence-badge.confidence-orange .confidence-dot {
+    background: #ffc107;
+}
+
+/* Red confidence */
+.nexus-confidence-badge.confidence-red {
+    color: #721c24;
+    background: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.nexus-confidence-badge.confidence-red .confidence-dot {
+    background: #dc3545;
+}
+
+/* Detailed assessment button */
+.nexus-detailed-assessment-btn {
+    background: none;
+    border: none;
+    color: #0073aa;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nexus-detailed-assessment-btn:hover {
+    background: #0073aa;
+    color: white;
+    transform: scale(1.1);
+}
+
+.nexus-detailed-assessment-btn .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Legacy quality display for backward compatibility */
+.nexus-legacy-quality-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nexus-legacy-quality-display .quality-score {
+    font-weight: 600;
+    color: #333;
+    font-size: 13px;
+}
+
+/* Cost confirmation dialog */
+.nexus-cost-confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.nexus-cost-confirmation-dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+}
+
+.nexus-cost-confirmation-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nexus-cost-confirmation-header .dashicons {
+    color: #0073aa;
+    font-size: 20px;
+}
+
+.nexus-cost-confirmation-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.nexus-cost-confirmation-content {
+    padding: 20px;
+}
+
+.nexus-cost-confirmation-content p {
+    margin: 0 0 15px 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+.nexus-cost-amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0073aa;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.nexus-cost-features {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.nexus-cost-features h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.nexus-cost-features ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #666;
+    font-size: 13px;
+}
+
+.nexus-cost-features li {
+    margin-bottom: 5px;
+}
+
+.nexus-cost-confirmation-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.nexus-cost-confirmation-footer .button {
+    min-width: 80px;
+}
+
+/* Responsive adjustments for confidence badges */
+@media (max-width: 782px) {
+    .nexus-confidence-badge-container {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+    }
+
+    .nexus-confidence-badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    .confidence-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .nexus-detailed-assessment-btn .dashicons {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+    }
+}
+
 .nexus-ai-wp-quality-disabled,
 .nexus-ai-wp-quality-none {
     color: #999;

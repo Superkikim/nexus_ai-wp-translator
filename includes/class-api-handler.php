@@ -390,15 +390,23 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
         
-        $translated_content = $data['content'][0]['text'];
-        error_log('Nexus AI WP Translator: Translation successful');
-        
+        $raw_response = $data['content'][0]['text'];
+
+        // Parse translation and confidence assessment
+        $parsed_response = $this->parse_translation_with_confidence($raw_response);
+
+        error_log('Nexus AI WP Translator: Translation successful with confidence: ' . $parsed_response['confidence_level']);
+
         // Cache the translation
-        $this->cache_translation($original_content, $source_lang, $target_lang, $translated_content);
-        
+        $this->cache_translation($original_content, $source_lang, $target_lang, $parsed_response['translated_content']);
+
         return array(
             'success' => true,
-            'translated_content' => $translated_content,
+            'translated_content' => $parsed_response['translated_content'],
+            'confidence_assessment' => array(
+                'level' => $parsed_response['confidence_level'],
+                'reason' => $parsed_response['confidence_reason']
+            ),
             'processing_time' => $processing_time,
             'api_calls' => 1
         );
@@ -863,15 +871,14 @@ class Nexus_AI_WP_Translator_API_Handler {
                 "You are a professional translator. Translate the following %s content to %s with absolute precision.\n\n" .
 
                 "CRITICAL REQUIREMENTS:\n" .
-                "1. OUTPUT ONLY THE TRANSLATION - No explanations, comments, meta-text, or additional content\n" .
-                "2. COMPLETE TRANSLATION - Translate the entire content without stopping or asking to continue\n" .
-                "3. NATURAL TONE - Maintain the questioning tone and conversational style of the original\n" .
-                "4. DIRECT TRANSLATION - Provide a natural, fluent translation that adapts to standard %s phrasing\n" .
-                "5. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
-                "6. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
-                "7. PROPER NOUNS - Keep brand names, person names, and place names in original form\n" .
-                "8. DATES & TIMES - Preserve exact format and adapt to target language conventions\n" .
-                "9. WORDPRESS BLOCKS - Preserve all WordPress block structures and attributes\n\n" .
+                "1. COMPLETE TRANSLATION - Translate the entire content without stopping or asking to continue\n" .
+                "2. NATURAL TONE - Maintain the questioning tone and conversational style of the original\n" .
+                "3. DIRECT TRANSLATION - Provide a natural, fluent translation that adapts to standard %s phrasing\n" .
+                "4. PRESERVE FORMATTING - Maintain ALL HTML tags, CSS classes, and structural elements exactly\n" .
+                "5. TECHNICAL PRESERVATION - Keep URLs, email addresses, code snippets, and technical identifiers unchanged\n" .
+                "6. PROPER NOUNS - Keep brand names, person names, and place names in original form\n" .
+                "7. DATES & TIMES - Preserve exact format and adapt to target language conventions\n" .
+                "8. WORDPRESS BLOCKS - Preserve all WordPress block structures and attributes\n\n" .
 
                 "ABSOLUTELY FORBIDDEN:\n" .
                 "- Adding any comments, explanations, or notes\n" .
@@ -881,7 +888,19 @@ class Nexus_AI_WP_Translator_API_Handler {
                 "- Adding phrases like 'Here is the translation:' or similar\n" .
                 "- Approximating times/dates with words like 'around', 'about', 'o'clock'\n\n" .
 
-                "RESPOND WITH ONLY THE COMPLETE TRANSLATION:\n\n" .
+                "OUTPUT FORMAT:\n" .
+                "Provide your response in this exact format:\n\n" .
+                "TRANSLATION:\n" .
+                "[Your complete translation here]\n\n" .
+                "CONFIDENCE: [GREEN/ORANGE/RED]\n" .
+                "REASON: [Brief explanation if not GREEN]\n\n" .
+
+                "CONFIDENCE LEVELS:\n" .
+                "- GREEN: High confidence, translation is accurate and complete\n" .
+                "- ORANGE: Medium confidence, some areas may need attention\n" .
+                "- RED: Low confidence, issues detected that need review\n\n" .
+
+                "CONTENT TO TRANSLATE:\n\n" .
                 "%s",
                 $source_lang_name,
                 $target_lang_name,
@@ -892,7 +911,48 @@ class Nexus_AI_WP_Translator_API_Handler {
 
         return $prompt;
     }
-    
+
+    /**
+     * Parse translation response with confidence assessment
+     */
+    private function parse_translation_with_confidence($raw_response) {
+        // Initialize default values
+        $result = array(
+            'translated_content' => $raw_response,
+            'confidence_level' => 'green',
+            'confidence_reason' => null
+        );
+
+        // Try to extract structured response
+        if (preg_match('/TRANSLATION:\s*(.*?)\s*CONFIDENCE:\s*(\w+)(?:\s*REASON:\s*(.*))?/s', $raw_response, $matches)) {
+            $result['translated_content'] = trim($matches[1]);
+            $result['confidence_level'] = strtolower(trim($matches[2]));
+            $result['confidence_reason'] = isset($matches[3]) ? trim($matches[3]) : null;
+        } else {
+            // Fallback: Look for confidence markers in the response
+            if (preg_match('/CONFIDENCE:\s*(\w+)(?:\s*REASON:\s*(.*))?/i', $raw_response, $confidence_matches)) {
+                $result['confidence_level'] = strtolower(trim($confidence_matches[1]));
+                $result['confidence_reason'] = isset($confidence_matches[2]) ? trim($confidence_matches[2]) : null;
+
+                // Remove confidence markers from translation
+                $result['translated_content'] = preg_replace('/CONFIDENCE:.*$/is', '', $raw_response);
+                $result['translated_content'] = trim($result['translated_content']);
+            }
+        }
+
+        // Validate confidence level
+        $valid_levels = array('green', 'orange', 'red');
+        if (!in_array($result['confidence_level'], $valid_levels)) {
+            $result['confidence_level'] = 'green'; // Default to green if invalid
+        }
+
+        // Clean up translation content
+        $result['translated_content'] = preg_replace('/^TRANSLATION:\s*/i', '', $result['translated_content']);
+        $result['translated_content'] = trim($result['translated_content']);
+
+        return $result;
+    }
+
     /**
      * Get language name from code
      */
@@ -1792,5 +1852,203 @@ class Nexus_AI_WP_Translator_API_Handler {
      */
     public function clear_progress($progress_id) {
         delete_transient('nexus_ai_wp_progress_' . $progress_id);
+    }
+
+    /**
+     * Perform detailed quality assessment on-demand
+     */
+    public function perform_detailed_quality_assessment($original_content, $translated_content, $source_lang, $target_lang) {
+        if (empty($this->api_key)) {
+            return array(
+                'success' => false,
+                'message' => __('API key not configured', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+        if (empty($model)) {
+            return array(
+                'success' => false,
+                'message' => __('No AI model selected', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $start_time = microtime(true);
+
+        // Create detailed assessment prompt
+        $prompt = $this->create_detailed_assessment_prompt($original_content, $translated_content, $source_lang, $target_lang);
+
+        // Prepare request
+        $headers = array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $this->api_key,
+            'anthropic-version' => '2023-06-01'
+        );
+
+        $body = array(
+            'model' => $model,
+            'max_tokens' => 4000,
+            'messages' => array(
+                array(
+                    'role' => 'user',
+                    'content' => $prompt
+                )
+            )
+        );
+
+        // Make API request
+        $response = wp_remote_post($this->api_endpoint, array(
+            'headers' => $headers,
+            'body' => wp_json_encode($body),
+            'timeout' => 60
+        ));
+
+        $processing_time = microtime(true) - $start_time;
+
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+
+        if ($response_code !== 200) {
+            $error_data = json_decode($response_body, true);
+            $error_message = isset($error_data['error']['message'])
+                ? $error_data['error']['message']
+                : __('API request failed', 'nexus-ai-wp-translator');
+
+            return array(
+                'success' => false,
+                'message' => $error_message
+            );
+        }
+
+        $data = json_decode($response_body, true);
+
+        if (!isset($data['content'][0]['text'])) {
+            return array(
+                'success' => false,
+                'message' => __('Invalid API response format', 'nexus-ai-wp-translator')
+            );
+        }
+
+        // Parse the detailed assessment response
+        $assessment_data = $this->parse_detailed_assessment_response($data['content'][0]['text']);
+
+        // Calculate estimated cost (rough estimate based on tokens)
+        $estimated_cost = 0.05; // Fixed cost for detailed assessment
+
+        return array(
+            'success' => true,
+            'data' => array_merge($assessment_data, array(
+                'cost' => $estimated_cost,
+                'processing_time' => $processing_time
+            ))
+        );
+    }
+
+    /**
+     * Create detailed assessment prompt
+     */
+    private function create_detailed_assessment_prompt($original_content, $translated_content, $source_lang, $target_lang) {
+        $source_lang_name = $this->get_language_name($source_lang);
+        $target_lang_name = $this->get_language_name($target_lang);
+
+        return sprintf(
+            "You are a professional translation quality assessor. Analyze the quality of this translation and provide a detailed assessment.\n\n" .
+
+            "ORIGINAL (%s):\n%s\n\n" .
+
+            "TRANSLATION (%s):\n%s\n\n" .
+
+            "Provide a comprehensive quality assessment in this JSON format:\n\n" .
+            "{\n" .
+            '  "overall_score": 85,' . "\n" .
+            '  "grade": "B+",' . "\n" .
+            '  "completeness": 90,' . "\n" .
+            '  "consistency": 85,' . "\n" .
+            '  "structure": 80,' . "\n" .
+            '  "length": 88,' . "\n" .
+            '  "issues": [' . "\n" .
+            '    {' . "\n" .
+            '      "severity": "medium",' . "\n" .
+            '      "type": "terminology",' . "\n" .
+            '      "description": "Specific issue description with location",' . "\n" .
+            '      "found_text": "problematic text",' . "\n" .
+            '      "suggested_fix": "suggested improvement"' . "\n" .
+            '    }' . "\n" .
+            '  ],' . "\n" .
+            '  "suggestions": [' . "\n" .
+            '    "Consider localizing specific expressions for better readability",' . "\n" .
+            '    "Review technical terms for target audience appropriateness"' . "\n" .
+            '  ],' . "\n" .
+            '  "metrics": {' . "\n" .
+            '    "original_word_count": 150,' . "\n" .
+            '    "translated_word_count": 145,' . "\n" .
+            '    "length_ratio": 0.97' . "\n" .
+            '  }' . "\n" .
+            "}\n\n" .
+
+            "ASSESSMENT CRITERIA:\n" .
+            "- Overall Score: 0-100 based on translation quality\n" .
+            "- Grade: A+, A, A-, B+, B, B-, C+, C, C-, D, F\n" .
+            "- Completeness: How much of the original content is translated\n" .
+            "- Consistency: Formatting, style, and terminology consistency\n" .
+            "- Structure: Preservation of document organization\n" .
+            "- Length: Appropriateness of translation length\n" .
+            "- Issues: Specific problems with severity (high/medium/low), type, description, location, and suggested fixes\n" .
+            "- Suggestions: Actionable recommendations for improvement\n" .
+            "- Metrics: Quantitative analysis of the translation\n\n" .
+
+            "Focus on providing specific, actionable feedback with exact text examples and clear improvement suggestions.",
+            $source_lang_name,
+            $original_content,
+            $target_lang_name,
+            $translated_content
+        );
+    }
+
+    /**
+     * Parse detailed assessment response
+     */
+    private function parse_detailed_assessment_response($response) {
+        // Try to extract JSON from the response
+        if (preg_match('/\{.*\}/s', $response, $matches)) {
+            $json_data = json_decode($matches[0], true);
+            if ($json_data) {
+                return $json_data;
+            }
+        }
+
+        // Fallback: Create basic assessment if JSON parsing fails
+        return array(
+            'overall_score' => 75,
+            'grade' => 'B',
+            'completeness' => 80,
+            'consistency' => 75,
+            'structure' => 70,
+            'length' => 75,
+            'issues' => array(
+                array(
+                    'severity' => 'medium',
+                    'type' => 'parsing',
+                    'description' => 'Could not parse detailed assessment response',
+                    'found_text' => '',
+                    'suggested_fix' => 'Manual review recommended'
+                )
+            ),
+            'suggestions' => array(
+                'Manual review of translation quality recommended'
+            ),
+            'metrics' => array(
+                'original_word_count' => str_word_count(strip_tags($original_content ?? '')),
+                'translated_word_count' => str_word_count(strip_tags($translated_content ?? '')),
+                'length_ratio' => 1.0
+            )
+        );
     }
 }

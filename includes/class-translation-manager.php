@@ -460,35 +460,39 @@ class Nexus_AI_WP_Translator_Manager {
         // Clear translation cache after successful post creation
         $this->api_handler->clear_post_translation_cache($source_post_id, array($target_lang));
 
-        // Perform hybrid quality assessment (LLM + PHP)
+        // Extract basic quality assessment from translation result
         $quality_assessment = null;
-        $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
+        $use_quality_assessment = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
 
-        if ($use_llm_quality) {
-            // Create hybrid quality assessment combining LLM and PHP analysis
-            $quality_assessment = $this->create_hybrid_quality_assessment(
-                $source_post_id,
-                $translated_post_id,
-                $source_lang,
-                $target_lang,
-                $translation_result
+        if ($use_quality_assessment && isset($translation_result['confidence_assessment'])) {
+            // Store basic quality assessment from translation
+            $quality_assessment = array(
+                'assessment_type' => 'basic',
+                'confidence_level' => $translation_result['confidence_assessment']['level'],
+                'confidence_reason' => $translation_result['confidence_assessment']['reason'] ?? null,
+                'assessment_date' => current_time('mysql'),
+                'post_id' => $translated_post_id,
+                'source_post_id' => $source_post_id,
+                'detailed_assessment_available' => true
             );
 
-            if ($quality_assessment) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("Nexus AI WP Translator: Using hybrid quality assessment: " . wp_json_encode($quality_assessment));
-                }
-
-                // Store quality assessment as post meta
-                update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
-
-                // Store translation relationship with quality data in database
-                $this->db->store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
-            }
-        } else {
-            // Quality assessment disabled
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Nexus AI WP Translator: Quality assessment disabled in settings");
+                error_log("Nexus AI WP Translator: Basic quality assessment: " . wp_json_encode($quality_assessment));
+            }
+
+            // Store basic quality assessment as post meta
+            update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $quality_assessment);
+
+            // Store translation relationship with basic quality data
+            $this->db->store_translation_relationship($source_post_id, $translated_post_id, $source_lang, $target_lang, 'completed', $quality_assessment);
+        } else {
+            // Quality assessment disabled or not available
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                if (!$use_quality_assessment) {
+                    error_log("Nexus AI WP Translator: Quality assessment disabled in settings");
+                } else {
+                    error_log("Nexus AI WP Translator: No confidence assessment in translation result");
+                }
             }
 
             // Store translation relationship without quality data
@@ -1199,117 +1203,64 @@ class Nexus_AI_WP_Translator_Manager {
     }
 
     /**
-     * Create hybrid quality assessment combining LLM and PHP analysis
+     * Perform detailed quality assessment on-demand
      */
-    private function create_hybrid_quality_assessment($source_post_id, $translated_post_id, $source_lang, $target_lang, $translation_result) {
+    public function perform_detailed_quality_assessment($source_post_id, $translated_post_id, $source_lang, $target_lang) {
         // Get original and translated content
         $source_post = get_post($source_post_id);
         $translated_post = get_post($translated_post_id);
 
         if (!$source_post || !$translated_post) {
-            return null;
+            return array(
+                'success' => false,
+                'message' => __('Could not load post content', 'nexus-ai-wp-translator')
+            );
         }
 
         $original_content = $source_post->post_content;
         $translated_content = $translated_post->post_content;
 
-        // Initialize quality assessor for PHP-based analysis
-        if (!class_exists('Nexus_AI_WP_Translator_Quality_Assessor')) {
-            require_once NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'includes/class-quality-assessor.php';
-        }
-        $php_assessor = new Nexus_AI_WP_Translator_Quality_Assessor();
-
-        // Get PHP-based technical assessment
-        $php_assessment = $php_assessor->assess_translation_quality(
+        // Use API handler to perform detailed assessment
+        $assessment_result = $this->api_handler->perform_detailed_quality_assessment(
             $original_content,
             $translated_content,
             $source_lang,
             $target_lang
         );
 
-        // Start with PHP assessment as base
-        $hybrid_assessment = $php_assessment;
-
-        // Overlay LLM assessment data if available
-        if (isset($translation_result['quality']) && is_array($translation_result['quality'])) {
-            $llm_quality = $translation_result['quality'];
-
-            // Use LLM overall score if available and reasonable
-            if (isset($llm_quality['overall_score']) && is_numeric($llm_quality['overall_score'])) {
-                $llm_score = intval($llm_quality['overall_score']);
-                if ($llm_score >= 0 && $llm_score <= 100) {
-                    // Blend LLM and PHP overall scores (70% LLM, 30% PHP for linguistic accuracy)
-                    $hybrid_assessment['overall_score'] = round(($llm_score * 0.7) + ($php_assessment['overall_score'] * 0.3));
-                }
-            }
-
-            // Use LLM grade if available
-            if (isset($llm_quality['overall_grade']) && !empty($llm_quality['overall_grade'])) {
-                $hybrid_assessment['grade'] = $llm_quality['overall_grade'];
-            } else {
-                // Calculate grade from hybrid score
-                $hybrid_assessment['grade'] = $this->calculate_grade_from_score($hybrid_assessment['overall_score']);
-            }
-
-            // Use LLM component scores if available, otherwise keep PHP scores
-            $llm_components = ['completeness', 'consistency', 'structure', 'length'];
-            foreach ($llm_components as $component) {
-                if (isset($llm_quality[$component]) && is_numeric($llm_quality[$component])) {
-                    $llm_component_score = intval($llm_quality[$component]);
-                    if ($llm_component_score >= 0 && $llm_component_score <= 100) {
-                        // Blend LLM and PHP component scores (60% LLM, 40% PHP for balance)
-                        $php_key = $component . '_score';
-                        if (isset($php_assessment[$php_key])) {
-                            $hybrid_assessment[$php_key] = round(($llm_component_score * 0.6) + ($php_assessment[$php_key] * 0.4));
-                        } else {
-                            $hybrid_assessment[$php_key] = $llm_component_score;
-                        }
-                    }
-                }
-            }
-
-            // Add LLM-specific insights if available
-            if (isset($llm_quality['issues']) && is_array($llm_quality['issues'])) {
-                // Merge LLM issues with PHP issues
-                $hybrid_assessment['issues'] = array_merge(
-                    $php_assessment['issues'],
-                    $llm_quality['issues']
-                );
-            }
-
-            if (isset($llm_quality['suggestions']) && is_array($llm_quality['suggestions'])) {
-                // Merge LLM suggestions with PHP suggestions
-                $hybrid_assessment['suggestions'] = array_merge(
-                    $php_assessment['suggestions'],
-                    $llm_quality['suggestions']
-                );
-            }
-
-            // Add LLM word counts if available
-            if (isset($llm_quality['original_words']) && is_numeric($llm_quality['original_words'])) {
-                $hybrid_assessment['metrics']['llm_original_words'] = intval($llm_quality['original_words']);
-            }
-            if (isset($llm_quality['translated_words']) && is_numeric($llm_quality['translated_words'])) {
-                $hybrid_assessment['metrics']['llm_translated_words'] = intval($llm_quality['translated_words']);
-            }
+        if (!$assessment_result['success']) {
+            return $assessment_result;
         }
 
-        // Add hybrid assessment metadata
-        $hybrid_assessment['assessment_type'] = 'hybrid';
-        $hybrid_assessment['llm_data_available'] = isset($translation_result['quality']);
-        $hybrid_assessment['assessment_date'] = current_time('mysql');
-        $hybrid_assessment['post_id'] = $translated_post_id;
-        $hybrid_assessment['source_post_id'] = $source_post_id;
+        // Create comprehensive quality assessment
+        $detailed_assessment = array(
+            'assessment_type' => 'detailed',
+            'overall_score' => $assessment_result['data']['overall_score'] ?? 0,
+            'grade' => $assessment_result['data']['grade'] ?? 'F',
+            'completeness_score' => $assessment_result['data']['completeness'] ?? 0,
+            'consistency_score' => $assessment_result['data']['consistency'] ?? 0,
+            'structure_score' => $assessment_result['data']['structure'] ?? 0,
+            'length_score' => $assessment_result['data']['length'] ?? 0,
+            'issues' => $assessment_result['data']['issues'] ?? array(),
+            'suggestions' => $assessment_result['data']['suggestions'] ?? array(),
+            'metrics' => $assessment_result['data']['metrics'] ?? array(),
+            'assessment_date' => current_time('mysql'),
+            'post_id' => $translated_post_id,
+            'source_post_id' => $source_post_id,
+            'api_cost' => $assessment_result['data']['cost'] ?? 0
+        );
+
+        // Update the quality assessment with detailed data
+        update_post_meta($translated_post_id, '_nexus_ai_wp_translator_quality_assessment', $detailed_assessment);
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log("Nexus AI WP Translator: Hybrid assessment created - Overall: {$hybrid_assessment['overall_score']}%, Components: " .
-                "Completeness: {$hybrid_assessment['completeness_score']}%, " .
-                "Consistency: {$hybrid_assessment['consistency_score']}%, " .
-                "Structure: {$hybrid_assessment['structure_score']}%, " .
-                "Length: {$hybrid_assessment['length_score']}%");
+            error_log("Nexus AI WP Translator: Detailed assessment completed - Overall: {$detailed_assessment['overall_score']}%");
         }
 
-        return $hybrid_assessment;
+        return array(
+            'success' => true,
+            'data' => $detailed_assessment
+        );
     }
 
     /**
