@@ -241,24 +241,24 @@ if (!defined('ABSPATH')) {
 </div>
 
 <script>
-console.log('NexusAI Debug: Inline script in admin-settings.php started');
+console.debug('[Nexus Translator]: Inline script in admin-settings.php started');
 
 // Wait for variables to be available
 function waitForAjaxVars() {
     if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
-        console.log('NexusAI Debug: Waiting for AJAX variables...');
+        console.debug('[Nexus Translator]: Waiting for AJAX variables...');
         setTimeout(waitForAjaxVars, 100);
         return;
     }
-    console.log('NexusAI Debug: AJAX variables available in inline script:', nexus_ai_wp_translator_ajax);
+    console.debug('[Nexus Translator]: AJAX variables available in inline script:', nexus_ai_wp_translator_ajax);
     initInlineScript();
 }
 
 function initInlineScript() {
-    console.log('NexusAI Debug: Initializing inline script functionality');
+    console.debug('[Nexus Translator]: Initializing inline script functionality');
 
 jQuery(document).ready(function($) {
-    console.log('NexusAI Debug: Inline script jQuery ready');
+    console.debug('[Nexus Translator]: Inline script jQuery ready');
     
     var apiKeyChanged = false;
     var apiKeyValidated = false;
@@ -275,7 +275,7 @@ jQuery(document).ready(function($) {
         currentScenario = 2; // API key exists, no model
     }
     
-    console.log('NexusAI Debug: Detected scenario:', currentScenario, 'API key length:', currentApiKey.length, 'Model:', currentModel);
+    console.debug('[Nexus Translator]: Detected scenario:', currentScenario, 'API key length:', currentApiKey.length, 'Model:', currentModel);
     
     // Handle initial state based on scenario
     handleInitialScenario(currentScenario);
@@ -285,20 +285,20 @@ jQuery(document).ready(function($) {
         
         switch(scenario) {
             case 1: // No API key, No model
-                console.log('NexusAI Debug: Scenario 1 - No API key, no model');
+                console.debug('[Nexus Translator]: Scenario 1 - No API key, no model');
                 modelRow.hide(); // Keep model field hidden
                 // No background testing - no API key configured
                 break;
                 
             case 2: // API key exists, No model  
-                console.log('NexusAI Debug: Scenario 2 - API key exists, no model');
+                console.debug('[Nexus Translator]: Scenario 2 - API key exists, no model');
                 modelRow.hide(); // Start hidden
                 // Perform background API test
                 performBackgroundApiTest(currentApiKey);
                 break;
                 
             case 3: // Both API key and model exist
-                console.log('NexusAI Debug: Scenario 3 - Both API key and model exist');
+                console.debug('[Nexus Translator]: Scenario 3 - Both API key and model exist');
                 modelRow.hide(); // Start hidden
                 // Perform background API test
                 performBackgroundApiTest(currentApiKey);
@@ -314,7 +314,7 @@ jQuery(document).ready(function($) {
             timestamp: Date.now()
         };
         sessionStorage.setItem('nexus_ai_api_error', JSON.stringify(errorData));
-        console.log('NexusAI Debug: API error semaphore set:', errorData);
+        console.debug('[Nexus Translator]: API error semaphore set:', errorData);
     }
     
     function getApiErrorSemaphore() {
@@ -323,7 +323,7 @@ jQuery(document).ready(function($) {
             try {
                 return JSON.parse(errorData);
             } catch (e) {
-                console.log('NexusAI Debug: Error parsing semaphore data:', e);
+                console.debug('[Nexus Translator]: Error parsing semaphore data:', e);
                 return null;
             }
         }
@@ -332,12 +332,12 @@ jQuery(document).ready(function($) {
     
     function clearApiErrorSemaphore() {
         sessionStorage.removeItem('nexus_ai_api_error');
-        console.log('NexusAI Debug: API error semaphore cleared');
+        console.debug('[Nexus Translator]: API error semaphore cleared');
     }
     
     // Background API testing function
     function performBackgroundApiTest(apiKey) {
-        console.log('NexusAI Debug: Performing background API test');
+        console.debug('[Nexus Translator]: Performing background API test');
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_test_api',
@@ -345,21 +345,21 @@ jQuery(document).ready(function($) {
             nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
-                console.log('NexusAI Debug: Background API test successful');
+                console.debug('[Nexus Translator]: Background API test successful');
                 // Clear any existing error semaphore
                 clearApiErrorSemaphore();
                 apiKeyValidated = true;
                 // Load models silently
                 loadModels(apiKey);
             } else {
-                console.log('NexusAI Debug: Background API test failed:', response.message);
+                console.debug('[Nexus Translator]: Background API test failed:', response.message);
                 // Set error semaphore
                 setApiErrorSemaphore(response.message || 'API connection failed');
                 // Show error popup
                 showApiErrorPopup(response.message || 'API connection failed');
             }
         }).fail(function() {
-            console.log('NexusAI Debug: Background API test failed with connection error');
+            console.debug('[Nexus Translator]: Background API test failed with connection error');
             var errorMsg = 'Connection failed. Please check your API key and network connection.';
             setApiErrorSemaphore(errorMsg);
             showApiErrorPopup(errorMsg);
@@ -368,7 +368,7 @@ jQuery(document).ready(function($) {
     
     // Error popup function
     function showApiErrorPopup(message) {
-        console.log('NexusAI Debug: Showing API error popup');
+        console.debug('[Nexus Translator]: Showing API error popup');
         
         // Create modal HTML if it doesn't exist
         if ($('#nexus-api-error-modal').length === 0) {
@@ -402,7 +402,7 @@ jQuery(document).ready(function($) {
     
     // Function to switch to API Settings tab programmatically
     function switchToApiSettingsTab() {
-        console.log('NexusAI Debug: Switching to API Settings tab');
+        console.debug('[Nexus Translator]: Switching to API Settings tab');
         
         // Update tab navigation
         $('.nav-tab').removeClass('nav-tab-active');
@@ -420,7 +420,7 @@ jQuery(document).ready(function($) {
     function displayApiErrorIfExists() {
         var errorData = getApiErrorSemaphore();
         if (errorData && errorData.hasError) {
-            console.log('NexusAI Debug: Displaying API error from semaphore:', errorData.message);
+            console.debug('[Nexus Translator]: Displaying API error from semaphore:', errorData.message);
             var resultDiv = $('#api-test-result');
             resultDiv.html('<div class="notice notice-error"><p><strong>API Error:</strong> ' + errorData.message + '</p></div>');
         }
@@ -431,7 +431,7 @@ jQuery(document).ready(function($) {
     function initAutoSave() {
         // Handle all checkboxes in the form
         $('#nexus-ai-wp-translator-settings-form input[type="checkbox"]').on('change', function() {
-            console.log('NexusAI Debug: Checkbox changed, auto-saving:', $(this).attr('name'));
+            console.debug('[Nexus Translator]: Checkbox changed, auto-saving:', $(this).attr('name'));
             dynamicSaveSettings();
         });
         
@@ -439,19 +439,19 @@ jQuery(document).ready(function($) {
         var saveTimeout;
         $('#nexus-ai-wp-translator-settings-form input[type="number"]').on('input', function() {
             var fieldName = $(this).attr('name');
-            console.log('NexusAI Debug: Number input changed:', fieldName);
+            console.debug('[Nexus Translator]: Number input changed:', fieldName);
             
             // Clear previous timeout
             clearTimeout(saveTimeout);
             
             // Set new timeout to save after user stops typing (500ms delay)
             saveTimeout = setTimeout(function() {
-                console.log('NexusAI Debug: Auto-saving after number input change');
+                console.debug('[Nexus Translator]: Auto-saving after number input change');
                 dynamicSaveSettings();
             }, 500);
         });
         
-        console.log('NexusAI Debug: Auto-save initialized for all form fields');
+        console.debug('[Nexus Translator]: Auto-save initialized for all form fields');
     }
     
     // Initialize auto-save for all form fields
@@ -541,7 +541,7 @@ jQuery(document).ready(function($) {
         }
         
         // Always save settings first, then test
-        console.log('NexusAI Debug: Saving settings before API test...');
+        console.debug('[Nexus Translator]: Saving settings before API test...');
         button.prop('disabled', true).text('<?php _e('Saving & Testing...', 'nexus-ai-wp-translator'); ?>');
         resultDiv.html('<div class="notice notice-info"><p><?php _e('Saving settings and testing API connection...', 'nexus-ai-wp-translator'); ?></p></div>');
         
@@ -558,7 +558,7 @@ jQuery(document).ready(function($) {
                 
                 // Load models after successful API test
                 if (response.success) {
-                    console.log('NexusAI Debug: API test successful, loading models...');
+                    console.debug('[Nexus Translator]: API test successful, loading models...');
                     // Clear any existing error semaphore on successful validation
                     clearApiErrorSemaphore();
                     apiKeyValidated = true;
@@ -574,7 +574,7 @@ jQuery(document).ready(function($) {
     
     // Auto-test API key function (silent test for page load)
     function autoTestApiKey(apiKey, showModelField) {
-        console.log('NexusAI Debug: Auto-testing API key silently, showModelField:', showModelField);
+        console.debug('[Nexus Translator]: Auto-testing API key silently, showModelField:', showModelField);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_test_api',
@@ -582,16 +582,16 @@ jQuery(document).ready(function($) {
             nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
             if (response.success) {
-                console.log('NexusAI Debug: Auto-test successful, API key validated');
+                console.debug('[Nexus Translator]: Auto-test successful, API key validated');
                 apiKeyValidated = true;
                 if (showModelField) {
                     loadModels(apiKey);
                 }
             } else {
-                console.log('NexusAI Debug: Auto-test failed');
+                console.debug('[Nexus Translator]: Auto-test failed');
                 // For scenario 3, if validation fails, revert to scenario 2 behavior
                 if (currentScenario === 3) {
-                    console.log('NexusAI Debug: Scenario 3 validation failed, reverting to scenario 2 behavior');
+                    console.debug('[Nexus Translator]: Scenario 3 validation failed, reverting to scenario 2 behavior');
                     // Clear the saved model since API key is invalid
                     if (window.nexusAiServerData) {
                         window.nexusAiServerData.selectedModel = '';
@@ -600,10 +600,10 @@ jQuery(document).ready(function($) {
                 }
             }
         }).fail(function() {
-            console.log('NexusAI Debug: Auto-test failed with connection error');
+            console.debug('[Nexus Translator]: Auto-test failed with connection error');
             // For scenario 3, if validation fails, revert to scenario 2 behavior
             if (currentScenario === 3) {
-                console.log('NexusAI Debug: Scenario 3 validation failed with connection error, reverting to scenario 2 behavior');
+                console.debug('[Nexus Translator]: Scenario 3 validation failed with connection error, reverting to scenario 2 behavior');
                 if (window.nexusAiServerData) {
                     window.nexusAiServerData.selectedModel = '';
                 }
@@ -615,12 +615,12 @@ jQuery(document).ready(function($) {
     // Load models function with improved state management
     function loadModels(apiKey, preserveCurrentSelection) {
         if (modelOperationInProgress) {
-            console.log('NexusAI Debug: Model operation in progress, skipping loadModels');
+            console.debug('[Nexus Translator]: Model operation in progress, skipping loadModels');
             return;
         }
         
         modelOperationInProgress = true;
-        console.log('NexusAI Debug: Loading models with API key, preserveCurrentSelection:', preserveCurrentSelection);
+        console.debug('[Nexus Translator]: Loading models with API key, preserveCurrentSelection:', preserveCurrentSelection);
         
         var modelSelect = $('#nexus_ai_wp_translator_model');
         var modelRow = $('#model-selection-row');
@@ -631,14 +631,14 @@ jQuery(document).ready(function($) {
         if (preserveCurrentSelection && modelSelect.val()) {
             // Use current dropdown value if preserving and available
             currentSelection = modelSelect.val();
-            console.log('NexusAI Debug: Using current dropdown selection:', currentSelection);
+            console.debug('[Nexus Translator]: Using current dropdown selection:', currentSelection);
         } else if (window.nexusAiServerData && window.nexusAiServerData.selectedModel) {
             // Use server data as fallback
             currentSelection = window.nexusAiServerData.selectedModel;
-            console.log('NexusAI Debug: Using server data selection:', currentSelection);
+            console.debug('[Nexus Translator]: Using server data selection:', currentSelection);
         }
         
-        console.log('NexusAI Debug: Final current selection for loadModels:', currentSelection);
+        console.debug('[Nexus Translator]: Final current selection for loadModels:', currentSelection);
         
         // Disable refresh button during loading
         refreshButton.prop('disabled', true).text('Loading...');
@@ -649,7 +649,7 @@ jQuery(document).ready(function($) {
             api_key: apiKey,
             nonce: nexus_ai_wp_translator_ajax.nonce
         }, function(response) {
-            console.log('NexusAI Debug: Models response:', response);
+            console.debug('[Nexus Translator]: Models response:', response);
             
             if (response.success && response.models) {
                 modelSelect.empty();
@@ -669,14 +669,14 @@ jQuery(document).ready(function($) {
                 
                 // If current selection exists but wasn't found in API response, preserve it
                 if (currentSelection && !modelFound) {
-                    console.log('NexusAI Debug: Current selection not found in API response, preserving:', currentSelection);
+                    console.debug('[Nexus Translator]: Current selection not found in API response, preserving:', currentSelection);
                     modelSelect.append('<option value="' + currentSelection + '" selected>' + currentSelection + ' (previously saved)</option>');
                 }
                 
                 // Ensure selection is set correctly
                 if (currentSelection) {
                     modelSelect.val(currentSelection);
-                    console.log('NexusAI Debug: Set model selection to:', modelSelect.val());
+                    console.debug('[Nexus Translator]: Set model selection to:', modelSelect.val());
                 }
                 
                 // Show model selection row after successful load
@@ -699,7 +699,7 @@ jQuery(document).ready(function($) {
                 apiKeyValidated = true;
             }
         }).fail(function() {
-            console.log('NexusAI Debug: Failed to load models');
+            console.debug('[Nexus Translator]: Failed to load models');
             // Connection failed - preserve saved model if exists
             modelSelect.empty();
             modelSelect.append('<option value="">Select model</option>');
@@ -718,18 +718,18 @@ jQuery(document).ready(function($) {
             modelSelect.prop('disabled', false);
             refreshButton.prop('disabled', false).text('<?php _e('Refresh Models', 'nexus-ai-wp-translator'); ?>');
             modelOperationInProgress = false;
-            console.log('NexusAI Debug: Model loading operation completed');
+            console.debug('[Nexus Translator]: Model loading operation completed');
         });
     }
     
     // Dynamic save when model selection changes
     $('#nexus_ai_wp_translator_model').on('change', function() {
         if (apiKeyValidated && $(this).val()) {
-            console.log('NexusAI Debug: Model selection changed, saving dynamically');
+            console.debug('[Nexus Translator]: Model selection changed, saving dynamically');
             // Update our local tracking of selected model
             if (window.nexusAiServerData) {
                 window.nexusAiServerData.selectedModel = $(this).val();
-                console.log('NexusAI Debug: Updated selectedModel to:', $(this).val());
+                console.debug('[Nexus Translator]: Updated selectedModel to:', $(this).val());
             }
             dynamicSaveSettings();
         }
@@ -739,11 +739,11 @@ jQuery(document).ready(function($) {
     $('#nexus-ai-wp-refresh-models').on('click', function() {
         var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
         if (apiKey && apiKeyValidated && !modelOperationInProgress) {
-            console.log('NexusAI Debug: Refreshing models manually with current selection preservation');
+            console.debug('[Nexus Translator]: Refreshing models manually with current selection preservation');
             // Always preserve current selection when manually refreshing
             loadModels(apiKey, true);
         } else if (modelOperationInProgress) {
-            console.log('NexusAI Debug: Refresh models blocked - operation in progress');
+            console.debug('[Nexus Translator]: Refresh models blocked - operation in progress');
         } else {
             $('#api-test-result').html('<div class="notice notice-warning"><p><?php _e('Please test your API connection first.', 'nexus-ai-wp-translator'); ?></p></div>');
         }
@@ -757,12 +757,12 @@ jQuery(document).ready(function($) {
         
         // Capture current model selection before save
         var currentModelValue = $('#nexus_ai_wp_translator_model').val();
-        console.log('NexusAI Debug: Saving settings with model value:', currentModelValue);
+        console.debug('[Nexus Translator]: Saving settings with model value:', currentModelValue);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, formData, function(response) {
             if (response.success) {
                 apiKeyChanged = false;
-                console.log('NexusAI Debug: Settings saved dynamically - synchronizing state');
+                console.debug('[Nexus Translator]: Settings saved dynamically - synchronizing state');
                 
                 // Update server data to match what was just saved
                 if (window.nexusAiServerData) {
@@ -771,7 +771,7 @@ jQuery(document).ready(function($) {
                     
                     if (currentModelValue) {
                         window.nexusAiServerData.selectedModel = currentModelValue;
-                        console.log('NexusAI Debug: Updated server data selectedModel to:', currentModelValue);
+                        console.debug('[Nexus Translator]: Updated server data selectedModel to:', currentModelValue);
                     }
                 }
                 
@@ -785,7 +785,7 @@ jQuery(document).ready(function($) {
                     callback();
                 }
             } else {
-                console.log('NexusAI Debug: Dynamic save failed:', response);
+                console.debug('[Nexus Translator]: Dynamic save failed:', response);
                 if (!callback) {
                     showAutoSaveError();
                 }
@@ -795,7 +795,7 @@ jQuery(document).ready(function($) {
                 }
             }
         }).fail(function() {
-            console.log('NexusAI Debug: Dynamic save request failed');
+            console.debug('[Nexus Translator]: Dynamic save request failed');
             if (!callback) {
                 showAutoSaveError();
             }

@@ -166,7 +166,7 @@ if (!defined('ABSPATH')) {
 jQuery(document).ready(function($) {
     // Check if posts.js functions are available
     if (typeof window.NexusAIWPTranslatorPosts === 'undefined') {
-        console.log('NexusAI Debug: posts.js not loaded, using inline unlink function');
+        console.debug('[Nexus Translator]: posts.js not loaded, using inline unlink function');
     }
     
     // Unlink translation

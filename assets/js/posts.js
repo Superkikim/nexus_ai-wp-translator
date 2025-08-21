@@ -192,10 +192,10 @@
                 nonce: nexus_ai_wp_translator_posts.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Post action response received');
-                console.log('NexusAI Debug: Response:', response);
-                console.log('NexusAI Debug: Response type:', typeof response);
-                console.log('NexusAI Debug: Response is null/undefined:', response === null || response === undefined);
+                console.debug('[Nexus Translator]: Post action response received');
+                console.debug('[Nexus Translator]: Response:', response);
+                console.debug('[Nexus Translator]: Response type:', typeof response);
+                console.debug('[Nexus Translator]: Response is null/undefined:', response === null || response === undefined);
                 
                 if (response === null || response === undefined) {
                     console.error('NexusAI Debug: Response is null or undefined!');
@@ -204,12 +204,12 @@
                     return;
                 }
                 
-                console.log('NexusAI Debug: Response success property:', response.success);
+                console.debug('[Nexus Translator]: Response success property:', response.success);
                 
                 NexusAIWPTranslatorPosts.closePopup();
                 
                 if (response.success) {
-                    console.log('NexusAI Debug: Action successful, redirecting...');
+                    console.debug('[Nexus Translator]: Action successful, redirecting...');
                     // Redirect or reload as appropriate
                     if (action === 'delete') {
                         // Redirect to post list
@@ -219,9 +219,9 @@
                         window.location.reload();
                     }
                 } else {
-                    console.log('NexusAI Debug: Action failed, showing alert');
+                    console.debug('[Nexus Translator]: Action failed, showing alert');
                     var errorMessage = 'Error: ' + (response.data ? response.data : 'Unknown error occurred');
-                    console.log('NexusAI Debug: Error message:', errorMessage);
+                    console.debug('[Nexus Translator]: Error message:', errorMessage);
                     alert(errorMessage);
                 }
             })

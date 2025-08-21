@@ -7,24 +7,24 @@
     'use strict';
 
     // Debug: Log when script file is loaded
-    console.log('NexusAI Debug: admin.js file loaded');
-    console.log('NexusAI Debug: Current URL:', window.location.href);
-    console.log('NexusAI Debug: jQuery available:', typeof jQuery !== 'undefined');
+    console.debug('[Nexus Translator]: admin.js file loaded');
+    console.debug('[Nexus Translator]: Current URL:', window.location.href);
+    console.debug('[Nexus Translator]: jQuery available:', typeof jQuery !== 'undefined');
 
     // Check if jQuery is available
     if (typeof jQuery === 'undefined') {
         console.error('NexusAI Debug: jQuery is not loaded!');
         return; // Exit if jQuery is not available
     } else {
-        console.log('NexusAI Debug: jQuery is available');
+        console.debug('[Nexus Translator]: jQuery is available');
     }
 
     // Check if our localized variables are available
     if (typeof nexus_ai_wp_translator_ajax === 'undefined') {
         console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
-        console.log('NexusAI Debug: Available global variables:', Object.keys(window));
+        console.debug('[Nexus Translator]: Available global variables:', Object.keys(window));
     } else {
-        console.log('NexusAI Debug: AJAX variables available:', nexus_ai_wp_translator_ajax);
+        console.debug('[Nexus Translator]: AJAX variables available:', nexus_ai_wp_translator_ajax);
     }
 
     // Define the admin object immediately when script loads
@@ -41,13 +41,13 @@
         var $ = jQuery; // Ensure $ is available within this method
 
         if (this.initialized) {
-            console.log('NexusAI Debug: Admin already initialized, skipping');
+            console.debug('[Nexus Translator]: Admin already initialized, skipping');
             return;
         }
         this.initialized = true;
         
-        console.log('NexusAI Debug: Starting admin initialization');
-        console.log('NexusAI Debug: Admin object initialized successfully');
+        console.debug('[Nexus Translator]: Starting admin initialization');
+        console.debug('[Nexus Translator]: Admin object initialized successfully');
         this.initTabSwitching();
         this.initApiTesting();
         this.initSettingsSave();
@@ -61,18 +61,18 @@
         
         // Load models on page load if API key exists
         var apiKey = $('#nexus_ai_wp_translator_api_key').val();
-        console.log('NexusAI Debug: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+        console.debug('[Nexus Translator]: API key on page load:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
         
         if (apiKey && apiKey.trim().length > 0) {
-            console.log('NexusAI Debug: API key found on page load, loading models automatically');
+            console.debug('[Nexus Translator]: API key found on page load, loading models automatically');
             this.loadAvailableModels();
         } else {
-            console.log('NexusAI Debug: No API key found on page load, skipping model load');
+            console.debug('[Nexus Translator]: No API key found on page load, skipping model load');
         }
         
         // Check for auto translation on post edit pages
         if ($('#post_ID').length > 0) {
-            console.log('NexusAI Debug: Post edit page detected, checking for auto translation');
+            console.debug('[Nexus Translator]: Post edit page detected, checking for auto translation');
             var self = this;
             setTimeout(function() {
                 self.checkAutoTranslation();
@@ -92,12 +92,12 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing tab switching');
+        console.debug('[Nexus Translator]: Initializing tab switching');
         $('.nav-tab').on('click', function(e) {
             e.preventDefault();
             
             var target = $(this).attr('href');
-            console.log('NexusAI Debug: Tab clicked:', target);
+            console.debug('[Nexus Translator]: Tab clicked:', target);
             
             // Update nav tabs
             $('.nav-tab').removeClass('nav-tab-active');
@@ -114,7 +114,7 @@
         // Restore active tab from localStorage
         var activeTab = localStorage.getItem('nexus_ai_wp_translator_active_tab');
         if (activeTab && $(activeTab).length) {
-            console.log('NexusAI Debug: Restoring active tab:', activeTab);
+            console.debug('[Nexus Translator]: Restoring active tab:', activeTab);
             $('.nav-tab[href="' + activeTab + '"]').click();
         }
     },
@@ -131,28 +131,28 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing API testing');
+        console.debug('[Nexus Translator]: Initializing API testing');
         
         // Test API connection
         $('#nexus-ai-wp-test-api').on('click', function() {
-            console.log('NexusAI Debug: Test API button clicked');
+            console.debug('[Nexus Translator]: Test API button clicked');
             
             var button = $(this);
             var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
             var resultDiv = $('#api-test-result');
             
-            console.log('NexusAI Debug: API key for test:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'EMPTY');
+            console.debug('[Nexus Translator]: API key for test:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'EMPTY');
             
             if (!apiKey) {
-                console.log('NexusAI Debug: No API key provided');
+                console.debug('[Nexus Translator]: No API key provided');
                 NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Please enter an API key first.');
                 return;
             }
             
-            console.log('NexusAI Debug: Auto-saving API key before test');
+            console.debug('[Nexus Translator]: Auto-saving API key before test');
             // Auto-save API key before testing
             NexusAIWPTranslatorAdmin.autoSaveApiKey(apiKey, function() {
-                console.log('NexusAI Debug: API key auto-saved, proceeding with test');
+                console.debug('[Nexus Translator]: API key auto-saved, proceeding with test');
                 // Proceed with test after saving
                 NexusAIWPTranslatorAdmin.performApiTest(button, apiKey, resultDiv);
             });
@@ -160,29 +160,29 @@
         
         // Refresh models button
         $('#nexus-ai-wp-refresh-models').on('click', function() {
-            console.log('NexusAI Debug: Refresh models button clicked');
+            console.debug('[Nexus Translator]: Refresh models button clicked');
             
             var button = $(this);
             var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
             
             if (!apiKey) {
-                console.log('NexusAI Debug: No API key for refresh models');
+                console.debug('[Nexus Translator]: No API key for refresh models');
                 alert('Please enter and test your API key first.');
                 return;
             }
             
             button.prop('disabled', true).text('Loading...');
-            console.log('NexusAI Debug: Starting manual model refresh');
+            console.debug('[Nexus Translator]: Starting manual model refresh');
             
             NexusAIWPTranslatorAdmin.loadAvailableModels(function() {
                 button.prop('disabled', false).text('Refresh Models');
-                console.log('NexusAI Debug: Manual model refresh completed');
+                console.debug('[Nexus Translator]: Manual model refresh completed');
             });
         });
         
         // Auto-save when model selection changes
         $(document).on('change', '#nexus_ai_wp_translator_model', function() {
-            console.log('NexusAI Debug: Model selection changed to:', $(this).val());
+            console.debug('[Nexus Translator]: Model selection changed to:', $(this).val());
             var selectedModel = $(this).val();
             if (selectedModel) {
                 NexusAIWPTranslatorAdmin.autoSaveModel(selectedModel);
@@ -198,7 +198,7 @@
     autoSaveApiKey: function(apiKey, callback) {
         var $ = jQuery; // Ensure $ is available within this method
         
-        console.log('NexusAI Debug: Auto-saving API key');
+        console.debug('[Nexus Translator]: Auto-saving API key');
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_save_settings',
@@ -206,11 +206,11 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: API key auto-save response:', response);
+            console.debug('[Nexus Translator]: API key auto-save response:', response);
             if (callback) callback();
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Failed to auto-save API key:', error);
+            console.debug('[Nexus Translator]: Failed to auto-save API key:', error);
             if (callback) callback(); // Continue anyway
         });
     },
@@ -221,7 +221,7 @@
     autoSaveModel: function(model) {
         var $ = jQuery; // Ensure $ is available within this method
         
-        console.log('NexusAI Debug: Auto-saving model:', model);
+        console.debug('[Nexus Translator]: Auto-saving model:', model);
         
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_save_settings',
@@ -229,7 +229,7 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: Model auto-save response:', response);
+            console.debug('[Nexus Translator]: Model auto-save response:', response);
             // Show subtle feedback
             var feedback = $('<span class="model-saved-feedback" style="color: #46b450; margin-left: 10px;">✓ Saved</span>');
             $('#nexus_ai_wp_translator_model').after(feedback);
@@ -238,7 +238,7 @@
             }, 2000);
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Failed to auto-save model:', error);
+            console.debug('[Nexus Translator]: Failed to auto-save model:', error);
         });
     },
     
@@ -248,15 +248,15 @@
     performApiTest: function(button, apiKey, resultDiv) {
         var $ = jQuery; // Ensure $ is available within this method
         
-        console.log('NexusAI Debug: Starting API test with key length:', apiKey.length);
-        console.log('NexusAI Debug: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
-        console.log('NexusAI Debug: Nonce:', nexus_ai_wp_translator_ajax.nonce);
-        console.log('NexusAI Debug: About to make AJAX POST request for API test');
+        console.debug('[Nexus Translator]: Starting API test with key length:', apiKey.length);
+        console.debug('[Nexus Translator]: AJAX URL:', nexus_ai_wp_translator_ajax.ajax_url);
+        console.debug('[Nexus Translator]: Nonce:', nexus_ai_wp_translator_ajax.nonce);
+        console.debug('[Nexus Translator]: About to make AJAX POST request for API test');
         
         button.prop('disabled', true).text('Testing...');
         resultDiv.html('<div class="nexus-ai-wp-spinner"></div> Testing connection...');
         
-        console.log('NexusAI Debug: Making AJAX request with data:', {
+        console.debug('[Nexus Translator]: Making AJAX request with data:', {
             action: 'nexus_ai_wp_test_api',
             api_key: apiKey.substring(0, 10) + '...',
             nonce: nexus_ai_wp_translator_ajax.nonce
@@ -268,24 +268,24 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: API test response:', response);
-            console.log('NexusAI Debug: Response type:', typeof response);
-            console.log('NexusAI Debug: Response success:', response.success);
+            console.debug('[Nexus Translator]: API test response:', response);
+            console.debug('[Nexus Translator]: Response type:', typeof response);
+            console.debug('[Nexus Translator]: Response success:', response.success);
             
             var noticeClass = response.success ? 'success' : 'error';
             NexusAIWPTranslatorAdmin.showNotice(resultDiv, noticeClass, response.message);
             
             // If API test successful, load available models
             if (response.success) {
-                console.log('NexusAI Debug: API test successful, loading models now');
+                console.debug('[Nexus Translator]: API test successful, loading models now');
                 NexusAIWPTranslatorAdmin.loadAvailableModels();
             } else {
-                console.log('NexusAI Debug: API test failed:', response.message);
+                console.debug('[Nexus Translator]: API test failed:', response.message);
             }
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: API test failed - network error:', error);
-            console.log('NexusAI Debug: XHR response:', xhr.responseText);
+            console.debug('[Nexus Translator]: API test failed - network error:', error);
+            console.debug('[Nexus Translator]: XHR response:', xhr.responseText);
             NexusAIWPTranslatorAdmin.showNotice(resultDiv, 'error', 'Connection failed. Please check your internet connection.');
         })
         .always(function() {
@@ -299,32 +299,32 @@
     loadAvailableModels: function(callback) {
         var $ = jQuery; // Ensure $ is available within this method
         
-        console.log('NexusAI Debug: Starting to load available models');
+        console.debug('[Nexus Translator]: Starting to load available models');
         
         var apiKey = $('#nexus_ai_wp_translator_api_key').val().trim();
         var modelSelect = $('#nexus_ai_wp_translator_model');
         
-        console.log('NexusAI Debug: Model select element found:', modelSelect.length > 0);
-        console.log('NexusAI Debug: API key for models:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
-        console.log('NexusAI Debug: Model select element ID:', modelSelect.attr('id'));
-        console.log('NexusAI Debug: Current model select HTML:', modelSelect.length > 0 ? modelSelect[0].outerHTML.substring(0, 200) + '...' : 'NOT FOUND');
+        console.debug('[Nexus Translator]: Model select element found:', modelSelect.length > 0);
+        console.debug('[Nexus Translator]: API key for models:', apiKey ? 'EXISTS (length: ' + apiKey.length + ')' : 'NOT FOUND');
+        console.debug('[Nexus Translator]: Model select element ID:', modelSelect.attr('id'));
+        console.debug('[Nexus Translator]: Current model select HTML:', modelSelect.length > 0 ? modelSelect[0].outerHTML.substring(0, 200) + '...' : 'NOT FOUND');
         
         if (!apiKey) {
-            console.log('NexusAI Debug: No API key found, cannot load models');
+            console.debug('[Nexus Translator]: No API key found, cannot load models');
             if (callback) callback();
             return;
         }
         
         // Store current selection
         var currentSelection = modelSelect.val();
-        console.log('NexusAI Debug: Current model selection:', currentSelection);
+        console.debug('[Nexus Translator]: Current model selection:', currentSelection);
         
         // Show loading state
         modelSelect.html('<option value="">Loading models...</option>');
-        console.log('NexusAI Debug: Set loading state in dropdown');
+        console.debug('[Nexus Translator]: Set loading state in dropdown');
         
-        console.log('NexusAI Debug: Making AJAX request to get models');
-        console.log('NexusAI Debug: AJAX data for models:', {
+        console.debug('[Nexus Translator]: Making AJAX request to get models');
+        console.debug('[Nexus Translator]: AJAX data for models:', {
             action: 'nexus_ai_wp_get_models',
             api_key: apiKey.substring(0, 10) + '...',
             nonce: nexus_ai_wp_translator_ajax.nonce
@@ -336,13 +336,13 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: Get models AJAX response:', response);
-            console.log('NexusAI Debug: Response type:', typeof response);
-            console.log('NexusAI Debug: Response success:', response.success);
-            console.log('NexusAI Debug: Response models:', response.models);
+            console.debug('[Nexus Translator]: Get models AJAX response:', response);
+            console.debug('[Nexus Translator]: Response type:', typeof response);
+            console.debug('[Nexus Translator]: Response success:', response.success);
+            console.debug('[Nexus Translator]: Response models:', response.models);
             
             if (response.success && response.models) {
-                console.log('NexusAI Debug: Models received successfully:', response.models);
+                console.debug('[Nexus Translator]: Models received successfully:', response.models);
                 modelSelect.empty();
                 
                 // Add "Select model" placeholder first
@@ -353,16 +353,16 @@
                 $.each(response.models, function(modelId, displayName) {
                     var selected = (modelId === currentSelection) ? 'selected' : '';
                     modelSelect.append('<option value="' + modelId + '" ' + selected + '>' + displayName + '</option>');
-                    console.log('NexusAI Debug: Added model:', modelId, '→', displayName);
+                    console.debug('[Nexus Translator]: Added model:', modelId, '→', displayName);
                     modelCount++;
                 });
                 
-                console.log('NexusAI Debug: Total models added:', modelCount);
+                console.debug('[Nexus Translator]: Total models added:', modelCount);
             } else {
-                console.log('NexusAI Debug: Failed to get models or no models in response');
-                console.log('NexusAI Debug: Response success:', response.success);
-                console.log('NexusAI Debug: Response models:', response.models);
-                console.log('NexusAI Debug: Full response object:', response);
+                console.debug('[Nexus Translator]: Failed to get models or no models in response');
+                console.debug('[Nexus Translator]: Response success:', response.success);
+                console.debug('[Nexus Translator]: Response models:', response.models);
+                console.debug('[Nexus Translator]: Full response object:', response);
                 
                 // Show error message instead of default models
                 modelSelect.empty();
@@ -370,20 +370,20 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Get models AJAX request failed:', error);
-            console.log('NexusAI Debug: XHR status:', status);
-            console.log('NexusAI Debug: XHR status code:', xhr.status);
-            console.log('NexusAI Debug: XHR response:', xhr.responseText);
-            console.log('NexusAI Debug: XHR status code:', xhr.status);
-            console.log('NexusAI Debug: Full XHR object:', xhr);
+            console.debug('[Nexus Translator]: Get models AJAX request failed:', error);
+            console.debug('[Nexus Translator]: XHR status:', status);
+            console.debug('[Nexus Translator]: XHR status code:', xhr.status);
+            console.debug('[Nexus Translator]: XHR response:', xhr.responseText);
+            console.debug('[Nexus Translator]: XHR status code:', xhr.status);
+            console.debug('[Nexus Translator]: Full XHR object:', xhr);
             
             // Show network error instead of default models
             modelSelect.empty();
             modelSelect.append('<option value="">Network error - check connection</option>');
         })
         .always(function() {
-            console.log('NexusAI Debug: API test request completed');
-            console.log('NexusAI Debug: Load models request completed');
+            console.debug('[Nexus Translator]: API test request completed');
+            console.debug('[Nexus Translator]: Load models request completed');
             if (callback) callback();
         });
     },
@@ -401,10 +401,10 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing settings save');
+        console.debug('[Nexus Translator]: Initializing settings save');
         
         $('#nexus-ai-wp-save-settings').on('click', function() {
-            console.log('NexusAI Debug: Save settings button clicked');
+            console.debug('[Nexus Translator]: Save settings button clicked');
             
             var button = $(this);
             var form = $('#nexus-ai-wp-translator-settings-form');
@@ -414,16 +414,16 @@
             var formData = form.serialize();
             formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
             
-            console.log('NexusAI Debug: Saving settings with form data');
+            console.debug('[Nexus Translator]: Saving settings with form data');
             
             $.post(nexus_ai_wp_translator_ajax.ajax_url, formData)
             .done(function(response) {
-                console.log('NexusAI Debug: Save settings response:', response);
+                console.debug('[Nexus Translator]: Save settings response:', response);
                 var noticeClass = response.success ? 'success' : 'error';
                 NexusAIWPTranslatorAdmin.showGlobalNotice(noticeClass, response.data);
             })
             .fail(function(xhr, status, error) {
-                console.log('NexusAI Debug: Save settings failed:', error);
+                console.debug('[Nexus Translator]: Save settings failed:', error);
                 NexusAIWPTranslatorAdmin.showGlobalNotice('error', 'Failed to save settings. Please try again.');
             })
             .always(function() {
@@ -433,7 +433,7 @@
 
         // Clear translation cache button
         $('#nexus-ai-wp-clear-cache').on('click', function() {
-            console.log('NexusAI Debug: Clear cache button clicked');
+            console.debug('[Nexus Translator]: Clear cache button clicked');
 
             var button = $(this);
             var resultSpan = $('#nexus-ai-wp-clear-cache-result');
@@ -446,7 +446,7 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Clear cache response:', response);
+                console.debug('[Nexus Translator]: Clear cache response:', response);
                 if (response.success) {
                     resultSpan.html('<span style="color: green;">✓ ' + response.data + '</span>');
                 } else {
@@ -454,7 +454,7 @@
                 }
             })
             .fail(function(xhr, status, error) {
-                console.log('NexusAI Debug: Clear cache failed:', error);
+                console.debug('[Nexus Translator]: Clear cache failed:', error);
                 resultSpan.html('<span style="color: red;">✗ Failed to clear cache</span>');
             })
             .always(function() {
@@ -481,11 +481,11 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing translation actions');
+        console.debug('[Nexus Translator]: Initializing translation actions');
         
         // Manual translation trigger
         $(document).on('click', '#nexus-ai-wp-translate-post', function() {
-            console.log('NexusAI Debug: Translate post button clicked');
+            console.debug('[Nexus Translator]: Translate post button clicked');
 
             var button = $(this);
             var postId = NexusAIWPTranslatorAdmin.getPostId();
@@ -495,7 +495,7 @@
                 targetLanguages.push($(this).val());
             });
 
-            console.log('NexusAI Debug: Post ID:', postId, 'Target languages:', targetLanguages);
+            console.debug('[Nexus Translator]: Post ID:', postId, 'Target languages:', targetLanguages);
 
             if (targetLanguages.length === 0) {
                 alert('Please select at least one target language.');
@@ -518,14 +518,14 @@
 
         // Resume translation trigger
         $(document).on('click', '.resume-translation-btn', function() {
-            console.log('NexusAI Debug: Resume translation button clicked');
+            console.debug('[Nexus Translator]: Resume translation button clicked');
 
             var button = $(this);
             var postId = button.data('post-id');
             var postTitle = button.data('post-title');
             var resumableLanguages = button.data('resumable-languages').split(',');
 
-            console.log('NexusAI Debug: Resume for post ID:', postId, 'Languages:', resumableLanguages);
+            console.debug('[Nexus Translator]: Resume for post ID:', postId, 'Languages:', resumableLanguages);
 
             if (!confirm('Resume failed translations for: ' + resumableLanguages.join(', ') + '?')) {
                 return;
@@ -537,20 +537,20 @@
 
         // Add to queue trigger
         $(document).on('click', '.add-to-queue-btn', function() {
-            console.log('NexusAI Debug: Add to queue button clicked');
+            console.debug('[Nexus Translator]: Add to queue button clicked');
 
             var button = $(this);
             var postId = button.data('post-id');
             var postTitle = button.data('post-title');
 
-            console.log('NexusAI Debug: Add to queue for post ID:', postId);
+            console.debug('[Nexus Translator]: Add to queue for post ID:', postId);
 
             NexusAIWPTranslatorAdmin.showAddToQueueDialog(postId, postTitle);
         });
         
         // Translation status check
         $(document).on('click', '#nexus-ai-wp-get-translation-status', function() {
-            console.log('NexusAI Debug: Get translation status clicked');
+            console.debug('[Nexus Translator]: Get translation status clicked');
             
             var button = $(this);
             var postId = NexusAIWPTranslatorAdmin.getPostId();
@@ -563,7 +563,7 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Translation status response:', response);
+                console.debug('[Nexus Translator]: Translation status response:', response);
                 
                 if (response.success && response.data.length > 0) {
                     var html = '<ul>';
@@ -583,7 +583,7 @@
         
         // Unlink translation
         $(document).on('click', '.nexus-ai-wp-unlink-translation, .unlink-translation', function() {
-            console.log('NexusAI Debug: Unlink translation clicked');
+            console.debug('[Nexus Translator]: Unlink translation clicked');
             
             if (!confirm('Are you sure you want to unlink this translation?')) {
                 return;
@@ -603,7 +603,7 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Unlink response:', response);
+                console.debug('[Nexus Translator]: Unlink response:', response);
                 
                 if (response.success) {
                     row.fadeOut(300, function() {
@@ -615,7 +615,7 @@
                 }
             })
             .fail(function(xhr, status, error) {
-                console.log('NexusAI Debug: Unlink failed:', error);
+                console.debug('[Nexus Translator]: Unlink failed:', error);
                 alert('Network error occurred');
                 button.prop('disabled', false).text('Unlink');
             });
@@ -634,10 +634,10 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing status refresh');
+        console.debug('[Nexus Translator]: Initializing status refresh');
         
         $('#nexus-ai-wp-refresh-stats').on('click', function() {
-            console.log('NexusAI Debug: Refresh stats clicked');
+            console.debug('[Nexus Translator]: Refresh stats clicked');
             
             var button = $(this);
             button.prop('disabled', true).text('Refreshing...');
@@ -648,7 +648,7 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Refresh stats response:', response);
+                console.debug('[Nexus Translator]: Refresh stats response:', response);
                 
                 if (response.success) {
                     location.reload();
@@ -674,10 +674,10 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing bulk actions');
+        console.debug('[Nexus Translator]: Initializing bulk actions');
 
         $('#cleanup-orphaned').on('click', function() {
-            console.log('NexusAI Debug: Cleanup orphaned clicked');
+            console.debug('[Nexus Translator]: Cleanup orphaned clicked');
 
             if (!confirm('Are you sure you want to clean up orphaned relationships? This will remove all relationships where posts have been deleted.')) {
                 return;
@@ -691,7 +691,7 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
-                console.log('NexusAI Debug: Cleanup response:', response);
+                console.debug('[Nexus Translator]: Cleanup response:', response);
 
                 if (response.success) {
                     location.reload();
@@ -717,7 +717,7 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing progress dialog');
+        console.debug('[Nexus Translator]: Initializing progress dialog');
 
         // Progress dialog close button
         $(document).on('click', '#nexus-ai-wp-progress-close', function() {
@@ -748,7 +748,7 @@
      * Show notice in a specific container
      */
     showNotice: function(container, type, message) {
-        console.log('NexusAI Debug: Showing notice:', type, message);
+        console.debug('[Nexus Translator]: Showing notice:', type, message);
         var noticeClass = 'notice-' + type;
         container.html('<div class="notice ' + noticeClass + '"><p>' + message + '</p></div>');
     },
@@ -765,7 +765,7 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Showing global notice:', type, message);
+        console.debug('[Nexus Translator]: Showing global notice:', type, message);
         var noticeClass = 'notice-' + type;
         var notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
         
@@ -800,7 +800,7 @@
             var urlParams = new URLSearchParams(window.location.search);
             postId = urlParams.get('post');
         }
-        console.log('NexusAI Debug: Current post ID:', postId);
+        console.debug('[Nexus Translator]: Current post ID:', postId);
         return postId;
     },
 
@@ -816,11 +816,11 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Checking for auto translation status');
+        console.debug('[Nexus Translator]: Checking for auto translation status');
 
         var postId = this.getPostId();
         if (!postId) {
-            console.log('NexusAI Debug: No post ID found, skipping auto translation check');
+            console.debug('[Nexus Translator]: No post ID found, skipping auto translation check');
             return;
         }
 
@@ -830,14 +830,14 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: Auto translation status response:', response);
+            console.debug('[Nexus Translator]: Auto translation status response:', response);
 
             if (response.success && response.data && response.data.has_auto_translation) {
                 NexusAIWPTranslatorAdmin.showAutoTranslationProgress(response.data);
             }
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Auto translation status check failed:', error);
+            console.debug('[Nexus Translator]: Auto translation status check failed:', error);
         });
     },
 
@@ -846,7 +846,7 @@
      * Show auto translation progress popup
      */
     showAutoTranslationProgress: function(data) {
-        console.log('NexusAI Debug: Showing auto translation progress:', data);
+        console.debug('[Nexus Translator]: Showing auto translation progress:', data);
         
         // Language names mapping
         var languageNames = {
@@ -972,7 +972,7 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Dismissing auto translation popup');
+        console.debug('[Nexus Translator]: Dismissing auto translation popup');
 
         var postId = this.getPostId();
         if (postId) {
@@ -992,7 +992,7 @@
      * Start translation with progress dialog
      */
     startTranslationWithProgress: function(postId, postTitle, targetLanguages, button) {
-        console.log('NexusAI Debug: Starting translation with progress dialog');
+        console.debug('[Nexus Translator]: Starting translation with progress dialog');
 
         // Show progress dialog
         this.showProgressDialog(postTitle, targetLanguages);
@@ -1008,7 +1008,7 @@
      * Show progress dialog
      */
     showProgressDialog: function(postTitle, targetLanguages) {
-        console.log('NexusAI Debug: Showing progress dialog');
+        console.debug('[Nexus Translator]: Showing progress dialog');
 
         // Update dialog content
         $('#nexus-ai-wp-progress-post-title').text(postTitle);
@@ -1061,7 +1061,7 @@
     performTranslationWithProgress: function(postId, targetLanguages, button) {
         var self = this;
 
-        console.log('NexusAI Debug: Starting AJAX translation request with real-time progress');
+        console.debug('[Nexus Translator]: Starting AJAX translation request with real-time progress');
 
         // Generate unique progress ID
         var progressId = 'trans_' + postId + '_' + targetLanguages.join('_') + '_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -1075,7 +1075,7 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: Translation response:', response);
+            console.debug('[Nexus Translator]: Translation response:', response);
 
             if (response.success) {
                 self.handleTranslationSuccess(response, button);
@@ -1084,7 +1084,7 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Translation failed:', error);
+            console.debug('[Nexus Translator]: Translation failed:', error);
             self.handleTranslationError('Network error: ' + error, button);
         });
 
@@ -1097,7 +1097,7 @@
      */
     startRealTimeProgressTracking: function(progressId) {
         var self = this;
-        console.log('NexusAI Debug: Starting real-time progress tracking for:', progressId);
+        console.debug('[Nexus Translator]: Starting real-time progress tracking for:', progressId);
 
         // Poll for progress updates every 500ms
         var progressInterval = setInterval(function() {
@@ -1113,14 +1113,14 @@
                     // Stop polling if translation is complete or failed
                     if (response.data.status === 'completed' || response.data.status === 'failed') {
                         clearInterval(progressInterval);
-                        console.log('NexusAI Debug: Progress tracking completed:', response.data.status);
+                        console.debug('[Nexus Translator]: Progress tracking completed:', response.data.status);
                     }
                 } else {
-                    console.log('NexusAI Debug: Progress tracking error:', response.message);
+                    console.debug('[Nexus Translator]: Progress tracking error:', response.message);
                 }
             })
             .fail(function() {
-                console.log('NexusAI Debug: Progress tracking request failed');
+                console.debug('[Nexus Translator]: Progress tracking request failed');
             });
         }, 500);
 
@@ -1131,7 +1131,7 @@
         setTimeout(function() {
             if (self.progressInterval) {
                 clearInterval(self.progressInterval);
-                console.log('NexusAI Debug: Progress tracking timeout - cleaning up');
+                console.debug('[Nexus Translator]: Progress tracking timeout - cleaning up');
             }
         }, 300000);
     },
@@ -1140,7 +1140,7 @@
      * Update progress with real-time data
      */
     updateRealTimeProgress: function(progressData) {
-        console.log('NexusAI Debug: Updating real-time progress:', progressData);
+        console.debug('[Nexus Translator]: Updating real-time progress:', progressData);
 
         // Update progress bar
         var percentage = progressData.progress_percentage || 0;
@@ -1279,7 +1279,7 @@
      * Handle translation success
      */
     handleTranslationSuccess: function(response, button) {
-        console.log('NexusAI Debug: Handling translation success');
+        console.debug('[Nexus Translator]: Handling translation success');
 
         // Clear progress interval
         if (this.progressInterval) {
@@ -1308,7 +1308,7 @@
      * Handle translation error
      */
     handleTranslationError: function(errorMessage, button) {
-        console.log('NexusAI Debug: Handling translation error:', errorMessage);
+        console.debug('[Nexus Translator]: Handling translation error:', errorMessage);
 
         // Clear progress interval
         if (this.progressInterval) {
@@ -1331,7 +1331,7 @@
      * Show success dialog
      */
     showSuccessDialog: function(response) {
-        console.log('NexusAI Debug: Showing success dialog');
+        console.debug('[Nexus Translator]: Showing success dialog');
 
         var successCount = response.success_count || 0;
         var errorCount = response.error_count || 0;
@@ -1365,7 +1365,7 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing bulk actions interface');
+        console.debug('[Nexus Translator]: Initializing bulk actions interface');
 
         // Update selection count when checkboxes change
         $(document).on('change', '.select-post-checkbox, .select-all-checkbox', function() {
@@ -1399,7 +1399,7 @@
                 return;
             }
 
-            console.log('NexusAI Debug: Bulk action:', action, 'for posts:', selectedPosts);
+            console.debug('[Nexus Translator]: Bulk action:', action, 'for posts:', selectedPosts);
 
             // Handle different actions
             switch(action) {
@@ -1490,7 +1490,7 @@
      * Handle bulk set language action
      */
     handleBulkSetLanguage: function(selectedPosts) {
-        console.log('NexusAI Debug: Handling bulk set language');
+        console.debug('[Nexus Translator]: Handling bulk set language');
 
         // Show language selection dialog
         this.showBulkSetLanguageDialog(selectedPosts);
@@ -1500,7 +1500,7 @@
      * Handle bulk translate action
      */
     handleBulkTranslate: function(selectedPosts) {
-        console.log('NexusAI Debug: Handling bulk translate');
+        console.debug('[Nexus Translator]: Handling bulk translate');
 
         // Check existing translations and show dialog
         this.showBulkTranslateDialog(selectedPosts);
@@ -1604,7 +1604,7 @@
      * Perform bulk translation
      */
     performBulkTranslation: function(selectedPosts, targetLanguages) {
-        console.log('NexusAI Debug: Starting bulk translation for', selectedPosts.length, 'posts to', targetLanguages);
+        console.debug('[Nexus Translator]: Starting bulk translation for', selectedPosts.length, 'posts to', targetLanguages);
 
         // Show progress dialog for bulk translation
         this.showBulkTranslationProgress(selectedPosts, targetLanguages);
@@ -1857,7 +1857,7 @@
             return post.id;
         });
 
-        console.log('NexusAI Debug: Linking posts:', postIds, 'with source:', sourcePostId);
+        console.debug('[Nexus Translator]: Linking posts:', postIds, 'with source:', sourcePostId);
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_bulk_link_posts',
@@ -1918,7 +1918,7 @@
      * Start resume translation with progress dialog
      */
     startResumeTranslation: function(postId, postTitle, resumableLanguages, button) {
-        console.log('NexusAI Debug: Starting resume translation');
+        console.debug('[Nexus Translator]: Starting resume translation');
 
         // Show progress dialog
         this.showProgressDialog(postTitle + ' (Resume)', resumableLanguages);
@@ -1936,7 +1936,7 @@
     performResumeTranslation: function(postId, resumableLanguages, button) {
         var self = this;
 
-        console.log('NexusAI Debug: Starting AJAX resume translation request');
+        console.debug('[Nexus Translator]: Starting AJAX resume translation request');
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_resume_translation',
@@ -1945,7 +1945,7 @@
             nonce: nexus_ai_wp_translator_ajax.nonce
         })
         .done(function(response) {
-            console.log('NexusAI Debug: Resume translation response:', response);
+            console.debug('[Nexus Translator]: Resume translation response:', response);
 
             if (response.success) {
                 self.handleTranslationSuccess(response, button);
@@ -1954,7 +1954,7 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.log('NexusAI Debug: Resume translation failed:', error);
+            console.debug('[Nexus Translator]: Resume translation failed:', error);
             self.handleTranslationError('Network error: ' + error, button);
         });
 
@@ -2014,14 +2014,14 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing quality assessment interface');
+        console.debug('[Nexus Translator]: Initializing quality assessment interface');
 
         // Handle quality details button clicks
         $(document).on('click', '.nexus-ai-wp-quality-details', function() {
             var button = $(this);
             var postId = button.data('post-id');
 
-            console.log('NexusAI Debug: Quality details requested for post:', postId);
+            console.debug('[Nexus Translator]: Quality details requested for post:', postId);
 
             NexusAIWPTranslatorAdmin.showQualityDetailsDialog(postId);
         });
@@ -2201,7 +2201,7 @@
 
         var $ = jQuery; // Ensure $ is available within this method
 
-        console.log('NexusAI Debug: Initializing translation queue interface');
+        console.debug('[Nexus Translator]: Initializing translation queue interface');
 
         // Auto-refresh queue when tab is active
         this.queueRefreshInterval = null;
@@ -2271,11 +2271,11 @@
             if (response.success) {
                 self.updateQueueDisplay(response.data);
             } else {
-                console.log('NexusAI Debug: Failed to load queue data:', response.message);
+                console.debug('[Nexus Translator]: Failed to load queue data:', response.message);
             }
         })
         .fail(function() {
-            console.log('NexusAI Debug: Network error loading queue data');
+            console.debug('[Nexus Translator]: Network error loading queue data');
         });
     },
 
@@ -2750,7 +2750,7 @@
             return post.id;
         });
 
-        console.log('NexusAI Debug: Setting language', language, 'for posts:', postIds);
+        console.debug('[Nexus Translator]: Setting language', language, 'for posts:', postIds);
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_bulk_set_language',
@@ -2787,7 +2787,7 @@
             return post.id;
         });
 
-        console.log('NexusAI Debug: Unlinking posts:', postIds);
+        console.debug('[Nexus Translator]: Unlinking posts:', postIds);
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_bulk_unlink_posts',
@@ -2823,7 +2823,7 @@
             return post.id;
         });
 
-        console.log('NexusAI Debug: Deleting posts:', postIds);
+        console.debug('[Nexus Translator]: Deleting posts:', postIds);
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_bulk_delete_posts',
@@ -2859,7 +2859,7 @@
             return post.id;
         });
 
-        console.log('NexusAI Debug: Clearing cache for posts:', postIds);
+        console.debug('[Nexus Translator]: Clearing cache for posts:', postIds);
 
         $.post(nexus_ai_wp_translator_ajax.ajax_url, {
             action: 'nexus_ai_wp_bulk_clear_cache_posts',
@@ -2882,14 +2882,14 @@
 
     // Make NexusAIWPTranslatorAdmin globally available immediately
     window.NexusAIWPTranslatorAdmin = NexusAIWPTranslatorAdmin;
-    console.log('NexusAI Debug: NexusAIWPTranslatorAdmin made globally available');
+    console.debug('[Nexus Translator]: NexusAIWPTranslatorAdmin made globally available');
 
     // Initialize when document is ready with proper jQuery scoping
     jQuery(document).ready(function($) {
         'use strict';
 
-        console.log('NexusAI Debug: JavaScript function wrapper started');
-        console.log('NexusAI Debug: Document ready, initializing admin interface');
+        console.debug('[Nexus Translator]: JavaScript function wrapper started');
+        console.debug('[Nexus Translator]: Document ready, initializing admin interface');
 
         if (window.NexusAIWPTranslatorAdmin) {
             window.NexusAIWPTranslatorAdmin.init();
@@ -2905,7 +2905,7 @@
                 try {
                     window.NexusAIWPTranslatorAdmin.checkAutoTranslation();
                 } catch(error) {
-                    console.log('NexusAI Debug: Auto translation check failed:', error);
+                    console.debug('[Nexus Translator]: Auto translation check failed:', error);
                 }
             }, 1500);
         }
