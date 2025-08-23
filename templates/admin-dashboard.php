@@ -30,8 +30,8 @@ if (!defined('ABSPATH')) {
             <div class="nexus-ai-wp-dashboard-grid">
                 <!-- Row 1: Analytics -->
                 <div class="nexus-ai-wp-dashboard-row">
-                    <!-- Primary Analytics (2x2 sub-grid) -->
-                    <div class="nexus-ai-wp-dashboard-section">
+                    <!-- Col 1: Primary Analytics (2x2 sub-grid) -->
+                    <div class="nexus-ai-wp-dashboard-section" style="grid-column: 1 / 2;">
                         <h3><?php _e('Primary Analytics', 'nexus-ai-wp-translator'); ?></h3>
                         <div class="nexus-ai-wp-analytics-grid">
                             <div class="nexus-ai-wp-analytics-card">
@@ -65,8 +65,8 @@ if (!defined('ABSPATH')) {
                         </div>
                     </div>
 
-                    <!-- Secondary Analytics (2x2 sub-grid) -->
-                    <div class="nexus-ai-wp-dashboard-section">
+                    <!-- Col 2: Secondary Analytics (2x2 sub-grid) -->
+                    <div class="nexus-ai-wp-dashboard-section" style="grid-column: 2 / 3;">
                         <h3><?php _e('Secondary Analytics', 'nexus-ai-wp-translator'); ?></h3>
                         <div class="nexus-ai-wp-analytics-grid">
                             <div class="nexus-ai-wp-analytics-card">
@@ -103,8 +103,8 @@ if (!defined('ABSPATH')) {
 
                 <!-- Row 2: System Status & Quick Actions -->
                 <div class="nexus-ai-wp-dashboard-row">
-                    <!-- System Status Panel -->
-                    <div class="nexus-ai-wp-dashboard-section">
+                    <!-- Col 1: System Status Panel -->
+                    <div class="nexus-ai-wp-dashboard-section" style="grid-column: 1 / 2;">
                         <h3><?php _e('System Status', 'nexus-ai-wp-translator'); ?></h3>
                         <div class="nexus-ai-wp-status-panel">
                             <div class="status-item" id="claude-api-status">
@@ -140,8 +140,8 @@ if (!defined('ABSPATH')) {
                         </div>
                     </div>
 
-                    <!-- Quick Actions Panel -->
-                    <div class="nexus-ai-wp-dashboard-section">
+                    <!-- Col 2: Quick Actions Panel -->
+                    <div class="nexus-ai-wp-dashboard-section" style="grid-column: 2 / 3;">
                         <h3><?php _e('Quick Actions', 'nexus-ai-wp-translator'); ?></h3>
                         <div class="nexus-ai-wp-quick-actions-grid">
                             <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>

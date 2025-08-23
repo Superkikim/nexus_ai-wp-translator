@@ -103,14 +103,15 @@
 /* Dashboard Tab Styles */
 .nexus-ai-wp-dashboard-grid {
     display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    grid-auto-flow: row;
     gap: 30px;
     margin-bottom: 30px;
 }
 
+/* Rows act as grouping only; children become grid items */
 .nexus-ai-wp-dashboard-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    display: contents;
 }
 
 .nexus-ai-wp-dashboard-section {
@@ -130,10 +131,11 @@
     padding-bottom: 10px;
 }
 
-/* Analytics Grid */
+/* Analytics Grid (2x2) */
 .nexus-ai-wp-analytics-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    grid-auto-rows: 1fr;
     gap: 15px;
 }
 
@@ -229,6 +231,7 @@
 /* Quick Actions Grid */
 .nexus-ai-wp-quick-actions-grid {
     display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
 }
 
@@ -264,7 +267,7 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .nexus-ai-wp-dashboard-row {
+    .nexus-ai-wp-dashboard-grid {
         grid-template-columns: 1fr;
     }
 }
