@@ -98,6 +98,190 @@
 .action-buttons {
     display: flex;
     gap: 10px;
+}
+
+/* Dashboard Tab Styles */
+.nexus-ai-wp-dashboard-grid {
+    display: grid;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.nexus-ai-wp-dashboard-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.nexus-ai-wp-dashboard-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.nexus-ai-wp-dashboard-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #23282d;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* Analytics Grid */
+.nexus-ai-wp-analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.nexus-ai-wp-analytics-card {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.nexus-ai-wp-analytics-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #0073aa;
+}
+
+.nexus-ai-wp-analytics-card .analytics-icon {
+    font-size: 24px;
+    width: 40px;
+    text-align: center;
+}
+
+.nexus-ai-wp-analytics-card .analytics-content {
+    flex: 1;
+}
+
+.nexus-ai-wp-analytics-card .analytics-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.nexus-ai-wp-analytics-card .analytics-value {
+    font-size: 14px;
+    color: #0073aa;
+    font-weight: 600;
+}
+
+/* Status Panel */
+.nexus-ai-wp-status-panel {
+    display: grid;
+    gap: 15px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.status-item .status-icon {
+    font-size: 20px;
+    width: 30px;
+    text-align: center;
+}
+
+.status-item .status-content {
+    flex: 1;
+}
+
+.status-item .status-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.status-item .status-value {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-success {
+    color: #46b450;
+}
+
+.status-error {
+    color: #dc3232;
+}
+
+.status-warning {
+    color: #ffb900;
+}
+
+/* Quick Actions Grid */
+.nexus-ai-wp-quick-actions-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.nexus-ai-wp-action-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: not-allowed;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.nexus-ai-wp-action-button.placeholder-button {
+    opacity: 0.6;
+}
+
+.nexus-ai-wp-action-button .action-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.nexus-ai-wp-action-button .action-text {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .nexus-ai-wp-dashboard-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .nexus-ai-wp-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .nexus-ai-wp-dashboard-section {
+        padding: 15px;
+    }
+
+    .nexus-ai-wp-analytics-card {
+        padding: 12px;
+    }
+}
     flex-wrap: wrap;
 }
 

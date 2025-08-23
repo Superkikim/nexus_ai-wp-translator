@@ -14,15 +14,164 @@ if (!defined('ABSPATH')) {
     <!-- Content Management Tabs -->
     <div class="nexus-ai-wp-content-tabs">
         <nav class="nav-tab-wrapper">
-            <a href="#articles-tab" class="nav-tab nav-tab-active"><?php _e('Articles', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#dashboard-tab" class="nav-tab nav-tab-active"><?php _e('Dashboard', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#articles-tab" class="nav-tab"><?php _e('Articles', 'nexus-ai-wp-translator'); ?></a>
             <a href="#pages-tab" class="nav-tab"><?php _e('Pages', 'nexus-ai-wp-translator'); ?></a>
             <a href="#events-tab" class="nav-tab"><?php _e('Events', 'nexus-ai-wp-translator'); ?></a>
             <a href="#queue-tab" class="nav-tab"><?php _e('Translation Queue', 'nexus-ai-wp-translator'); ?></a>
-            <a href="#analytics-tab" class="nav-tab"><?php _e('Analytics', 'nexus-ai-wp-translator'); ?></a>
+            <a href="#logs-tab" class="nav-tab"><?php _e('Logs', 'nexus-ai-wp-translator'); ?></a>
         </nav>
-        
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <h2><?php _e('Dashboard Overview', 'nexus-ai-wp-translator'); ?></h2>
+
+            <!-- Dashboard Grid Layout -->
+            <div class="nexus-ai-wp-dashboard-grid">
+                <!-- Row 1: Analytics -->
+                <div class="nexus-ai-wp-dashboard-row">
+                    <!-- Primary Analytics (2x2 sub-grid) -->
+                    <div class="nexus-ai-wp-dashboard-section">
+                        <h3><?php _e('Primary Analytics', 'nexus-ai-wp-translator'); ?></h3>
+                        <div class="nexus-ai-wp-analytics-grid">
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">📊</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Translation Volume', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Translation count data will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">⭐</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Quality Score', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Average quality metrics will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">🌍</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Popular Languages', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Language pair statistics will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">⚡</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Processing Speed', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Performance metrics will go here]</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Analytics (2x2 sub-grid) -->
+                    <div class="nexus-ai-wp-dashboard-section">
+                        <h3><?php _e('Secondary Analytics', 'nexus-ai-wp-translator'); ?></h3>
+                        <div class="nexus-ai-wp-analytics-grid">
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">⏳</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Pending Queue', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Queue statistics will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">💾</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Storage Usage', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Storage metrics will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">🔌</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('API Usage', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: API usage data will go here]</div>
+                                </div>
+                            </div>
+                            <div class="nexus-ai-wp-analytics-card">
+                                <div class="analytics-icon">❌</div>
+                                <div class="analytics-content">
+                                    <div class="analytics-label"><?php _e('Error Rate', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="analytics-value">[PLACEHOLDER: Error statistics will go here]</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: System Status & Quick Actions -->
+                <div class="nexus-ai-wp-dashboard-row">
+                    <!-- System Status Panel -->
+                    <div class="nexus-ai-wp-dashboard-section">
+                        <h3><?php _e('System Status', 'nexus-ai-wp-translator'); ?></h3>
+                        <div class="nexus-ai-wp-status-panel">
+                            <div class="status-item" id="claude-api-status">
+                                <div class="status-icon">🔄</div>
+                                <div class="status-content">
+                                    <div class="status-label"><?php _e('Claude API Status', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-value"><?php _e('Checking...', 'nexus-ai-wp-translator'); ?></div>
+                                </div>
+                            </div>
+                            <div class="status-item" id="anthropic-service-status">
+                                <div class="status-icon">🌐</div>
+                                <div class="status-content">
+                                    <div class="status-label"><?php _e('Anthropic Service Status', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-value"><?php _e('Checking...', 'nexus-ai-wp-translator'); ?></div>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">⚙️</div>
+                                <div class="status-content">
+                                    <div class="status-label"><?php _e('Plugin Status', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-value status-success"><?php _e('Active', 'nexus-ai-wp-translator'); ?></div>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon">🔒</div>
+                                <div class="status-content">
+                                    <div class="status-label"><?php _e('API Key', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-value <?php echo get_option('nexus_ai_wp_translator_api_key') ? 'status-success' : 'status-error'; ?>">
+                                        <?php echo get_option('nexus_ai_wp_translator_api_key') ? __('Configured', 'nexus-ai-wp-translator') : __('Not Configured', 'nexus-ai-wp-translator'); ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Panel -->
+                    <div class="nexus-ai-wp-dashboard-section">
+                        <h3><?php _e('Quick Actions', 'nexus-ai-wp-translator'); ?></h3>
+                        <div class="nexus-ai-wp-quick-actions-grid">
+                            <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>
+                                <span class="action-icon">🚀</span>
+                                <span class="action-text">[PLACEHOLDER BUTTON: Primary action will go here]</span>
+                            </button>
+                            <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>
+                                <span class="action-icon">⚡</span>
+                                <span class="action-text">[PLACEHOLDER BUTTON: Secondary action will go here]</span>
+                            </button>
+                            <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>
+                                <span class="action-icon">📤</span>
+                                <span class="action-text">[PLACEHOLDER BUTTON: Export action will go here]</span>
+                            </button>
+                            <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>
+                                <span class="action-icon">🗄️</span>
+                                <span class="action-text">[PLACEHOLDER BUTTON: Cache action will go here]</span>
+                            </button>
+                            <button type="button" class="nexus-ai-wp-action-button placeholder-button" disabled>
+                                <span class="action-icon">🚨</span>
+                                <span class="action-text">[PLACEHOLDER BUTTON: Emergency action will go here]</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Articles Tab -->
-        <div id="articles-tab" class="tab-content active">
+        <div id="articles-tab" class="tab-content">
             <h2><?php _e('Articles to Translate', 'nexus-ai-wp-translator'); ?></h2>
 
             <!-- Action Buttons Explanation -->
@@ -288,146 +437,73 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="nexus-ai-wp-translator-dashboard">
-        <!-- Statistics Cards -->
-        <div class="nexus-ai-wp-stats-cards">
-            <div class="nexus-ai-wp-stat-card">
-                <h3><?php _e('Total Translations', 'nexus-ai-wp-translator'); ?></h3>
-                <div class="stat-number"><?php echo number_format(intval($stats['total'] ?? 0)); ?></div>
+        <!-- Logs Tab -->
+        <div id="logs-tab" class="tab-content">
+            <h2><?php _e('Translation Logs', 'nexus-ai-wp-translator'); ?></h2>
+
+            <div class="nexus-ai-wp-logs-filters">
+                <form method="get" action="" id="logs-filter-form">
+                    <input type="hidden" name="page" value="nexus-ai-wp-translator-dashboard" />
+                    <input type="hidden" name="tab" value="logs" />
+
+                    <select name="status" id="logs-status-filter">
+                        <option value=""><?php _e('All Statuses', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="success"><?php _e('Success', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="error"><?php _e('Error', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="processing"><?php _e('Processing', 'nexus-ai-wp-translator'); ?></option>
+                    </select>
+
+                    <select name="action" id="logs-action-filter">
+                        <option value=""><?php _e('All Actions', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="translate"><?php _e('Translation', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="queue"><?php _e('Queue', 'nexus-ai-wp-translator'); ?></option>
+                        <option value="link"><?php _e('Link', 'nexus-ai-wp-translator'); ?></option>
+                    </select>
+
+                    <input type="text" name="search" id="logs-search" placeholder="<?php _e('Search logs...', 'nexus-ai-wp-translator'); ?>" />
+
+                    <input type="submit" class="button" value="<?php _e('Filter', 'nexus-ai-wp-translator'); ?>" />
+                    <button type="button" class="button" id="clear-logs-filters">
+                        <?php _e('Clear Filters', 'nexus-ai-wp-translator'); ?>
+                    </button>
+                    <button type="button" class="button" id="refresh-logs">
+                        <?php _e('Refresh', 'nexus-ai-wp-translator'); ?>
+                    </button>
+                </form>
             </div>
-            
-            <div class="nexus-ai-wp-stat-card">
-                <h3><?php _e('Recent (7 days)', 'nexus-ai-wp-translator'); ?></h3>
-                <div class="stat-number"><?php echo number_format(intval($stats['recent'] ?? 0)); ?></div>
-            </div>
-            
-            <div class="nexus-ai-wp-stat-card">
-                <h3><?php _e('Success Rate', 'nexus-ai-wp-translator'); ?></h3>
-                <div class="stat-number"><?php echo number_format(floatval($stats['success_rate'] ?? 0), 1); ?>%</div>
-            </div>
-            
-            <div class="nexus-ai-wp-stat-card">
-                <h3><?php _e('API Calls (7 days)', 'nexus-ai-wp-translator'); ?></h3>
-                <div class="stat-number"><?php echo number_format(intval($stats['api_calls'] ?? 0)); ?></div>
-            </div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="nexus-ai-wp-quick-actions">
-            <h2><?php _e('Quick Actions', 'nexus-ai-wp-translator'); ?></h2>
-            <div class="action-buttons">
-                <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-settings'); ?>" class="button button-primary">
-                    <?php _e('Settings', 'nexus-ai-wp-translator'); ?>
-                </a>
-                <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-logs'); ?>" class="button">
-                    <?php _e('View Logs', 'nexus-ai-wp-translator'); ?>
-                </a>
-                <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-relationships'); ?>" class="button">
-                    <?php _e('Manage Relationships', 'nexus-ai-wp-translator'); ?>
-                </a>
-                <button id="nexus-ai-wp-refresh-stats" class="button">
-                    <?php _e('Refresh Stats', 'nexus-ai-wp-translator'); ?>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Recent Activity -->
-        <div class="nexus-ai-wp-recent-activity">
-            <h2><?php _e('Recent Translation Activity', 'nexus-ai-wp-translator'); ?></h2>
-            
-            <?php if ($recent_logs): ?>
-                <table class="wp-list-table widefat fixed striped">
+
+            <div id="logs-table-container">
+                <table class="wp-list-table widefat fixed striped" id="logs-table">
                     <thead>
                         <tr>
+                            <th><?php _e('Date/Time', 'nexus-ai-wp-translator'); ?></th>
                             <th><?php _e('Post', 'nexus-ai-wp-translator'); ?></th>
                             <th><?php _e('Action', 'nexus-ai-wp-translator'); ?></th>
                             <th><?php _e('Status', 'nexus-ai-wp-translator'); ?></th>
-                            <th><?php _e('Time', 'nexus-ai-wp-translator'); ?></th>
+                            <th><?php _e('Message', 'nexus-ai-wp-translator'); ?></th>
+                            <th><?php _e('API Calls', 'nexus-ai-wp-translator'); ?></th>
+                            <th><?php _e('Processing Time', 'nexus-ai-wp-translator'); ?></th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php foreach ($recent_logs as $log): ?>
-                            <tr>
-                                <td>
-                                    <?php if ($log->post_title): ?>
-                                        <a href="<?php echo get_edit_post_link($log->post_id); ?>"><?php echo esc_html($log->post_title); ?></a>
-                                    <?php else: ?>
-                                        <span class="deleted-post"><?php _e('Deleted Post', 'nexus-ai-wp-translator'); ?> (ID: <?php echo $log->post_id; ?>)</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo esc_html($log->action); ?></td>
-                                <td>
-                                    <span class="status-<?php echo esc_attr($log->status); ?>">
-                                        <?php echo esc_html(ucfirst($log->status)); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo human_time_diff(strtotime($log->created_at), current_time('timestamp')) . ' ' . __('ago', 'nexus-ai-wp-translator'); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
+                    <tbody id="logs-tbody">
+                        <tr>
+                            <td colspan="7" class="nexus-ai-wp-loading"><?php _e('Loading logs...', 'nexus-ai-wp-translator'); ?></td>
+                        </tr>
                     </tbody>
                 </table>
-                
-                <p>
-                    <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-logs'); ?>" class="button">
-                        <?php _e('View All Logs', 'nexus-ai-wp-translator'); ?>
-                    </a>
-                </p>
-            <?php else: ?>
-                <p><?php _e('No translation activity yet.', 'nexus-ai-wp-translator'); ?></p>
-            <?php endif; ?>
-        </div>
-        
-        <!-- System Status -->
-        <div class="nexus-ai-wp-system-status">
-            <h2><?php _e('System Status', 'nexus-ai-wp-translator'); ?></h2>
-            
-            <table class="form-table">
-                <tr>
-                    <th><?php _e('API Key Status', 'nexus-ai-wp-translator'); ?></th>
-                    <td>
-                        <?php if (get_option('nexus_ai_wp_translator_api_key')): ?>
-                            <span class="status-success"><?php _e('Configured', 'nexus-ai-wp-translator'); ?></span>
-                        <?php else: ?>
-                            <span class="status-error"><?php _e('Not Configured', 'nexus-ai-wp-translator'); ?></span>
-                            <a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-settings'); ?>" class="button button-small">
-                                <?php _e('Configure', 'nexus-ai-wp-translator'); ?>
-                            </a>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <th><?php _e('Auto Translation', 'nexus-ai-wp-translator'); ?></th>
-                    <td>
-                        <?php if (get_option('nexus_ai_wp_translator_auto_translate', true)): ?>
-                            <span class="status-success"><?php _e('Enabled', 'nexus-ai-wp-translator'); ?></span>
-                        <?php else: ?>
-                            <span class="status-warning"><?php _e('Disabled', 'nexus-ai-wp-translator'); ?></span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <th><?php _e('Throttle Status', 'nexus-ai-wp-translator'); ?></th>
-                    <td>
-                        <?php
-                        $db = Nexus_AI_WP_Translator_Database::get_instance();
-                        $throttle_limit = get_option('nexus_ai_wp_translator_throttle_limit', 10);
-                        $current_calls = $db->get_throttle_status(60);
-                        
-                        if ($current_calls < $throttle_limit):
-                        ?>
-                            <span class="status-success"><?php printf(__('%d/%d calls used', 'nexus-ai-wp-translator'), $current_calls, $throttle_limit); ?></span>
-                        <?php else: ?>
-                            <span class="status-error"><?php _e('Limit reached', 'nexus-ai-wp-translator'); ?></span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="tablenav" id="logs-pagination">
+                <div class="tablenav-pages">
+                    <!-- Pagination will be loaded here -->
+                </div>
+            </div>
         </div>
     </div>
+
+
 </div>
 
 <script>
@@ -435,26 +511,51 @@ jQuery(document).ready(function($) {
     // Tab switching for content tabs
     $('.nexus-ai-wp-content-tabs .nav-tab').on('click', function(e) {
         e.preventDefault();
-        
+
         var target = $(this).attr('href');
-        
+
         // Update nav tabs
         $('.nexus-ai-wp-content-tabs .nav-tab').removeClass('nav-tab-active');
         $(this).addClass('nav-tab-active');
-        
+
         // Update tab content
         $('.nexus-ai-wp-content-tabs .tab-content').removeClass('active');
         $(target).addClass('active');
-        
+
         // Save active tab
         localStorage.setItem('nexus_ai_wp_translator_content_tab', target);
+
+        // Load tab-specific content using dashboard module
+        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadTabContent === 'function') {
+            NexusAIWPTranslatorDashboard.loadTabContent(target);
+        }
     });
-    
-    // Restore active tab
+
+    // Restore active tab or default to dashboard
     var activeContentTab = localStorage.getItem('nexus_ai_wp_translator_content_tab');
     if (activeContentTab && $(activeContentTab).length) {
         $('.nexus-ai-wp-content-tabs .nav-tab[href="' + activeContentTab + '"]').click();
+    } else {
+        // Default to dashboard tab
+        $('.nexus-ai-wp-content-tabs .nav-tab[href="#dashboard-tab"]').click();
     }
+
+    // Add logs refresh functionality
+    $(document).on('click', '#refresh-logs', function() {
+        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadLogsData === 'function') {
+            NexusAIWPTranslatorDashboard.loadLogsData();
+        }
+    });
+
+    // Add logs filter clear functionality
+    $(document).on('click', '#clear-logs-filters', function() {
+        $('#logs-status-filter').val('');
+        $('#logs-action-filter').val('');
+        $('#logs-search').val('');
+        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadLogsData === 'function') {
+            NexusAIWPTranslatorDashboard.loadLogsData();
+        }
+    });
     
     // Translate individual post - show language selection popup
     $(document).on('click', '.translate-post-btn', function() {

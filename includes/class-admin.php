@@ -78,6 +78,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_resume_translation', array($this, 'ajax_resume_translation'));
         add_action('wp_ajax_nexus_ai_wp_get_progress', array($this, 'ajax_get_progress'));
         add_action('wp_ajax_nexus_ai_wp_get_quality_details', array($this, 'ajax_get_quality_details'));
+        add_action('wp_ajax_nexus_ai_wp_get_logs', array($this, 'ajax_get_logs'));
         add_action('wp_ajax_nexus_ai_wp_reassess_quality', array($this, 'ajax_reassess_quality'));
         add_action('wp_ajax_nexus_ai_wp_detailed_assessment', array($this, 'ajax_detailed_assessment'));
         
@@ -156,14 +157,7 @@ class Nexus_AI_WP_Translator_Admin {
             array($this, 'admin_page_settings')
         );
         
-        add_submenu_page(
-            'nexus-ai-wp-translator-dashboard',
-            __('Translation Logs', 'nexus-ai-wp-translator'),
-            __('Logs', 'nexus-ai-wp-translator'),
-            'manage_options',
-            'nexus-ai-wp-translator-logs',
-            array($this, 'admin_page_logs')
-        );
+
         
         add_submenu_page(
             'nexus-ai-wp-translator-dashboard',
@@ -561,18 +555,7 @@ class Nexus_AI_WP_Translator_Admin {
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
     }
     
-    /**
-     * Logs page
-     */
-    public function admin_page_logs() {
-        $page = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
-        $per_page = 20;
-        $offset = ($page - 1) * $per_page;
-        
-        $logs = $this->db->get_translation_logs($per_page, $offset);
-        
-        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-logs.php';
-    }
+
     
     /**
      * Relationships page
@@ -1484,6 +1467,55 @@ class Nexus_AI_WP_Translator_Admin {
             'message' => __('Detailed quality assessment completed', 'nexus-ai-wp-translator'),
             'quality_data' => $result['data'],
             'cost' => $result['data']['api_cost'] ?? 0.05
+        ));
+    }
+
+    /**
+     * AJAX: Get logs for dashboard
+     */
+    public function ajax_get_logs() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+        $per_page = isset($_POST['per_page']) ? intval($_POST['per_page']) : 20;
+        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+        $action = isset($_POST['action_filter']) ? sanitize_text_field($_POST['action_filter']) : '';
+        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+
+        $offset = ($page - 1) * $per_page;
+
+        if (!$this->db) {
+            wp_send_json_error(__('Database connection error', 'nexus-ai-wp-translator'));
+            return;
+        }
+
+        $logs = $this->db->get_translation_logs($per_page, $offset, $status, $action, $search);
+
+        // Format logs for JSON response
+        $formatted_logs = array();
+        foreach ($logs as $log) {
+            $formatted_logs[] = array(
+                'id' => $log->id,
+                'post_id' => $log->post_id,
+                'post_title' => $log->post_title,
+                'action' => $log->action,
+                'status' => $log->status,
+                'message' => $log->message,
+                'api_calls_count' => intval($log->api_calls_count),
+                'processing_time' => floatval($log->processing_time),
+                'created_at' => date('Y-m-d H:i:s', strtotime($log->created_at))
+            );
+        }
+
+        wp_send_json_success(array(
+            'logs' => $formatted_logs,
+            'total' => count($formatted_logs),
+            'page' => $page,
+            'per_page' => $per_page
         ));
     }
 }

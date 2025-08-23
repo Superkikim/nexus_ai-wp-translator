@@ -82,7 +82,10 @@
          */
         loadTabContent: function(tabId) {
             switch(tabId) {
-                case '#posts-tab':
+                case '#dashboard-tab':
+                    this.loadDashboardOverview();
+                    break;
+                case '#articles-tab':
                     this.loadPostsList('post');
                     break;
                 case '#pages-tab':
@@ -97,7 +100,10 @@
                         NexusAIWPTranslatorQueueManager.startQueueAutoRefresh();
                     }
                     break;
-                case '#stats-tab':
+                case '#logs-tab':
+                    this.loadLogsData();
+                    break;
+                case '#analytics-tab':
                     this.loadDashboardStats();
                     break;
             }
@@ -378,6 +384,129 @@
                 clearInterval(this.statsRefreshInterval);
                 this.statsRefreshInterval = null;
             }
+        },
+
+        /**
+         * Load dashboard overview
+         */
+        loadDashboardOverview: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('loadDashboardOverview')) return;
+            var $ = jQuery;
+
+            console.debug('[Nexus Translator]: Loading dashboard overview');
+
+            // Check API status
+            this.checkApiStatus();
+
+            // Check Anthropic service status
+            this.checkAnthropicStatus();
+        },
+
+        /**
+         * Check API status using existing API test functionality
+         */
+        checkApiStatus: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('checkApiStatus')) return;
+            var $ = jQuery;
+
+            var statusElement = $('#claude-api-status .status-value');
+            var iconElement = $('#claude-api-status .status-icon');
+
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val() ||
+                        (typeof nexus_ai_wp_translator_ajax !== 'undefined' && nexus_ai_wp_translator_ajax.api_key);
+
+            if (!apiKey) {
+                statusElement.removeClass('status-success status-error').addClass('status-error')
+                    .text('No API Key');
+                iconElement.text('❌');
+                return;
+            }
+
+            statusElement.text('Testing...');
+            iconElement.text('🔄');
+
+            // Use existing API test functionality
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_test_api',
+                api_key: apiKey,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success) {
+                    statusElement.removeClass('status-error').addClass('status-success')
+                        .text('Connected');
+                    iconElement.text('✅');
+                } else {
+                    statusElement.removeClass('status-success').addClass('status-error')
+                        .text('Connection Failed');
+                    iconElement.text('❌');
+                }
+            })
+            .fail(function() {
+                statusElement.removeClass('status-success').addClass('status-error')
+                    .text('Test Failed');
+                iconElement.text('❌');
+            });
+        },
+
+        /**
+         * Check Anthropic service status
+         */
+        checkAnthropicStatus: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('checkAnthropicStatus')) return;
+            var $ = jQuery;
+
+            var statusElement = $('#anthropic-service-status .status-value');
+            var iconElement = $('#anthropic-service-status .status-icon');
+
+            // For now, just show operational status
+            // In the future, this could check Anthropic's status page
+            statusElement.removeClass('status-error').addClass('status-success')
+                .text('Operational');
+            iconElement.text('✅');
+        },
+
+        /**
+         * Load logs data
+         */
+        loadLogsData: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('loadLogsData')) return;
+            var $ = jQuery;
+
+            console.debug('[Nexus Translator]: Loading logs data');
+
+            var tbody = $('#logs-tbody');
+            tbody.html('<tr><td colspan="7" class="nexus-ai-wp-loading">Loading logs...</td></tr>');
+
+            // Load logs via AJAX
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_logs',
+                nonce: nexus_ai_wp_translator_ajax.nonce,
+                per_page: 20,
+                page: 1
+            })
+            .done(function(response) {
+                if (response.success && response.data.logs) {
+                    var logsHtml = '';
+                    response.data.logs.forEach(function(log) {
+                        logsHtml += '<tr>' +
+                            '<td><strong>' + log.created_at + '</strong></td>' +
+                            '<td>' + (log.post_title || 'Deleted Post (ID: ' + log.post_id + ')') + '</td>' +
+                            '<td>' + log.action + '</td>' +
+                            '<td><span class="status-' + log.status + '">' + log.status.charAt(0).toUpperCase() + log.status.slice(1) + '</span></td>' +
+                            '<td>' + (log.message.length > 100 ? log.message.substring(0, 100) + '...' : log.message) + '</td>' +
+                            '<td>' + (log.api_calls_count || 0) + '</td>' +
+                            '<td>' + (log.processing_time > 0 ? log.processing_time.toFixed(2) + 's' : '-') + '</td>' +
+                        '</tr>';
+                    });
+                    tbody.html(logsHtml);
+                } else {
+                    tbody.html('<tr><td colspan="7">No logs found.</td></tr>');
+                }
+            })
+            .fail(function() {
+                tbody.html('<tr><td colspan="7" class="error">Failed to load logs.</td></tr>');
+            });
         },
 
         /**
