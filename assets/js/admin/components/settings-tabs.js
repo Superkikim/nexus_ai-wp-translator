@@ -109,6 +109,7 @@
                 
                 // Serialize form data
                 var formData = form.serialize();
+                // Only send fields actually present; avoid forcing defaults
                 formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
                 
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, formData)

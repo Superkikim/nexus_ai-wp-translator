@@ -60,11 +60,11 @@ class Nexus_AI_WP_Translator_Plugin {
         // Register uninstall hook
         register_uninstall_hook(__FILE__, 'nexus_ai_wp_translator_uninstall');
 
-        // Check for version updates on every load
-        add_action('plugins_loaded', array($this, 'check_version_update'));
+        // Check for version updates on every load (early)
+        add_action('plugins_loaded', array($this, 'check_version_update'), 1);
 
-        // Initialize components
-        add_action('init', array($this, 'init_components'));
+        // Initialize components (after upgrade check)
+        add_action('init', array($this, 'init_components'), 5);
     }
     
     /**
@@ -327,7 +327,7 @@ class Nexus_AI_WP_Translator_Plugin {
             foreach ($default_options as $key => $value) {
                 // Only add if option doesn't exist (preserves existing settings)
                 if (false === get_option('nexus_ai_wp_translator_' . $key)) {
-                    add_option('nexus_ai_wp_translator_' . $key, $value);
+                    add_option('nexus_ai_wp_translator_' . $key, $value, '', false);
                     if (defined('WP_DEBUG') && WP_DEBUG) {
                         error_log("Nexus AI WP Translator: Added default option: {$key}");
                     }

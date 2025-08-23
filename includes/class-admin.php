@@ -789,73 +789,69 @@ class Nexus_AI_WP_Translator_Admin {
     }
     
     /**
-     * AJAX: Save settings
+     * AJAX: Save settings (idempotent, non-destructive)
+     * Only updates keys explicitly provided in POST.
      */
     public function ajax_save_settings() {
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Nexus AI WP Translator: Saving settings via AJAX');
-        }
-        
-        // Validate and sanitize input data
-        $api_key = isset($_POST['nexus_ai_wp_translator_api_key']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_api_key']) : '';
-        $model = isset($_POST['nexus_ai_wp_translator_model']) ? sanitize_text_field($_POST['nexus_ai_wp_translator_model']) : '';
-        
-        // Debug: Log what model we're trying to save
-        error_log('Nexus AI WP Translator: Attempting to save model: "' . $model . '"');
-        error_log('Nexus AI WP Translator: Model POST data: ' . print_r($_POST['nexus_ai_wp_translator_model'] ?? 'NOT SET', true));
-        
-        $target_languages = isset($_POST['nexus_ai_wp_translator_target_languages']) ? array_map('sanitize_text_field', (array) $_POST['nexus_ai_wp_translator_target_languages']) : array();
-        $use_llm_quality_assessment = isset($_POST['nexus_ai_wp_translator_use_llm_quality_assessment']) ? true : false;
-        $save_as_draft = isset($_POST['nexus_ai_wp_translator_save_as_draft']) ? true : false;
-        $throttle_limit = isset($_POST['nexus_ai_wp_translator_throttle_limit']) ? intval($_POST['nexus_ai_wp_translator_throttle_limit']) : 10;
-        $throttle_period = isset($_POST['nexus_ai_wp_translator_throttle_period']) ? intval($_POST['nexus_ai_wp_translator_throttle_period']) : 3600;
-        $retry_attempts = isset($_POST['nexus_ai_wp_translator_retry_attempts']) ? intval($_POST['nexus_ai_wp_translator_retry_attempts']) : 3;
-        $cache_translations = isset($_POST['nexus_ai_wp_translator_cache_translations']) ? true : false;
 
-        $settings = array(
-            'api_key' => $api_key,
-            'model' => $model,
-            'target_languages' => $target_languages,
-            'use_llm_quality_assessment' => $use_llm_quality_assessment,
-            'save_as_draft' => $save_as_draft,
-            'throttle_limit' => $throttle_limit,
-            'throttle_period' => $throttle_period,
-            'retry_attempts' => $retry_attempts,
-            'cache_translations' => $cache_translations
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Saving settings via AJAX (non-destructive)');
+        }
+
+        $updated_any = false;
+        $errors = array();
+
+        // Map of POST field => [option_key, sanitizer, validator]
+        $fields = array(
+            'nexus_ai_wp_translator_api_key' => array('api_key', 'sanitize_text_field', null),
+            'nexus_ai_wp_translator_model' => array('model', 'sanitize_text_field', null),
+            'nexus_ai_wp_translator_target_languages' => array('target_languages', null, function($v){ return is_array($v); }),
+            'nexus_ai_wp_translator_use_llm_quality_assessment' => array('use_llm_quality_assessment', function($v){ return (bool)$v; }, null),
+            'nexus_ai_wp_translator_save_as_draft' => array('save_as_draft', function($v){ return (bool)$v; }, null),
+            'nexus_ai_wp_translator_throttle_limit' => array('throttle_limit', 'intval', function($v){ return $v >= 1; }),
+            'nexus_ai_wp_translator_throttle_period' => array('throttle_period', 'intval', function($v){ return $v >= 60; }),
+            'nexus_ai_wp_translator_retry_attempts' => array('retry_attempts', 'intval', function($v){ return $v >= 1 && $v <= 10; }),
+            'nexus_ai_wp_translator_cache_translations' => array('cache_translations', function($v){ return (bool)$v; }, null),
         );
-        
-        // Validate settings
-        if ($throttle_limit < 1) {
-            wp_send_json_error(__('Throttle limit must be at least 1', 'nexus-ai-wp-translator'));
-            return;
-        }
-        
-        if ($throttle_period < 60) {
-            wp_send_json_error(__('Throttle period must be at least 60 seconds', 'nexus-ai-wp-translator'));
-            return;
-        }
-        
-        if ($retry_attempts < 1 || $retry_attempts > 10) {
-            wp_send_json_error(__('Retry attempts must be between 1 and 10', 'nexus-ai-wp-translator'));
-            return;
-        }
-        
-        foreach ($settings as $key => $value) {
-            update_option('nexus_ai_wp_translator_' . $key, $value);
-            
-            // Verify the save worked, especially for model
+
+        foreach ($fields as $post_key => $meta) {
+            if (!isset($_POST[$post_key])) {
+                continue; // Do not overwrite existing option when field not sent
+            }
+            list($option_key, $sanitizer, $validator) = $meta;
+            $raw = $_POST[$post_key];
+
+            // Normalize arrays (e.g., target_languages)
+            if ($post_key === 'nexus_ai_wp_translator_target_languages') {
+                $value = array_map('sanitize_text_field', (array)$raw);
+            } else {
+                $value = $sanitizer ? call_user_func($sanitizer, $raw) : $raw;
+            }
+
+            if (is_callable($validator) && !$validator($value)) {
+                $errors[] = $option_key;
+                continue;
+            }
+
+            update_option('nexus_ai_wp_translator_' . $option_key, $value);
+            $updated_any = true;
+
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                $saved_value = get_option('nexus_ai_wp_translator_' . $key);
-                error_log("Nexus AI WP Translator: Updated setting {$key} = '" . print_r($value, true) . "', verified: '" . print_r($saved_value, true) . "'");
+                $saved_value = get_option('nexus_ai_wp_translator_' . $option_key);
+                error_log("Nexus AI WP Translator: Updated setting {$option_key} = '" . print_r($value, true) . "', verified: '" . print_r($saved_value, true) . "'");
             }
         }
-        
+
+        if (!empty($errors)) {
+            wp_send_json_error(array('message' => __('Some fields failed validation', 'nexus-ai-wp-translator'), 'fields' => $errors));
+        }
+
+        // If nothing to update, still return success (idempotent)
         wp_send_json_success(__('Settings saved successfully', 'nexus-ai-wp-translator'));
     }
     

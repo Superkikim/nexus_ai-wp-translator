@@ -753,6 +753,7 @@ jQuery(document).ready(function($) {
     function dynamicSaveSettings(callback) {
         var form = $('#nexus-ai-wp-translator-settings-form');
         var formData = form.serialize();
+        // Do not include unchecked checkboxes as false; only send what changed/present
         formData += '&action=nexus_ai_wp_save_settings&nonce=' + nexus_ai_wp_translator_ajax.nonce;
         
         // Capture current model selection before save
