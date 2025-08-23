@@ -1493,7 +1493,8 @@ class Nexus_AI_WP_Translator_Admin {
             return;
         }
 
-        $logs = $this->db->get_translation_logs($per_page, $offset, $status, $action, $search);
+        // Current DB method supports limit+offset only
+        $logs = $this->db->get_translation_logs($per_page, $offset);
 
         // Format logs for JSON response
         $formatted_logs = array();

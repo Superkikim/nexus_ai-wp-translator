@@ -563,7 +563,9 @@ jQuery(document).ready(function($) {
         var postId = button.data('post-id');
         var postTitle = button.data('post-title');
 
-        NexusAIWPTranslatorDashboard.showLanguageSelectionPopup(postId, postTitle);
+        if (window.NexusAIWPTranslatorDashboardUI) {
+            NexusAIWPTranslatorDashboardUI.showLanguageSelectionPopup(postId, postTitle);
+        }
     });
     
     $('#nexus-ai-wp-refresh-stats').on('click', function() {
@@ -585,8 +587,8 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // Dashboard-specific translation functions
-    var NexusAIWPTranslatorDashboard = {
+    // Dashboard-specific translation UI functions (avoid clashing with module global)
+    var NexusAIWPTranslatorDashboardUI = {
 
         showLanguageSelectionPopup: function(postId, postTitle) {
             // Get available target languages
@@ -653,17 +655,17 @@ jQuery(document).ready(function($) {
 
             // Handle popup events
             $('#nexus-ai-wp-cancel-translate, .nexus-ai-wp-popup-close').on('click', function() {
-                NexusAIWPTranslatorDashboard.closeTranslatePopup();
+                NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
             });
 
             $('#nexus-ai-wp-start-translate').on('click', function() {
-                NexusAIWPTranslatorDashboard.startTranslation(postId, postTitle);
+                NexusAIWPTranslatorDashboardUI.startTranslation(postId, postTitle);
             });
 
             // Close on background click
             $('#nexus-ai-wp-translate-popup').on('click', function(e) {
                 if (e.target === this) {
-                    NexusAIWPTranslatorDashboard.closeTranslatePopup();
+                    NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
                 }
             });
         },
@@ -707,7 +709,7 @@ jQuery(document).ready(function($) {
                 alert('<?php _e('Network error occurred', 'nexus-ai-wp-translator'); ?>');
             })
             .always(function() {
-                NexusAIWPTranslatorDashboard.closeTranslatePopup();
+                NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
             });
         }
     };
