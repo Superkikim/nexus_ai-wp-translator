@@ -227,7 +227,7 @@ if (!defined('ABSPATH')) {
             
             function linkSelectedItems() {
                 // This function is implemented in assets/js/admin.js
-                console.log('Link selected items - functionality implemented in admin.js');
+                console.debug('[Nexus Translator]:Link selected items - functionality implemented in admin.js');
             }
         });
         </script>

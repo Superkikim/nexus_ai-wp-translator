@@ -5,9 +5,9 @@
 (function() {
     'use strict';
     
-    console.log('*** Nexus AI WP Translator: Block editor script STARTING ***');
-    console.log('Nexus AI WP Translator: Current URL:', window.location.href);
-    console.log('Nexus AI WP Translator: Document ready state:', document.readyState);
+    console.debug('[Nexus Translator]:*** Nexus AI WP Translator: Block editor script STARTING ***');
+    console.debug('[Nexus Translator]: Current URL:', window.location.href);
+    console.debug('[Nexus Translator]: Document ready state:', document.readyState);
     
     // Check if required WordPress objects are available
     if (typeof wp === 'undefined') {
@@ -15,14 +15,14 @@
         return;
     }
     
-    console.log('Nexus AI WP Translator: wp object available:', Object.keys(wp));
+    console.debug('[Nexus Translator]: wp object available:', Object.keys(wp));
     
     if (!wp.blocks) {
         console.error('Nexus AI WP Translator: wp.blocks not available');
         return;
     }
     
-    console.log('Nexus AI WP Translator: wp.blocks available, version:', wp.blocks.registerBlockType ? 'NEW' : 'OLD');
+    console.debug('[Nexus Translator]: wp.blocks available, version:', wp.blocks.registerBlockType ? 'NEW' : 'OLD');
     
     const { registerBlockType } = wp.blocks;
     const { InspectorControls, BlockControls, AlignmentToolbar } = wp.blockEditor;
@@ -30,18 +30,18 @@
     const { __ } = wp.i18n;
     const { createElement: el, Fragment } = wp.element;
     
-    console.log('Nexus AI WP Translator: All WP components loaded successfully');
+    console.debug('[Nexus Translator]: All WP components loaded successfully');
     
     // Check if our localized data is available
     if (typeof nexusAiWpTranslatorBlock === 'undefined') {
         console.error('Nexus AI WP Translator: nexusAiWpTranslatorBlock not available');
-        console.log('Nexus AI WP Translator: Available global variables:', Object.keys(window));
+        console.debug('[Nexus Translator]: Available global variables:', Object.keys(window));
         return;
     }
     
-    console.log('Nexus AI WP Translator: Localized data available:', nexusAiWpTranslatorBlock);
+    console.debug('[Nexus Translator]: Localized data available:', nexusAiWpTranslatorBlock);
     
-    console.log('Nexus AI WP Translator: About to register block type...');
+    console.debug('[Nexus Translator]: About to register block type...');
     
     const blockRegistration = {
         title: nexusAiWpTranslatorBlock.title,
@@ -73,7 +73,7 @@
             const { attributes, setAttributes } = props;
             const { style, showFlags, alignment } = attributes;
             
-            console.log('Nexus AI WP Translator: Block edit function called with attributes:', attributes);
+            console.debug('[Nexus Translator]: Block edit function called with attributes:', attributes);
             
             function onChangeStyle(newStyle) {
                 setAttributes({ style: newStyle });
@@ -89,7 +89,7 @@
             
             // Add some debug info to the preview
             const debugInfo = 'Debug: style=' + style + ', showFlags=' + showFlags + ', alignment=' + alignment;
-            console.log('Nexus AI WP Translator: Block preview -', debugInfo);
+            console.debug('[Nexus Translator]: Block preview -', debugInfo);
             
             // Preview component
             const preview = el('div', {
@@ -178,11 +178,11 @@
         }
     };
     
-    console.log('Nexus AI WP Translator: Block registration object:', blockRegistration);
+    console.debug('[Nexus Translator]: Block registration object:', blockRegistration);
     
     try {
         const result = registerBlockType('nexus-ai-wp-translator/language-switcher', blockRegistration);
-        console.log('*** Nexus AI WP Translator: Block registered successfully! ***', result);
+        console.debug('[Nexus Translator]:*** Nexus AI WP Translator: Block registered successfully! ***', result);
     } catch (error) {
         console.error('*** Nexus AI WP Translator: Block registration FAILED ***', error);
     }

@@ -509,7 +509,7 @@ jQuery(document).ready(function($) {
         }, function(response) {
             if (response.success) {
                 apiKeyChanged = false;
-                console.log('API key saved automatically');
+                console.debug('[Nexus Translator]:API key saved automatically');
             }
         });
     }

@@ -73,13 +73,13 @@
          * Switch to a specific language
          */
         switchLanguage: function(language) {
-            console.log('Switching to language:', language);
+            console.debug('[Nexus Translator]:Switching to language:', language);
             
             // Get URL from dropdown option if available
             var targetUrl = $('.nexus-ai-wp-language-select option[value="' + language + '"]').data('url');
             
             if (targetUrl && targetUrl !== '') {
-                console.log('Using URL from dropdown option:', targetUrl);
+                console.debug('[Nexus Translator]:Using URL from dropdown option:', targetUrl);
                 window.location.href = targetUrl;
                 return;
             }
@@ -94,7 +94,7 @@
             var currentUrl = window.location.href;
             var newUrl = this.buildLanguageUrl(currentUrl, language);
             
-            console.log('Redirecting from', currentUrl, 'to', newUrl);
+            console.debug('[Nexus Translator]:Redirecting from', currentUrl, 'to', newUrl);
             
             // Add fade effect
             $('body').addClass('nexus-ai-wp-content-fade switching');
@@ -187,12 +187,12 @@
             var browserLanguage = this.detectBrowserLanguage();
             var sourceLanguage = nexus_ai_wp_translator.source_language || 'en';
             
-            console.log('Browser language detected:', browserLanguage);
-            console.log('Source language:', sourceLanguage);
+            console.debug('[Nexus Translator]:Browser language detected:', browserLanguage);
+            console.debug('[Nexus Translator]:Source language:', sourceLanguage);
             
             // Don't redirect if browser language is the same as source language
             var supportedLanguages = this.getSupportedLanguages();
-            console.log('Supported languages:', supportedLanguages);
+            console.debug('[Nexus Translator]:Supported languages:', supportedLanguages);
             
             if (browserLanguage && supportedLanguages.includes(browserLanguage)) {
                 // Mark as visited
@@ -202,13 +202,13 @@
                 if (browserLanguage !== sourceLanguage) {
                     var newUrl = this.buildLanguageUrl(window.location.href, browserLanguage);
                     if (newUrl !== window.location.href) {
-                        console.log('Auto-redirecting to browser language:', browserLanguage);
-                        console.log('New URL:', newUrl);
+                        console.debug('[Nexus Translator]:Auto-redirecting to browser language:', browserLanguage);
+                        console.debug('[Nexus Translator]:New URL:', newUrl);
                         window.location.href = newUrl;
                     }
                 }
             } else {
-                console.log('Browser language not supported or same as source');
+                console.debug('[Nexus Translator]:Browser language not supported or same as source');
             }
         },
         
@@ -217,7 +217,7 @@
          */
         detectBrowserLanguage: function() {
             var language = navigator.language || navigator.userLanguage;
-            console.log('Detected browser language:', language);
+            console.debug('[Nexus Translator]:Detected browser language:', language);
             if (language) {
                 // Try full language code first (e.g., en-US)
                 if (this.isLanguageSupported(language)) {

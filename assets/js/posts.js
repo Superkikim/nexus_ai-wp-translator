@@ -89,7 +89,7 @@
          * Check for linked posts before action
          */
         checkLinkedPosts: function(postId, action, originalLink) {
-            console.log('Checking linked posts for post ID:', postId, 'Action:', action);
+            console.debug('[Nexus Translator]:Checking linked posts for post ID:', postId, 'Action:', action);
             
             $.post(nexus_ai_wp_translator_posts.ajax_url, {
                 action: 'nexus_ai_wp_get_linked_posts',
@@ -97,7 +97,7 @@
                 nonce: nexus_ai_wp_translator_posts.nonce
             })
             .done(function(response) {
-                console.log('Linked posts response:', response);
+                console.debug('[Nexus Translator]:Linked posts response:', response);
                 
                 if (response.success && response.data.length > 0) {
                     // Show confirmation popup
@@ -108,7 +108,7 @@
                 }
             })
             .fail(function(xhr, status, error) {
-                console.log('Failed to check linked posts:', error);
+                console.debug('[Nexus Translator]:Failed to check linked posts:', error);
                 // On error, proceed with original action
                 NexusAIWPTranslatorPosts.proceedWithOriginalAction(originalLink);
             });
@@ -178,7 +178,7 @@
          * Handle post action with user choice
          */
         handlePostAction: function(postId, action, choice, originalLink) {
-            console.log('Handling post action:', postId, action, choice);
+            console.debug('[Nexus Translator]:Handling post action:', postId, action, choice);
             
             // Show processing state
             $('.nexus-ai-wp-popup-buttons button').prop('disabled', true);
@@ -242,7 +242,7 @@
          * Proceed with original action (no linked posts)
          */
         proceedWithOriginalAction: function(originalLink) {
-            console.log('Proceeding with original action');
+            console.debug('[Nexus Translator]:Proceeding with original action');
             // Remove our event handler temporarily and trigger the original action
             var href = originalLink.attr('href');
             window.location.href = href;
