@@ -81,7 +81,10 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_get_logs', array($this, 'ajax_get_logs'));
         add_action('wp_ajax_nexus_ai_wp_reassess_quality', array($this, 'ajax_reassess_quality'));
         add_action('wp_ajax_nexus_ai_wp_detailed_assessment', array($this, 'ajax_detailed_assessment'));
-        
+
+        // Posts list (dashboard tabs)
+        add_action('wp_ajax_nexus_ai_wp_get_posts_list', array($this, 'ajax_get_posts_list'));
+
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
             add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
@@ -1513,6 +1516,30 @@ class Nexus_AI_WP_Translator_Admin {
             'total' => count($formatted_logs),
             'page' => $page,
             'per_page' => $per_page
+        ));
+    }
+
+    /**
+     * AJAX: Get posts list for dashboard tabs
+     */
+    public function ajax_get_posts_list() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_type = isset($_POST['post_type']) ? sanitize_key($_POST['post_type']) : 'post';
+        $filter = isset($_POST['filter']) ? sanitize_text_field($_POST['filter']) : '';
+        $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+        $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
+
+        // Basic list for now; TODO: apply filter/search/pagination when supported
+        $html = $this->render_posts_list($post_type);
+
+        wp_send_json_success(array(
+            'html' => $html,
+            'pagination' => ''
         ));
     }
 }
