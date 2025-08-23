@@ -336,6 +336,7 @@ class Nexus_AI_WP_Translator_Admin {
         $ajax_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
+            'api_key' => get_option('nexus_ai_wp_translator_api_key', ''),
             'debug' => defined('WP_DEBUG') && WP_DEBUG,
             'strings' => array(
                 'testing' => __('Testing API connection...', 'nexus-ai-wp-translator'),
@@ -736,17 +737,19 @@ class Nexus_AI_WP_Translator_Admin {
             return;
         }
         
-        $api_key = sanitize_text_field($_POST['api_key']);
+        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: API key received for test (length: ' . strlen($api_key) . ')');
         }
-        
-        // Save the API key in database and test it
-        update_option('nexus_ai_wp_translator_api_key', $api_key);
-        
-        // Refresh API key in handler
+
+        // Only update stored key if a non-empty key is provided to avoid wiping existing valid keys
+        if (!empty($api_key)) {
+            update_option('nexus_ai_wp_translator_api_key', $api_key);
+        }
+
+        // Refresh API key in handler (will pick up stored key if none provided)
         $this->api_handler->refresh_api_key();
-        
+
         $result = $this->api_handler->test_api_connection();
         
         wp_send_json($result);
@@ -771,17 +774,19 @@ class Nexus_AI_WP_Translator_Admin {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
         
-        $api_key = sanitize_text_field($_POST['api_key']);
+        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: API key for models (length: ' . strlen($api_key) . ')');
         }
-        
-        // Save the API key in database and get models
-        update_option('nexus_ai_wp_translator_api_key', $api_key);
-        
-        // Refresh API key in handler
+
+        // Only update stored key if a non-empty key is provided
+        if (!empty($api_key)) {
+            update_option('nexus_ai_wp_translator_api_key', $api_key);
+        }
+
+        // Refresh API key in handler (uses stored key if none provided)
         $this->api_handler->refresh_api_key();
-        
+
         $result = $this->api_handler->get_available_models();
         
         if (defined('WP_DEBUG') && WP_DEBUG) {

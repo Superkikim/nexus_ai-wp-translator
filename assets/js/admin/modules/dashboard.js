@@ -8,7 +8,7 @@
 
     // Dashboard module object
     var NexusAIWPTranslatorDashboard = {
-        
+
         /**
          * Initialize dashboard functionality
          */
@@ -20,20 +20,35 @@
 
             // Initialize dashboard tabs
             this.initDashboardTabs();
-            
+
             // Initialize post lists
             this.initPostLists();
-            
+
             // Initialize dashboard stats
             this.initDashboardStats();
-            
+
             // Initialize dashboard actions
             this.initDashboardActions();
+
+            // Make Pending Queue clickable to open Queue tab
+            jQuery(document).on('click', '#dashboard-pending-queue', function(e) {
+                e.preventDefault();
+                jQuery('.nexus-ai-wp-content-tabs .nav-tab[href="#queue-tab"]').trigger('click');
+            });
 
             // Enhance quality displays
             setTimeout(function() {
                 NexusAIWPTranslatorDashboard.enhanceQualityDisplays();
             }, 500);
+            // Wire "Queue" buttons in posts tables to open Add to Queue dialog
+            jQuery(document).on('click', '.add-to-queue-btn', function() {
+                var $btn = jQuery(this);
+                var postId = $btn.data('post-id');
+                var postTitle = $btn.data('post-title');
+                if (window.NexusAIWPTranslatorQueueManager && typeof NexusAIWPTranslatorQueueManager.showAddToQueueDialog === 'function') {
+                    NexusAIWPTranslatorQueueManager.showAddToQueueDialog(postId, postTitle);
+                }
+            });
         },
 
         /**
@@ -46,27 +61,27 @@
             // Handle dashboard tab switching
             $(document).on('click', '.nexus-ai-wp-dashboard-tab', function(e) {
                 e.preventDefault();
-                
+
                 var target = $(this).attr('href');
                 console.debug('[Nexus Translator]: Dashboard tab clicked:', target);
-                
+
                 // Remove active class from all tabs and content
                 $('.nexus-ai-wp-dashboard-tab').removeClass('nav-tab-active');
                 $('.nexus-ai-wp-dashboard-content').removeClass('active').hide();
-                
+
                 // Add active class to clicked tab
                 $(this).addClass('nav-tab-active');
-                
+
                 // Show corresponding content
                 $(target).addClass('active').show();
-                
+
                 // Store active tab in localStorage
                 localStorage.setItem('nexus_ai_wp_translator_dashboard_tab', target);
-                
+
                 // Load tab-specific content
                 this.loadTabContent(target);
             }.bind(this));
-            
+
             // Restore active tab from localStorage or URL hash
             var activeTab = window.location.hash || localStorage.getItem('nexus_ai_wp_translator_dashboard_tab');
             if (activeTab && $(activeTab).length > 0) {
@@ -120,9 +135,9 @@
             $(document).on('change', '.nexus-ai-wp-post-filter', function() {
                 var postType = $(this).data('post-type');
                 var filterValue = $(this).val();
-                
+
                 console.debug('[Nexus Translator]: Filtering posts:', postType, filterValue);
-                
+
                 NexusAIWPTranslatorDashboard.loadPostsList(postType, filterValue);
             });
 
@@ -130,21 +145,21 @@
             $(document).on('input', '.nexus-ai-wp-post-search', NexusAIWPTranslatorCore.debounce(function() {
                 var postType = $(this).data('post-type');
                 var searchTerm = $(this).val();
-                
+
                 console.debug('[Nexus Translator]: Searching posts:', postType, searchTerm);
-                
+
                 NexusAIWPTranslatorDashboard.loadPostsList(postType, null, searchTerm);
             }, 500));
 
             // Handle post list pagination
             $(document).on('click', '.nexus-ai-wp-post-pagination a', function(e) {
                 e.preventDefault();
-                
+
                 var postType = $(this).data('post-type');
                 var page = $(this).data('page');
-                
+
                 console.debug('[Nexus Translator]: Loading page:', postType, page);
-                
+
                 NexusAIWPTranslatorDashboard.loadPostsList(postType, null, null, page);
             });
         },
@@ -216,7 +231,7 @@
             $(document).on('click', '#nexus-ai-wp-refresh-dashboard-stats', function() {
                 var button = $(this);
                 button.prop('disabled', true).text('Refreshing...');
-                
+
                 NexusAIWPTranslatorDashboard.loadDashboardStats(null, function() {
                     button.prop('disabled', false).text('Refresh');
                 });
@@ -235,10 +250,23 @@
             NexusAIWPTranslatorAjax.getStats(period, function(response) {
                 if (response.success && response.data) {
                     NexusAIWPTranslatorDashboard.displayDashboardStats(response.data);
+                    // Also refresh queue stats for dashboard tile
+                    if (window.NexusAIWPTranslatorQueueManager) {
+                        // Fetch minimal queue stats and update the Pending Queue link text
+                        jQuery.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                            action: 'nexus_ai_wp_get_queue_status',
+                            status: 'pending',
+                            limit: 1,
+                            nonce: nexus_ai_wp_translator_ajax.nonce
+                        }).done(function(resp){
+                            var pending = (resp && resp.success && resp.data && resp.data.statistics && resp.data.statistics.pending) ? resp.data.statistics.pending : 0;
+                            jQuery('#dashboard-pending-queue').text(pending);
+                        });
+                    }
                 } else {
                     console.debug('[Nexus Translator]: Failed to load dashboard stats');
                 }
-                
+
                 if (callback) callback();
             });
         },
@@ -254,15 +282,15 @@
             if (statsData.total_translations !== undefined) {
                 $('#nexus-ai-wp-stat-total-translations').text(statsData.total_translations);
             }
-            
+
             if (statsData.translations_this_period !== undefined) {
                 $('#nexus-ai-wp-stat-period-translations').text(statsData.translations_this_period);
             }
-            
+
             if (statsData.active_languages !== undefined) {
                 $('#nexus-ai-wp-stat-active-languages').text(statsData.active_languages);
             }
-            
+
             if (statsData.average_quality !== undefined) {
                 $('#nexus-ai-wp-stat-average-quality').text(Math.round(statsData.average_quality) + '%');
             }
@@ -271,33 +299,33 @@
             if (statsData.language_breakdown) {
                 var languageNames = NexusAIWPTranslatorCore.getLanguageNames();
                 var breakdownHtml = '';
-                
+
                 Object.keys(statsData.language_breakdown).forEach(function(lang) {
                     var count = statsData.language_breakdown[lang];
                     var langName = languageNames[lang] || lang.toUpperCase();
-                    
+
                     breakdownHtml += '<div class="language-stat-item">' +
                         '<span class="language-name">' + langName + '</span>' +
                         '<span class="language-count">' + count + '</span>' +
                         '</div>';
                 });
-                
+
                 $('#nexus-ai-wp-language-breakdown').html(breakdownHtml);
             }
 
             // Update recent activity
             if (statsData.recent_activity) {
                 var activityHtml = '';
-                
+
                 statsData.recent_activity.forEach(function(activity) {
                     var timeAgo = NexusAIWPTranslatorCore.formatDate(activity.date);
-                    
+
                     activityHtml += '<div class="activity-item">' +
                         '<div class="activity-description">' + NexusAIWPTranslatorCore.escapeHtml(activity.description) + '</div>' +
                         '<div class="activity-time">' + timeAgo + '</div>' +
                         '</div>';
                 });
-                
+
                 $('#nexus-ai-wp-recent-activity').html(activityHtml);
             }
         },
@@ -314,10 +342,10 @@
                 if (!confirm('Are you sure you want to cleanup orphaned translations? This action cannot be undone.')) {
                     return;
                 }
-                
+
                 var button = $(this);
                 button.prop('disabled', true).text('Cleaning up...');
-                
+
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_cleanup_orphaned',
                     nonce: nexus_ai_wp_translator_ajax.nonce
@@ -326,7 +354,7 @@
                     if (response.success) {
                         var cleanedCount = response.data && response.data.cleaned_count ? response.data.cleaned_count : 0;
                         NexusAIWPTranslatorCore.showGlobalNotice('success', 'Cleaned up ' + cleanedCount + ' orphaned translations!');
-                        
+
                         // Refresh stats
                         NexusAIWPTranslatorDashboard.loadDashboardStats();
                     } else {
@@ -346,7 +374,7 @@
             $(document).on('click', '#nexus-ai-wp-export-data', function() {
                 var button = $(this);
                 button.prop('disabled', true).text('Exporting...');
-                
+
                 $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                     action: 'nexus_ai_wp_export_data',
                     nonce: nexus_ai_wp_translator_ajax.nonce
@@ -360,7 +388,7 @@
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                        
+
                         NexusAIWPTranslatorCore.showGlobalNotice('success', 'Data exported successfully!');
                     } else {
                         var errorMsg = response.data && response.data.message ? response.data.message : 'Unknown error';

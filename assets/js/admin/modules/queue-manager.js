@@ -105,7 +105,7 @@
             $('#queue-failed-count').text(data.statistics.failed || 0);
 
             // Update queue items list
-            var queueList = $('#queue-items-list');
+            var queueList = $('#queue-items-tbody');
             queueList.empty();
 
             if (data.items && data.items.length > 0) {
@@ -114,15 +114,12 @@
                     queueList.append(itemRow);
                 });
             } else {
-                queueList.append('<tr><td colspan="6">No queue items found.</td></tr>');
+                queueList.append('<tr><td colspan="7">No queue items found.</td></tr>');
             }
 
-            // Update queue status
-            var queueStatus = data.queue_status || 'unknown';
-            $('#queue-current-status').text(queueStatus.charAt(0).toUpperCase() + queueStatus.slice(1));
-            
-            // Update control buttons based on status
-            if (queueStatus === 'paused') {
+            // Update control buttons based on queue paused flag
+            var isPaused = (data.statistics && data.statistics.queue_paused) ? true : false;
+            if (isPaused) {
                 $('#pause-queue-btn').hide();
                 $('#resume-queue-btn').show();
             } else {
@@ -138,9 +135,10 @@
             if (!NexusAIWPTranslatorCore.ensureJQuery('createQueueItemRow')) return '';
             var $ = jQuery;
 
-            var languages = JSON.parse(item.target_languages || '[]');
+            var languages = [];
+            try { languages = JSON.parse(item.target_languages || '[]'); } catch(e) { languages = []; }
             var languageTags = languages.map(function(lang) {
-                return '<span class="queue-language-tag">' + lang + '</span>';
+                return '<span class="queue-language-tag">' + NexusAIWPTranslatorCore.escapeHtml(lang) + '</span>';
             }).join('');
 
             var statusClass = 'status-' + (item.status || 'unknown');
@@ -152,23 +150,21 @@
             }
             actionsHtml += '<button class="button button-small queue-item-remove" data-queue-id="' + item.id + '">Remove</button>';
 
-            var progressHtml = '';
-            if (item.progress_percentage !== null && item.progress_percentage !== undefined) {
-                progressHtml = '<div class="queue-progress-bar">' +
-                    '<div class="queue-progress-fill" style="width: ' + item.progress_percentage + '%"></div>' +
-                    '</div>' +
-                    '<span class="queue-progress-text">' + Math.round(item.progress_percentage) + '%</span>';
-            }
+            // Build table columns to match header: Post | Languages | Priority | Status | Scheduled | Attempts | Actions
+            var scheduled = item.scheduled_time ? NexusAIWPTranslatorCore.escapeHtml(item.scheduled_time) : '-';
+            var attempts = (item.attempts !== undefined && item.max_attempts !== undefined)
+                ? (parseInt(item.attempts, 10) + ' / ' + parseInt(item.max_attempts, 10)) : '-';
 
             return '<tr class="queue-item ' + statusClass + ' ' + priorityClass + '">' +
                 '<td>' +
-                '<strong>' + NexusAIWPTranslatorCore.escapeHtml(item.post_title || 'Post #' + item.post_id) + '</strong>' +
+                '<strong>' + NexusAIWPTranslatorCore.escapeHtml(item.post_title || ('Post #' + item.post_id)) + '</strong>' +
                 '<br><small>ID: ' + item.post_id + '</small>' +
                 '</td>' +
                 '<td>' + languageTags + '</td>' +
-                '<td><span class="queue-status-badge ' + statusClass + '">' + (item.status || 'Unknown').replace('_', ' ') + '</span></td>' +
                 '<td><span class="queue-priority-badge ' + priorityClass + '">' + (item.priority || 'Normal') + '</span></td>' +
-                '<td>' + progressHtml + '</td>' +
+                '<td><span class="queue-status-badge ' + statusClass + '">' + (item.status || 'Unknown').replace('_', ' ') + '</span></td>' +
+                '<td>' + scheduled + '</td>' +
+                '<td>' + attempts + '</td>' +
                 '<td>' + actionsHtml + '</td>' +
                 '</tr>';
         },
@@ -272,7 +268,7 @@
             var $ = jQuery;
 
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-                action: 'nexus_ai_wp_remove_queue_item',
+                action: 'nexus_ai_wp_remove_from_queue',
                 queue_id: queueId,
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
@@ -401,11 +397,15 @@
             if (!NexusAIWPTranslatorCore.ensureJQuery('addToQueue')) return;
             var $ = jQuery;
 
+            // Map priority string to numeric level expected by server (low=3, normal=5, high=7, urgent=9)
+            var priorityMap = { low: 3, normal: 5, high: 7, urgent: 9 };
+            var priorityValue = priorityMap[String(priority).toLowerCase()] || 5;
+
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_add_to_queue',
                 post_id: postId,
                 target_languages: targetLanguages,
-                priority: priority,
+                priority: priorityValue,
                 scheduled_time: scheduledTime,
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })

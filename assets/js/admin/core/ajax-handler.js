@@ -85,12 +85,8 @@
                 
                 if (response.success) {
                     resultDiv.html('<span style="color: #46b450;">✓ ' + nexus_ai_wp_translator_ajax.strings.success + '</span>');
-                    
-                    // Auto-save the API key after successful test
-                    NexusAIWPTranslatorAjax.autoSaveApiKey(apiKey, function() {
-                        // Load models after saving API key
-                        NexusAIWPTranslatorAjax.loadAvailableModels();
-                    });
+                    // Load models immediately (server already refreshed the key)
+                    NexusAIWPTranslatorAjax.loadAvailableModels();
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Unknown error';
                     resultDiv.html('<span style="color: #dc3232;">✗ ' + nexus_ai_wp_translator_ajax.strings.error + ' ' + errorMsg + '</span>');

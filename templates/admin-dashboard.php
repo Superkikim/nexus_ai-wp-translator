@@ -73,7 +73,7 @@ if (!defined('ABSPATH')) {
                                 <div class="analytics-icon">⏳</div>
                                 <div class="analytics-content">
                                     <div class="analytics-label"><?php _e('Pending Queue', 'nexus-ai-wp-translator'); ?></div>
-                                    <div class="analytics-value">[PLACEHOLDER: Queue statistics will go here]</div>
+                                    <div class="analytics-value"><a href="#queue-tab" id="dashboard-pending-queue">-</a></div>
                                 </div>
                             </div>
                             <div class="nexus-ai-wp-analytics-card">
