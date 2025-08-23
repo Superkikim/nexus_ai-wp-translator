@@ -8,27 +8,27 @@ if (!defined('ABSPATH')) {
 }
 
 class Nexus_AI_WP_Translator_Admin {
-    
+
     private static $instance = null;
     private $db;
     private $api_handler;
     private $translation_manager;
     private $hooks_initialized = false;
     private $script_enqueued = false;
-    
+
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
+
     private function __construct() {
         $this->init_dependencies();
-        
+
         $this->init_hooks();
     }
-    
+
     /**
      * Initialize dependencies with error checking
      */
@@ -45,25 +45,25 @@ class Nexus_AI_WP_Translator_Admin {
             return;
         }
         $this->hooks_initialized = true;
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [ADMIN] Registering admin hooks and AJAX handlers');
         }
-        
+
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'init_settings'));
         add_action('wp_ajax_nexus_ai_wp_bulk_set_language', array($this, 'ajax_bulk_set_language'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
-        
+
         // Add meta box to post edit screen
         add_action('add_meta_boxes', array($this, 'add_translation_meta_box'));
-        
+
         // Add columns to posts list
         add_filter('manage_posts_columns', array($this, 'add_posts_columns'));
         add_filter('manage_pages_columns', array($this, 'add_posts_columns'));
         add_action('manage_posts_custom_column', array($this, 'display_posts_columns'), 10, 2);
         add_action('manage_pages_custom_column', array($this, 'display_posts_columns'), 10, 2);
-        
+
         // AJAX handlers
         add_action('wp_ajax_nexus_ai_wp_test_api', array($this, 'ajax_test_api'));
         add_action('wp_ajax_nexus_ai_wp_get_models', array($this, 'ajax_get_models'));
@@ -82,8 +82,14 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_reassess_quality', array($this, 'ajax_reassess_quality'));
         add_action('wp_ajax_nexus_ai_wp_detailed_assessment', array($this, 'ajax_detailed_assessment'));
 
+        // Anthropic status AJAX
+        add_action('wp_ajax_nexus_ai_wp_get_anthropic_status', array($this, 'ajax_get_anthropic_status'));
         // Posts list (dashboard tabs)
         add_action('wp_ajax_nexus_ai_wp_get_posts_list', array($this, 'ajax_get_posts_list'));
+        // Load Anthropic status helper
+        if (!class_exists('NexusAIWPAnthropicStatus')) {
+            require_once plugin_dir_path(__FILE__) . 'class-anthropic-status.php';
+        }
 
         // Translation AJAX handlers (from translation manager)
         if ($this->translation_manager) {
@@ -92,42 +98,42 @@ class Nexus_AI_WP_Translator_Admin {
             add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
 
         }
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [ADMIN] AJAX handlers registered: test_api, get_models, save_settings, translate_post, unlink_translation, get_translation_status');
         }
-        
+
         // Post meta box save
         add_action('save_post', array($this, 'save_translation_meta_box'));
     }
-    
+
     /**
      * Save translation meta box data
      */
     public function save_translation_meta_box($post_id) {
         // Check if our nonce is set and verify it
-        if (!isset($_POST['nexus_ai_wp_translator_meta_box_nonce']) || 
+        if (!isset($_POST['nexus_ai_wp_translator_meta_box_nonce']) ||
             !wp_verify_nonce($_POST['nexus_ai_wp_translator_meta_box_nonce'], 'nexus_ai_wp_translator_meta_box')) {
             return;
         }
-        
+
         // Check if user has permission to edit the post
         if (!current_user_can('edit_post', $post_id)) {
             return;
         }
-        
+
         // Don't save during autosave
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
             return;
         }
-        
+
         // Save post language
         if (isset($_POST['nexus_ai_wp_post_language'])) {
             $post_language = sanitize_text_field($_POST['nexus_ai_wp_post_language']);
             update_post_meta($post_id, '_nexus_ai_wp_translator_language', $post_language);
         }
     }
-    
+
     /**
      * Add admin menu
      */
@@ -141,7 +147,7 @@ class Nexus_AI_WP_Translator_Admin {
             'dashicons-translation',
             30
         );
-        
+
         add_submenu_page(
             'nexus-ai-wp-translator-dashboard',
             __('Dashboard', 'nexus-ai-wp-translator'),
@@ -150,7 +156,7 @@ class Nexus_AI_WP_Translator_Admin {
             'nexus-ai-wp-translator-dashboard',
             array($this, 'admin_page_dashboard')
         );
-        
+
         add_submenu_page(
             'nexus-ai-wp-translator-dashboard',
             __('Settings', 'nexus-ai-wp-translator'),
@@ -159,9 +165,9 @@ class Nexus_AI_WP_Translator_Admin {
             'nexus-ai-wp-translator-settings',
             array($this, 'admin_page_settings')
         );
-        
 
-        
+
+
         add_submenu_page(
             'nexus-ai-wp-translator-dashboard',
             __('Post Relationships', 'nexus-ai-wp-translator'),
@@ -171,7 +177,7 @@ class Nexus_AI_WP_Translator_Admin {
             array($this, 'admin_page_relationships')
         );
     }
-    
+
     /**
      * Initialize settings
      */
@@ -186,7 +192,7 @@ class Nexus_AI_WP_Translator_Admin {
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_retry_attempts');
         register_setting('nexus_ai_wp_translator_settings', 'nexus_ai_wp_translator_cache_translations');
     }
-    
+
     /**
      * Enqueue admin scripts
      */
@@ -195,24 +201,24 @@ class Nexus_AI_WP_Translator_Admin {
         $load_on_hooks = array('post.php', 'post-new.php');
         $is_our_page = strpos($hook, 'nexus-ai-wp-translator') !== false;
         $is_post_page = in_array($hook, $load_on_hooks);
-        
+
         if (!$is_our_page && !$is_post_page) {
             return;
         }
-        
+
         // Prevent multiple enqueues
         if ($this->script_enqueued) {
             return;
         }
         $this->script_enqueued = true;
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] Loading admin scripts for hook: ' . $hook . ' (our_page: ' . ($is_our_page ? 'Y' : 'N') . ', post_page: ' . ($is_post_page ? 'Y' : 'N') . ')');
         }
-        
+
         // Enqueue jQuery first to ensure it's available
         wp_enqueue_script('jquery');
-        
+
         // Load modular admin scripts
         // Core utilities first
         wp_enqueue_script(
@@ -318,20 +324,20 @@ class Nexus_AI_WP_Translator_Admin {
             NEXUS_AI_WP_TRANSLATOR_VERSION,
             false
         );
-        
+
         wp_enqueue_style(
             'nexus-ai-wp-translator-admin',
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/css/admin.css',
             array(),
             NEXUS_AI_WP_TRANSLATOR_VERSION
         );
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             $main_script_url = NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/admin-main.js';
             $file_exists = file_exists(NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'assets/js/admin/admin-main.js') ? 'EXISTS' : 'MISSING';
             error_log('Nexus AI WP Translator: [SCRIPTS] Modular admin scripts enqueued - Main: ' . $main_script_url . ' - File: ' . $file_exists);
         }
-        
+
         // Make AJAX variables available globally, not just for the external script
         $ajax_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -347,15 +353,15 @@ class Nexus_AI_WP_Translator_Admin {
                 'confirm_unlink' => __('Are you sure you want to unlink this translation?', 'nexus-ai-wp-translator')
             )
         );
-        
+
         // Localize to the core script so it's available to all modules
         wp_localize_script('nexus-ai-wp-translator-admin-core', 'nexus_ai_wp_translator_ajax', $ajax_data);
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [SCRIPTS] AJAX variables localized - URL: ' . admin_url('admin-ajax.php'));
         }
     }
-    
+
     /**
      * Dashboard page
      */
@@ -366,10 +372,10 @@ class Nexus_AI_WP_Translator_Admin {
         }
         $stats = $this->db->get_translation_stats();
         $recent_logs = $this->db->get_translation_logs(10);
-        
+
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-dashboard.php';
     }
-    
+
     /**
      * Render posts list for a specific post type
      */
@@ -381,7 +387,7 @@ class Nexus_AI_WP_Translator_Admin {
             'orderby' => 'date',
             'order' => 'DESC'
         ));
-        
+
         if (empty($posts)) {
             return '<p>' . sprintf(__('No %s found.', 'nexus-ai-wp-translator'), $post_type) . '</p>';
         }
@@ -418,12 +424,12 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '</tr>';
         $output .= '</thead>';
         $output .= '<tbody>';
-        
+
         foreach ($posts as $post) {
             $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: 'auto';
             $translations = $this->db->get_post_translations($post->ID);
             $translation_count = count($translations);
-            
+
             $output .= '<tr>';
             $output .= '<td><input type="checkbox" class="select-post-checkbox" data-post-id="' . $post->ID . '" data-language="' . esc_attr($post_language) . '"></td>';
             $output .= '<td>';
@@ -511,13 +517,13 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= '</td>';
             $output .= '</tr>';
         }
-        
+
         $output .= '</tbody>';
         $output .= '</table>';
-        
+
         return $output;
     }
-    
+
     /**
      * Settings page
      */
@@ -529,11 +535,11 @@ class Nexus_AI_WP_Translator_Admin {
         $languages = $this->translation_manager->get_available_languages();
         // Sort languages alphabetically by name
         asort($languages);
-        
+
         $api_key = get_option('nexus_ai_wp_translator_api_key', '');
         $selected_model = get_option('nexus_ai_wp_translator_model', '');
         $target_languages_raw = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        
+
         // Ensure target_languages is an array (fix for string conversion issue)
         if (is_string($target_languages_raw)) {
             // Handle serialized string or comma-separated values
@@ -555,26 +561,26 @@ class Nexus_AI_WP_Translator_Admin {
         $throttle_period = get_option('nexus_ai_wp_translator_throttle_period', 3600);
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
         $cache_translations = get_option('nexus_ai_wp_translator_cache_translations', true);
-        
+
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-settings.php';
     }
-    
 
-    
+
+
     /**
      * Relationships page
      */
     public function admin_page_relationships() {
         global $wpdb;
-        
+
         $page = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
         $per_page = 20;
         $offset = ($page - 1) * $per_page;
-        
+
         $relationships = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT t.*, 
-                        sp.post_title as source_title, 
+                "SELECT t.*,
+                        sp.post_title as source_title,
                         tp.post_title as translated_title,
                         sp.post_status as source_status,
                         tp.post_status as translated_status
@@ -586,10 +592,10 @@ class Nexus_AI_WP_Translator_Admin {
                 $per_page, $offset
             )
         );
-        
+
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-relationships.php';
     }
-    
+
     /**
      * Add translation meta box
      */
@@ -603,7 +609,7 @@ class Nexus_AI_WP_Translator_Admin {
             'high'
         );
     }
-    
+
     /**
      * Display translation meta box
      */
@@ -614,18 +620,18 @@ class Nexus_AI_WP_Translator_Admin {
         $languages = $this->translation_manager->get_available_languages();
         // Sort languages alphabetically by name
         asort($languages);
-        
+
         // Get configured settings
         $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-        
+
         // If post language is not set, default to 'auto' (auto-detect)
         if (empty($post_language)) {
             $post_language = 'auto';
         }
-        
+
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
     }
-    
+
     /**
      * Add posts columns
      */
@@ -635,7 +641,7 @@ class Nexus_AI_WP_Translator_Admin {
         $columns['nexus_ai_wp_quality'] = __('Quality', 'nexus-ai-wp-translator');
         return $columns;
     }
-    
+
     /**
      * Display posts columns
      */
@@ -650,7 +656,7 @@ class Nexus_AI_WP_Translator_Admin {
                     echo __('Not set', 'nexus-ai-wp-translator');
                 }
                 break;
-                
+
             case 'nexus_ai_wp_translations':
                 $translations = $this->db->get_post_translations($post_id);
                 if ($translations) {
@@ -712,7 +718,7 @@ class Nexus_AI_WP_Translator_Admin {
                 break;
         }
     }
-    
+
     /**
      * AJAX: Test API connection
      */
@@ -722,21 +728,21 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: *** ajax_test_api() FUNCTION CALLED ***');
             error_log('Nexus AI WP Translator: POST data: ' . print_r($_POST, true));
         }
-        
+
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Permission denied for user');
             }
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
+
         if (!$this->api_handler) {
             wp_send_json_error(__('API handler not available', 'nexus-ai-wp-translator'));
             return;
         }
-        
+
         $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: API key received for test (length: ' . strlen($api_key) . ')');
@@ -751,10 +757,10 @@ class Nexus_AI_WP_Translator_Admin {
         $this->api_handler->refresh_api_key();
 
         $result = $this->api_handler->test_api_connection();
-        
+
         wp_send_json($result);
     }
-    
+
     /**
      * AJAX: Get available models
      */
@@ -764,16 +770,16 @@ class Nexus_AI_WP_Translator_Admin {
             error_log('Nexus AI WP Translator: *** ajax_get_models() FUNCTION CALLED ***');
             error_log('Nexus AI WP Translator: POST data: ' . print_r($_POST, true));
         }
-        
+
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Nexus AI WP Translator: Permission denied for get_models');
             }
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
+
         $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: API key for models (length: ' . strlen($api_key) . ')');
@@ -788,14 +794,14 @@ class Nexus_AI_WP_Translator_Admin {
         $this->api_handler->refresh_api_key();
 
         $result = $this->api_handler->get_available_models();
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: Get models result: ' . print_r($result, true));
         }
-        
+
         wp_send_json($result);
     }
-    
+
     /**
      * AJAX: Save settings (idempotent, non-destructive)
      * Only updates keys explicitly provided in POST.
@@ -862,51 +868,51 @@ class Nexus_AI_WP_Translator_Admin {
         // If nothing to update, still return success (idempotent)
         wp_send_json_success(__('Settings saved successfully', 'nexus-ai-wp-translator'));
     }
-    
+
     /**
      * AJAX: Get statistics
      */
     public function ajax_get_stats() {
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
+
         $period = sanitize_text_field($_POST['period']) ?: '7 days';
         $stats = $this->db->get_translation_stats($period);
-        
+
         wp_send_json_success($stats);
     }
-    
+
     /**
      * AJAX: Clean up orphaned relationships
      */
     public function ajax_cleanup_orphaned() {
         check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
-        
+
         global $wpdb;
-        
+
         // Delete relationships where source post doesn't exist
         $deleted_source = $wpdb->query("
             DELETE t FROM {$this->db->translations_table} t
             LEFT JOIN {$wpdb->posts} p ON t.source_post_id = p.ID
             WHERE p.ID IS NULL
         ");
-        
+
         // Delete relationships where translated post doesn't exist
         $deleted_translated = $wpdb->query("
             DELETE t FROM {$this->db->translations_table} t
             LEFT JOIN {$wpdb->posts} p ON t.translated_post_id = p.ID
             WHERE p.ID IS NULL
         ");
-        
+
         $total_deleted = $deleted_source + $deleted_translated;
-        
+
         wp_send_json_success(sprintf(
             __('Cleaned up %d orphaned relationships', 'nexus-ai-wp-translator'),
             $total_deleted
@@ -1133,56 +1139,25 @@ class Nexus_AI_WP_Translator_Admin {
             wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
 
-        $post_id = intval($_POST['post_id']);
-        $target_languages = array_map('sanitize_text_field', $_POST['target_languages']);
+        // TODO: Implement resume logic (placeholder)
+        wp_send_json_success(__('Resume translation not implemented yet', 'nexus-ai-wp-translator'));
+    }
 
-        if (!$post_id || empty($target_languages)) {
-            wp_send_json_error(__('Invalid parameters', 'nexus-ai-wp-translator'));
+    /**
+     * AJAX: Get Anthropic service status from Statuspage API (server-side to avoid CORS)
+     */
+    public function ajax_get_anthropic_status() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
         }
 
-        $results = array();
-        $success_count = 0;
-        $error_count = 0;
-
-        foreach ($target_languages as $target_lang) {
-            // Resume translation for this language
-            $result = $this->api_handler->translate_post_content($post_id, $target_lang);
-
-            if ($result['success']) {
-                // Create the translated post
-                $translation_result = $this->translation_manager->create_translated_post($post_id, $target_lang);
-
-                if ($translation_result['success']) {
-                    $success_count++;
-                    $results[] = array(
-                        'language' => $target_lang,
-                        'status' => 'success',
-                        'post_id' => $translation_result['translated_post_id']
-                    );
-                } else {
-                    $error_count++;
-                    $results[] = array(
-                        'language' => $target_lang,
-                        'status' => 'error',
-                        'message' => $translation_result['message']
-                    );
-                }
-            } else {
-                $error_count++;
-                $results[] = array(
-                    'language' => $target_lang,
-                    'status' => 'error',
-                    'message' => $result['message']
-                );
-            }
+        $result = NexusAIWPAnthropicStatus::get_api_status();
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
         }
-
-        wp_send_json_success(array(
-            'message' => sprintf(__('Resume completed: %d successful, %d failed', 'nexus-ai-wp-translator'), $success_count, $error_count),
-            'success_count' => $success_count,
-            'error_count' => $error_count,
-            'results' => $results
-        ));
+        wp_send_json_success($result);
     }
 
     /**

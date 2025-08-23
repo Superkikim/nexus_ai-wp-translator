@@ -107,10 +107,10 @@ if (!defined('ABSPATH')) {
                     <div class="nexus-ai-wp-dashboard-section" style="grid-column: 1 / 2;">
                         <h3><?php _e('System Status', 'nexus-ai-wp-translator'); ?></h3>
                         <div class="nexus-ai-wp-status-panel">
-                            <div class="status-item" id="claude-api-status">
+                            <div class="status-item" id="api-key-status">
                                 <div class="status-icon">🔄</div>
                                 <div class="status-content">
-                                    <div class="status-label"><?php _e('Claude API Status', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-label"><?php _e('API Key', 'nexus-ai-wp-translator'); ?></div>
                                     <div class="status-value"><?php _e('Checking...', 'nexus-ai-wp-translator'); ?></div>
                                 </div>
                             </div>
@@ -121,20 +121,12 @@ if (!defined('ABSPATH')) {
                                     <div class="status-value"><?php _e('Checking...', 'nexus-ai-wp-translator'); ?></div>
                                 </div>
                             </div>
-                            <div class="status-item">
-                                <div class="status-icon">⚙️</div>
-                                <div class="status-content">
-                                    <div class="status-label"><?php _e('Plugin Status', 'nexus-ai-wp-translator'); ?></div>
-                                    <div class="status-value status-success"><?php _e('Active', 'nexus-ai-wp-translator'); ?></div>
-                                </div>
-                            </div>
-                            <div class="status-item">
+                            <div class="status-item" id="api-key-status">
                                 <div class="status-icon">🔒</div>
                                 <div class="status-content">
                                     <div class="status-label"><?php _e('API Key', 'nexus-ai-wp-translator'); ?></div>
-                                    <div class="status-value <?php echo get_option('nexus_ai_wp_translator_api_key') ? 'status-success' : 'status-error'; ?>">
-                                        <?php echo get_option('nexus_ai_wp_translator_api_key') ? __('Configured', 'nexus-ai-wp-translator') : __('Not Configured', 'nexus-ai-wp-translator'); ?>
-                                    </div>
+                                    <div class="status-value"><?php _e('Checking...', 'nexus-ai-wp-translator'); ?></div>
+                                    <div class="status-actions"><a href="<?php echo admin_url('admin.php?page=nexus-ai-wp-translator-settings#api-settings'); ?>"><?php _e('Configure', 'nexus-ai-wp-translator'); ?></a></div>
                                 </div>
                             </div>
                         </div>

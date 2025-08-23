@@ -437,15 +437,15 @@
             if (!NexusAIWPTranslatorCore.ensureJQuery('checkApiStatus')) return;
             var $ = jQuery;
 
-            var statusElement = $('#claude-api-status .status-value');
-            var iconElement = $('#claude-api-status .status-icon');
+            var statusElement = $('#api-key-status .status-value');
+            var iconElement = $('#api-key-status .status-icon');
 
             var apiKey = $('#nexus_ai_wp_translator_api_key').val() ||
                         (typeof nexus_ai_wp_translator_ajax !== 'undefined' && nexus_ai_wp_translator_ajax.api_key);
 
             if (!apiKey) {
                 statusElement.removeClass('status-success status-error').addClass('status-error')
-                    .text('No API Key');
+                    .text('Not Configured');
                 iconElement.text('❌');
                 return;
             }
@@ -462,7 +462,7 @@
             .done(function(response) {
                 if (response.success) {
                     statusElement.removeClass('status-error').addClass('status-success')
-                        .text('Connected');
+                        .text('Validated');
                     iconElement.text('✅');
                 } else {
                     statusElement.removeClass('status-success').addClass('status-error')
@@ -487,11 +487,28 @@
             var statusElement = $('#anthropic-service-status .status-value');
             var iconElement = $('#anthropic-service-status .status-icon');
 
-            // For now, just show operational status
-            // In the future, this could check Anthropic's status page
-            statusElement.removeClass('status-error').addClass('status-success')
-                .text('Operational');
-            iconElement.text('✅');
+            // Retrieve live status from Anthropic Statuspage via server proxy
+            statusElement.text('Checking...');
+            iconElement.text('🔄');
+            jQuery.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_anthropic_status',
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            }).done(function(resp){
+                if (resp && resp.success && resp.data) {
+                    var level = resp.data.level || 'warning';
+                    var label = resp.data.label || 'Unknown';
+                    statusElement.removeClass('status-success status-warning status-error')
+                        .addClass('status-' + level)
+                        .text(label);
+                    iconElement.text(level === 'success' ? '✅' : (level === 'warning' ? '⚠️' : '❌'));
+                } else {
+                    statusElement.removeClass('status-success').addClass('status-error').text('Unavailable');
+                    iconElement.text('❌');
+                }
+            }).fail(function(){
+                statusElement.removeClass('status-success').addClass('status-error').text('Unavailable');
+                iconElement.text('❌');
+            });
         },
 
         /**
