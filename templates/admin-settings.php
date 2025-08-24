@@ -266,17 +266,17 @@ jQuery(document).ready(function($) {
     var modelOperationInProgress = false;
     
     // Determine current scenario based on server-side data
-    var currentApiKey = window.nexusAiServerData ? window.nexusAiServerData.apiKey : '';
+    var hasApiKey = window.nexusAiServerData ? window.nexusAiServerData.hasApiKey : false;
     var currentModel = window.nexusAiServerData ? window.nexusAiServerData.selectedModel : '';
     var currentScenario = 1; // Default: No API key, No model
-    
-    if (currentApiKey && currentModel) {
+
+    if (hasApiKey && currentModel) {
         currentScenario = 3; // Both API key and model exist
-    } else if (currentApiKey && !currentModel) {
+    } else if (hasApiKey && !currentModel) {
         currentScenario = 2; // API key exists, no model
     }
-    
-    console.debug('[Nexus Translator]: Detected scenario:', currentScenario, 'API key length:', currentApiKey.length, 'Model:', currentModel);
+
+    console.debug('[Nexus Translator]: Detected scenario:', currentScenario, 'Has API key:', hasApiKey, 'Model:', currentModel);
     
     // Handle initial state based on scenario
     handleInitialScenario(currentScenario);
@@ -291,18 +291,24 @@ jQuery(document).ready(function($) {
                 // No background testing - no API key configured
                 break;
                 
-            case 2: // API key exists, No model  
+            case 2: // API key exists, No model
                 console.debug('[Nexus Translator]: Scenario 2 - API key exists, no model');
                 modelRow.hide(); // Start hidden
-                // Perform background API test
-                performBackgroundApiTest(currentApiKey);
+                // Perform background API test using current form value
+                var apiKeyFromForm = $('#nexus_ai_wp_translator_api_key').val();
+                if (apiKeyFromForm) {
+                    performBackgroundApiTest(apiKeyFromForm);
+                }
                 break;
-                
+
             case 3: // Both API key and model exist
                 console.debug('[Nexus Translator]: Scenario 3 - Both API key and model exist');
                 modelRow.hide(); // Start hidden
-                // Perform background API test
-                performBackgroundApiTest(currentApiKey);
+                // Perform background API test using current form value
+                var apiKeyFromForm = $('#nexus_ai_wp_translator_api_key').val();
+                if (apiKeyFromForm) {
+                    performBackgroundApiTest(apiKeyFromForm);
+                }
                 break;
         }
     }
