@@ -486,24 +486,14 @@
             var statusElement = $('#api-key-status .status-value');
             var iconElement = $('#api-key-status .status-icon');
 
-            // SECURITY: Don't use API key from JavaScript, let server handle it
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val() || '';
-
-            if (!apiKey) {
-                statusElement.removeClass('status-success status-error').addClass('status-error')
-                    .text('Not Configured');
-                iconElement.text('❌');
-                return;
-            }
-
             statusElement.text('Testing...');
             iconElement.text('🔄');
 
-            // Use existing API test functionality
+            // Test API using server-side stored key (no key needed in JavaScript)
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_test_api',
-                api_key: apiKey,
                 nonce: nexus_ai_wp_translator_ajax.nonce
+                // No api_key parameter - let server use stored key
             })
             .done(function(response) {
                 if (response.success) {
@@ -511,8 +501,15 @@
                         .text('Validated');
                     iconElement.text('✅');
                 } else {
-                    statusElement.removeClass('status-success').addClass('status-error')
-                        .text('Connection Failed');
+                    // Check if it's a "no API key" error vs connection error
+                    var message = response.message || '';
+                    if (message.toLowerCase().includes('api key') || message.toLowerCase().includes('not configured')) {
+                        statusElement.removeClass('status-success').addClass('status-error')
+                            .text('Not Configured');
+                    } else {
+                        statusElement.removeClass('status-success').addClass('status-error')
+                            .text('Connection Failed');
+                    }
                     iconElement.text('❌');
                 }
             })

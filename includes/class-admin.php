@@ -639,6 +639,13 @@ class Nexus_AI_WP_Translator_Admin {
         // Refresh API key in handler (will pick up stored key if none provided)
         $this->api_handler->refresh_api_key();
 
+        // Check if we have any API key to test (either provided or stored)
+        $stored_key = get_option('nexus_ai_wp_translator_api_key', '');
+        if (empty($api_key) && empty($stored_key)) {
+            wp_send_json_error(__('No API key configured. Please configure your API key in settings.', 'nexus-ai-wp-translator'));
+            return;
+        }
+
         $result = $this->api_handler->test_api_connection();
 
         wp_send_json($result);
