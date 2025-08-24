@@ -185,11 +185,26 @@ class Nexus_AI_WP_Translator_Scheduler {
         // Schedule queue processing if not already scheduled
         if (!wp_next_scheduled('nexus_ai_wp_translator_process_queue')) {
             wp_schedule_event(time(), 'every_5_minutes', 'nexus_ai_wp_translator_process_queue');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Queue processing cron scheduled');
+            }
         }
 
         // Schedule cleanup if not already scheduled
         if (!wp_next_scheduled('nexus_ai_wp_translator_cleanup_queue')) {
             wp_schedule_event(time(), 'daily', 'nexus_ai_wp_translator_cleanup_queue');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Queue cleanup cron scheduled');
+            }
+        }
+
+        // Ensure queue is not paused by default
+        if (get_option('nexus_ai_wp_translator_queue_paused') === false) {
+            // Option doesn't exist, set it to false explicitly
+            update_option('nexus_ai_wp_translator_queue_paused', false);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Queue unpaused by default');
+            }
         }
     }
     
@@ -294,18 +309,31 @@ class Nexus_AI_WP_Translator_Scheduler {
     public function process_translation_queue() {
         // Check if queue processing is paused
         if (get_option('nexus_ai_wp_translator_queue_paused', false)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Queue processing is paused');
+            }
             return;
         }
-        
+
         // Get pending items
         $queue_items = $this->get_queue_items('pending', 5); // Process 5 at a time
-        
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: Processing ' . count($queue_items) . ' queue items');
+        }
+
         foreach ($queue_items as $item) {
             // Check if scheduled time has passed
             if ($item->scheduled_time && strtotime($item->scheduled_time) > time()) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('Nexus AI WP Translator: Skipping queue item ' . $item->id . ' - scheduled for future');
+                }
                 continue;
             }
-            
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Nexus AI WP Translator: Processing queue item ' . $item->id);
+            }
             $this->process_queue_item($item);
         }
     }

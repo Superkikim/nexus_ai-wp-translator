@@ -486,8 +486,8 @@
             var statusElement = $('#api-key-status .status-value');
             var iconElement = $('#api-key-status .status-icon');
 
-            var apiKey = $('#nexus_ai_wp_translator_api_key').val() ||
-                        (typeof nexus_ai_wp_translator_ajax !== 'undefined' && nexus_ai_wp_translator_ajax.api_key);
+            // SECURITY: Don't use API key from JavaScript, let server handle it
+            var apiKey = $('#nexus_ai_wp_translator_api_key').val() || '';
 
             if (!apiKey) {
                 statusElement.removeClass('status-success status-error').addClass('status-error')

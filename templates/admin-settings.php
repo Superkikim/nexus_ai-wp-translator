@@ -250,7 +250,8 @@ function waitForAjaxVars() {
         setTimeout(waitForAjaxVars, 100);
         return;
     }
-    console.debug('[Nexus Translator]: AJAX variables available in inline script:', nexus_ai_wp_translator_ajax);
+    // SECURITY: Don't log AJAX variables as they may contain sensitive data
+    console.debug('[Nexus Translator]: AJAX variables loaded in inline script');
     initInlineScript();
 }
 
@@ -836,8 +837,9 @@ waitForAjaxVars();
 
 <script>
 // Pass server-side values to JavaScript
+// SECURITY: API key removed to prevent exposure in browser
 window.nexusAiServerData = {
     selectedModel: '<?php echo esc_js($selected_model); ?>',
-    apiKey: '<?php echo esc_js($api_key); ?>'
+    hasApiKey: <?php echo !empty($api_key) ? 'true' : 'false'; ?>
 };
 </script>

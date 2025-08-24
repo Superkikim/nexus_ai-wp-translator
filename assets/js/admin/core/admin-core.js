@@ -24,7 +24,8 @@
         console.error('NexusAI Debug: nexus_ai_wp_translator_ajax is not defined!');
         console.debug('[Nexus Translator]: Available global variables:', Object.keys(window));
     } else {
-        console.debug('[Nexus Translator]: AJAX variables available:', nexus_ai_wp_translator_ajax);
+        // SECURITY: Don't log AJAX variables as they may contain sensitive data
+        console.debug('[Nexus Translator]: AJAX variables loaded successfully');
     }
 
     // Core utilities object

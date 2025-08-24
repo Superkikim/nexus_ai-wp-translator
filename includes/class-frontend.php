@@ -282,12 +282,18 @@ class Nexus_AI_WP_Translator_Frontend {
             $languages = array_merge($languages, $translated_languages);
         }
         
-        // Get target languages from translations table
-        $target_languages = $wpdb->get_col(
-            "SELECT DISTINCT target_language 
-             FROM {$this->db->translations_table} 
-             WHERE status = 'completed'"
-        );
+        // Get target languages from translations table (with error handling)
+        $target_languages = array();
+        if ($this->db && isset($this->db->translations_table)) {
+            $target_languages = $wpdb->get_col(
+                "SELECT DISTINCT target_language
+                 FROM {$this->db->translations_table}
+                 WHERE status = 'completed'"
+            );
+            if (!$target_languages) {
+                $target_languages = array();
+            }
+        }
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('Nexus AI WP Translator: [FRONTEND] Target languages from translations table: ' . print_r($target_languages, true));
@@ -458,12 +464,21 @@ class Nexus_AI_WP_Translator_Frontend {
             NEXUS_AI_WP_TRANSLATOR_VERSION
         );
         
+        // Get available languages with fallback
+        $available_languages = $this->get_available_content_languages();
+        if (empty($available_languages)) {
+            // Fallback to configured languages if no content languages found
+            $source_lang = get_option('nexus_ai_wp_translator_source_language', 'en');
+            $target_langs = get_option('nexus_ai_wp_translator_target_languages', array());
+            $available_languages = array_merge(array($source_lang), $target_langs);
+        }
+
         wp_localize_script('nexus-ai-wp-translator-frontend', 'nexus_ai_wp_translator', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
             'current_language' => $this->get_current_language(),
             'source_language' => get_option('nexus_ai_wp_translator_source_language', 'en'),
-            'available_languages' => $this->get_available_content_languages()
+            'available_languages' => $available_languages
         ));
     }
     

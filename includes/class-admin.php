@@ -40,7 +40,7 @@ class Nexus_AI_WP_Translator_Admin {
     }
 
     /**
-     * Get translation manager instance (lazy loading)
+     * Get translation manager instance (restored for settings page)
      */
     private function get_translation_manager() {
         if ($this->translation_manager === null) {
@@ -337,10 +337,10 @@ class Nexus_AI_WP_Translator_Admin {
         }
 
         // Make AJAX variables available globally, not just for the external script
+        // SECURITY: API key removed from JavaScript to prevent exposure in browser console
         $ajax_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
-            'api_key' => get_option('nexus_ai_wp_translator_api_key', ''),
             'debug' => defined('WP_DEBUG') && WP_DEBUG,
             'strings' => array(
                 'testing' => __('Testing API connection...', 'nexus-ai-wp-translator'),
@@ -526,11 +526,13 @@ class Nexus_AI_WP_Translator_Admin {
      * Settings page
      */
     public function admin_page_settings() {
-        if (!$this->translation_manager) {
+        // Ensure translation manager is initialized
+        $translation_manager = $this->get_translation_manager();
+        if (!$translation_manager) {
             echo '<div class="notice notice-error"><p>' . __('Translation manager error', 'nexus-ai-wp-translator') . '</p></div>';
             return;
         }
-        $languages = $this->translation_manager->get_available_languages();
+        $languages = $translation_manager->get_available_languages();
         // Sort languages alphabetically by name
         asort($languages);
 
