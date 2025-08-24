@@ -57,97 +57,10 @@ class Nexus_AI_WP_Translator_Manager {
         add_action('wp_ajax_nexus_ai_wp_link_posts', array($this, 'ajax_link_posts'));
 
         
-        // Add admin scripts for post management
-        if (is_admin()) {
-            add_action('admin_enqueue_scripts', array($this, 'enqueue_post_scripts'), 5);
-        }
+        // Post management scripts removed per user request
     }
     
-    /**
-     * Enqueue scripts for post management
-     */
-    public function enqueue_post_scripts($hook) {
-        static $post_scripts_enqueued = false;
-        
-        if (in_array($hook, array('edit.php', 'post.php', 'post-new.php')) || strpos($hook, 'nexus-ai-wp-translator') !== false) {
-            if ($post_scripts_enqueued) {
-                return;
-            }
-            $post_scripts_enqueued = true;
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Nexus AI WP Translator: [SCRIPTS] Loading posts.js for hook: ' . $hook);
-            }
-            
-            wp_enqueue_script(
-                'nexus-ai-wp-translator-posts',
-                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/posts.js',
-                array('jquery'),
-                NEXUS_AI_WP_TRANSLATOR_VERSION,
-                true
-            );
-            
-            wp_localize_script('nexus-ai-wp-translator-posts', 'nexus_ai_wp_translator_posts', array(
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('nexus_ai_wp_translator_nonce'),
-                'strings' => array(
-                    'confirm_title' => __('Linked Posts Found', 'nexus-ai-wp-translator'),
-                    'confirm_message' => __('This post has linked translations. What would you like to do?', 'nexus-ai-wp-translator'),
-                    'delete_all' => __('Delete all linked posts', 'nexus-ai-wp-translator'),
-                    'unlink_only' => __('Unlink and delete only this post', 'nexus-ai-wp-translator'),
-                    'cancel' => __('Cancel', 'nexus-ai-wp-translator'),
-                    'loading' => __('Loading linked posts...', 'nexus-ai-wp-translator'),
-                    'processing' => __('Processing...', 'nexus-ai-wp-translator')
-                )
-            ));
-            
-            // Add CSS for the popup
-            wp_add_inline_style('wp-admin', '
-                .nexus-ai-wp-delete-popup {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.7);
-                    z-index: 999999;
-                    display: none;
-                }
-                .nexus-ai-wp-delete-popup-content {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: white;
-                    padding: 20px;
-                    border-radius: 4px;
-                    max-width: 500px;
-                    width: 90%;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                }
-                .nexus-ai-wp-linked-posts {
-                    margin: 15px 0;
-                    padding: 10px;
-                    background: #f9f9f9;
-                    border-left: 4px solid #0073aa;
-                }
-                .nexus-ai-wp-linked-post {
-                    padding: 5px 0;
-                    border-bottom: 1px solid #eee;
-                }
-                .nexus-ai-wp-linked-post:last-child {
-                    border-bottom: none;
-                }
-                .nexus-ai-wp-popup-buttons {
-                    text-align: right;
-                    margin-top: 20px;
-                }
-                .nexus-ai-wp-popup-buttons .button {
-                    margin-left: 10px;
-                }
-            ');
-        }
-    }
+    // Post management scripts method removed per user request
     
 
     

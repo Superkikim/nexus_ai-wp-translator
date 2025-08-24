@@ -66,14 +66,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('wp_ajax_nexus_ai_wp_bulk_set_language', array($this, 'ajax_bulk_set_language'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
 
-        // Add meta box to post edit screen
-        add_action('add_meta_boxes', array($this, 'add_translation_meta_box'));
-
-        // Add columns to posts list
-        add_filter('manage_posts_columns', array($this, 'add_posts_columns'));
-        add_filter('manage_pages_columns', array($this, 'add_posts_columns'));
-        add_action('manage_posts_custom_column', array($this, 'display_posts_columns'), 10, 2);
-        add_action('manage_pages_custom_column', array($this, 'display_posts_columns'), 10, 2);
+        // Meta box and post list modifications removed per user request
 
         // AJAX handlers
         add_action('wp_ajax_nexus_ai_wp_test_api', array($this, 'ajax_test_api'));
@@ -291,13 +284,7 @@ class Nexus_AI_WP_Translator_Admin {
             false
         );
 
-        wp_enqueue_script(
-            'nexus-ai-wp-translator-meta-box',
-            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/components/meta-box.js',
-            array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler', 'nexus-ai-wp-translator-progress-dialog'),
-            NEXUS_AI_WP_TRANSLATOR_VERSION,
-            false
-        );
+        // Meta box script removed per user request
 
         // Modules
         wp_enqueue_script(
@@ -329,7 +316,6 @@ class Nexus_AI_WP_Translator_Admin {
                 'nexus-ai-wp-translator-translation-manager',
                 'nexus-ai-wp-translator-bulk-actions',
                 'nexus-ai-wp-translator-quality-assessor',
-                'nexus-ai-wp-translator-meta-box',
                 'nexus-ai-wp-translator-dashboard',
                 'nexus-ai-wp-translator-queue-manager'
             ),
@@ -608,128 +594,11 @@ class Nexus_AI_WP_Translator_Admin {
         include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/admin-relationships.php';
     }
 
-    /**
-     * Add translation meta box
-     */
-    public function add_translation_meta_box() {
-        add_meta_box(
-            'nexus-ai-wp-translator-meta-box',
-            __('Nexus AI WP Translator', 'nexus-ai-wp-translator'),
-            array($this, 'display_translation_meta_box'),
-            array('post', 'page'),
-            'side',
-            'high'
-        );
-    }
+    // Meta box methods removed per user request
 
-    /**
-     * Display translation meta box
-     */
-    public function display_translation_meta_box($post) {
-        $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true);
-        $source_post_id = get_post_meta($post->ID, '_nexus_ai_wp_translator_source_post', true);
-        $translations = $this->db->get_post_translations($post->ID);
-        $languages = $this->translation_manager->get_available_languages();
-        // Sort languages alphabetically by name
-        asort($languages);
+    // Column methods removed per user request
 
-        // Get configured settings
-        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'));
-
-        // If post language is not set, default to 'auto' (auto-detect)
-        if (empty($post_language)) {
-            $post_language = 'auto';
-        }
-
-        include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/meta-box-translation.php';
-    }
-
-    /**
-     * Add posts columns
-     */
-    public function add_posts_columns($columns) {
-        $columns['nexus_ai_wp_language'] = __('Language', 'nexus-ai-wp-translator');
-        $columns['nexus_ai_wp_translations'] = __('Translations', 'nexus-ai-wp-translator');
-        $columns['nexus_ai_wp_quality'] = __('Quality', 'nexus-ai-wp-translator');
-        return $columns;
-    }
-
-    /**
-     * Display posts columns
-     */
-    public function display_posts_columns($column, $post_id) {
-        switch ($column) {
-            case 'nexus_ai_wp_language':
-                $language = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
-                if ($language) {
-                    $languages = $this->translation_manager->get_available_languages();
-                    echo isset($languages[$language]) ? $languages[$language] : $language;
-                } else {
-                    echo __('Not set', 'nexus-ai-wp-translator');
-                }
-                break;
-
-            case 'nexus_ai_wp_translations':
-                $translations = $this->db->get_post_translations($post_id);
-                if ($translations) {
-                    $count = count($translations);
-                    $completed = 0;
-                    foreach ($translations as $translation) {
-                        if ($translation->status === 'completed') {
-                            $completed++;
-                        }
-                    }
-                    echo sprintf(__('%d/%d completed', 'nexus-ai-wp-translator'), $completed, $count);
-                } else {
-                    echo __('None', 'nexus-ai-wp-translator');
-                }
-                break;
-
-            case 'nexus_ai_wp_quality':
-                $use_llm_quality = get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true);
-
-                if (!$use_llm_quality) {
-                    // Quality assessment disabled - show disabled icon
-                    echo '<span class="nexus-ai-wp-quality-disabled" title="' . esc_attr__('Quality assessment disabled', 'nexus-ai-wp-translator') . '">⚪</span>';
-                } else {
-                    // Check for quality assessment data
-                    $quality_assessment = get_post_meta($post_id, '_nexus_ai_wp_translator_quality_assessment', true);
-
-                    if ($quality_assessment && is_array($quality_assessment)) {
-                        if (isset($quality_assessment['overall_score'])) {
-                            // Detailed assessment completed: Show grade + click for full report
-                            $score = intval($quality_assessment['overall_score']);
-                            $grade = isset($quality_assessment['grade']) ? $quality_assessment['grade'] : $this->calculate_grade_from_score($score);
-
-                            echo '<div class="nexus-quality-grade-display">';
-                            echo '<button type="button" class="nexus-quality-grade-btn" data-post-id="' . $post_id . '" title="' . esc_attr__('Click to view full quality report', 'nexus-ai-wp-translator') . '">';
-                            echo '<span class="quality-grade">' . esc_html($grade) . '</span>';
-                            echo '<span class="quality-score">' . $score . '%</span>';
-                            echo '</button>';
-                            echo '</div>';
-                        } elseif (isset($quality_assessment['confidence_level'])) {
-                            // Basic assessment only: Show confidence badge + Analyze button
-                            $confidence_level = $quality_assessment['confidence_level'];
-                            $confidence_reason = $quality_assessment['confidence_reason'] ?? null;
-
-                            echo '<div class="nexus-confidence-display">';
-                            echo '<div class="nexus-confidence-badge confidence-' . esc_attr($confidence_level) . '" title="' . esc_attr($confidence_reason ?: 'Confidence: ' . ucfirst($confidence_level)) . '">';
-                            echo '<span class="confidence-dot"></span>';
-                            echo '<span class="confidence-text">' . esc_html(strtoupper($confidence_level)) . '</span>';
-                            echo '</div>';
-                            echo '<button type="button" class="nexus-analyze-btn button button-small" data-post-id="' . $post_id . '">';
-                            echo esc_html__('Analyze', 'nexus-ai-wp-translator');
-                            echo '</button>';
-                            echo '</div>';
-                        }
-                    } else {
-                        // No quality data available
-                        echo '<span class="nexus-ai-wp-quality-none" title="' . esc_attr__('No quality assessment available', 'nexus-ai-wp-translator') . '">—</span>';
-                    }
-                }
-                break;
-        }
-    }
+    // Display posts columns method removed per user request
 
     /**
      * AJAX: Test API connection

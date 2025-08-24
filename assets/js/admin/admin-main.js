@@ -74,19 +74,20 @@
                     break;
 
                 case 'dashboard':
-                case 'posts':
-                case 'pages':
                     if (window.NexusAIWPTranslatorBulkActions) {
                         NexusAIWPTranslatorBulkActions.init();
                         NexusAIWPTranslatorBulkActions.initInterface();
                     }
                     break;
 
+                case 'posts':
+                case 'pages':
+                    // Bulk actions removed from WordPress admin pages per user request
+                    break;
+
                 case 'post-edit':
                 case 'post-new':
-                    if (window.NexusAIWPTranslatorMetaBox) {
-                        NexusAIWPTranslatorMetaBox.init();
-                    }
+                    // Meta box initialization removed per user request
                     break;
             }
         },
