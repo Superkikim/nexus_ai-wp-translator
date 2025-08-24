@@ -30,6 +30,9 @@
             // Initialize dashboard actions
             this.initDashboardActions();
 
+            // Initialize queue actions
+            this.initQueueActions();
+
             // Make Pending Queue clickable to open Queue tab
             jQuery(document).on('click', '#dashboard-pending-queue', function(e) {
                 e.preventDefault();
@@ -206,6 +209,49 @@
             })
             .fail(function() {
                 listContainer.html('<div class="notice notice-error"><p>Network error occurred while loading posts.</p></div>');
+            });
+        },
+
+        /**
+         * Initialize queue actions
+         */
+        initQueueActions: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('initQueueActions')) return;
+            var $ = jQuery;
+
+            // Process Queue Now button
+            $(document).on('click', '#process-queue-now', function(e) {
+                e.preventDefault();
+                var $button = $(this);
+                var originalText = $button.find('.action-text').text();
+
+                $button.prop('disabled', true);
+                $button.find('.action-text').text('Processing...');
+
+                $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                    action: 'nexus_ai_wp_process_queue_now',
+                    nonce: nexus_ai_wp_translator_ajax.nonce
+                }).done(function(response) {
+                    if (response.success) {
+                        $button.find('.action-text').text('✓ Triggered');
+                        setTimeout(function() {
+                            $button.find('.action-text').text(originalText);
+                            $button.prop('disabled', false);
+                            // Refresh queue stats
+                            if (typeof NexusAIWPTranslatorQueueManager !== 'undefined') {
+                                NexusAIWPTranslatorQueueManager.loadQueueData();
+                            }
+                        }, 2000);
+                    } else {
+                        alert('Error: ' + (response.data ? response.data.message : 'Unknown error'));
+                        $button.find('.action-text').text(originalText);
+                        $button.prop('disabled', false);
+                    }
+                }).fail(function() {
+                    alert('Network error occurred');
+                    $button.find('.action-text').text(originalText);
+                    $button.prop('disabled', false);
+                });
             });
         },
 

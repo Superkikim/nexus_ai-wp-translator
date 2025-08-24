@@ -31,6 +31,9 @@ class Nexus_AI_WP_Translator_Scheduler {
 
         // Ensure queue table exists on initialization
         $this->ensure_queue_table_exists();
+
+        // Ensure cron is scheduled
+        $this->ensure_cron_scheduled();
     }
     
     /**
@@ -52,6 +55,7 @@ class Nexus_AI_WP_Translator_Scheduler {
         add_action('wp_ajax_nexus_ai_wp_pause_queue', array($this, 'ajax_pause_queue'));
         add_action('wp_ajax_nexus_ai_wp_resume_queue', array($this, 'ajax_resume_queue'));
         add_action('wp_ajax_nexus_ai_wp_retry_queue_item', array($this, 'ajax_retry_queue_item'));
+        add_action('wp_ajax_nexus_ai_wp_process_queue_now', array($this, 'ajax_process_queue_now'));
         
         // Activation/deactivation hooks
         register_activation_hook(NEXUS_AI_WP_TRANSLATOR_PLUGIN_FILE, array($this, 'activate_scheduler'));
@@ -171,6 +175,21 @@ class Nexus_AI_WP_Translator_Scheduler {
 
         if (!$table_exists) {
             $this->create_queue_table();
+        }
+    }
+
+    /**
+     * Ensure cron is scheduled
+     */
+    private function ensure_cron_scheduled() {
+        // Schedule queue processing if not already scheduled
+        if (!wp_next_scheduled('nexus_ai_wp_translator_process_queue')) {
+            wp_schedule_event(time(), 'every_5_minutes', 'nexus_ai_wp_translator_process_queue');
+        }
+
+        // Schedule cleanup if not already scheduled
+        if (!wp_next_scheduled('nexus_ai_wp_translator_cleanup_queue')) {
+            wp_schedule_event(time(), 'daily', 'nexus_ai_wp_translator_cleanup_queue');
         }
     }
     
@@ -609,6 +628,22 @@ class Nexus_AI_WP_Translator_Scheduler {
         update_option('nexus_ai_wp_translator_queue_paused', false);
 
         wp_send_json_success(__('Queue resumed', 'nexus-ai-wp-translator'));
+    }
+
+    /**
+     * AJAX: Process queue now (manual trigger)
+     */
+    public function ajax_process_queue_now() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        // Process the queue immediately
+        $this->process_translation_queue();
+
+        wp_send_json_success(__('Queue processing triggered', 'nexus-ai-wp-translator'));
     }
 
     /**

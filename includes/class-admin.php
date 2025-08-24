@@ -35,7 +35,18 @@ class Nexus_AI_WP_Translator_Admin {
     private function init_dependencies() {
         $this->db = Nexus_AI_WP_Translator_Database::get_instance();
         $this->api_handler = Nexus_AI_WP_Translator_API_Handler::get_instance();
-        $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
+        // Translation manager will be loaded lazily when needed
+        $this->translation_manager = null;
+    }
+
+    /**
+     * Get translation manager instance (lazy loading)
+     */
+    private function get_translation_manager() {
+        if ($this->translation_manager === null) {
+            $this->translation_manager = Nexus_AI_WP_Translator_Manager::get_instance();
+        }
+        return $this->translation_manager;
     }
     /**
      * Initialize admin hooks
@@ -91,12 +102,13 @@ class Nexus_AI_WP_Translator_Admin {
             require_once plugin_dir_path(__FILE__) . 'class-anthropic-status.php';
         }
 
-        // Translation AJAX handlers (from translation manager)
-        if ($this->translation_manager) {
-            add_action('wp_ajax_nexus_ai_wp_translate_post', array($this->translation_manager, 'ajax_translate_post'));
-            add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this->translation_manager, 'ajax_unlink_translation'));
-            add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this->translation_manager, 'ajax_get_translation_status'));
+        // Translation AJAX handlers (using lazy loading)
+        add_action('wp_ajax_nexus_ai_wp_translate_post', array($this, 'ajax_translate_post_proxy'));
+        add_action('wp_ajax_nexus_ai_wp_unlink_translation', array($this, 'ajax_unlink_translation_proxy'));
+        add_action('wp_ajax_nexus_ai_wp_get_translation_status', array($this, 'ajax_get_translation_status_proxy'));
 
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Nexus AI WP Translator: [ADMIN] Translation manager AJAX proxy handlers registered');
         }
 
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -1521,5 +1533,32 @@ class Nexus_AI_WP_Translator_Admin {
             'html' => $html,
             'pagination' => ''
         ));
+    }
+
+    /**
+     * AJAX proxy methods for translation manager
+     */
+    public function ajax_translate_post_proxy() {
+        $translation_manager = $this->get_translation_manager();
+        if ($translation_manager && method_exists($translation_manager, 'ajax_translate_post')) {
+            return $translation_manager->ajax_translate_post();
+        }
+        wp_send_json_error(array('message' => __('Translation manager not available', 'nexus-ai-wp-translator')));
+    }
+
+    public function ajax_unlink_translation_proxy() {
+        $translation_manager = $this->get_translation_manager();
+        if ($translation_manager && method_exists($translation_manager, 'ajax_unlink_translation')) {
+            return $translation_manager->ajax_unlink_translation();
+        }
+        wp_send_json_error(array('message' => __('Translation manager not available', 'nexus-ai-wp-translator')));
+    }
+
+    public function ajax_get_translation_status_proxy() {
+        $translation_manager = $this->get_translation_manager();
+        if ($translation_manager && method_exists($translation_manager, 'ajax_get_translation_status')) {
+            return $translation_manager->ajax_get_translation_status();
+        }
+        wp_send_json_error(array('message' => __('Translation manager not available', 'nexus-ai-wp-translator')));
     }
 }
