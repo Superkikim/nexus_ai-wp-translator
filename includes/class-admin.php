@@ -65,6 +65,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('admin_init', array($this, 'init_settings'));
         add_action('wp_ajax_nexus_ai_wp_bulk_set_language', array($this, 'ajax_bulk_set_language'));
         add_action('wp_ajax_nexus_ai_wp_bulk_detect_language', array($this, 'ajax_bulk_detect_language'));
+        add_action('wp_ajax_nexus_ai_wp_get_target_languages', array($this, 'ajax_get_target_languages'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
 
         // Meta box and post list modifications removed per user request
@@ -1216,6 +1217,36 @@ class Nexus_AI_WP_Translator_Admin {
         }
 
         wp_send_json_success($quality_assessment);
+    }
+
+    /**
+     * AJAX: Get target languages
+     */
+    public function ajax_get_target_languages() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $target_languages = get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de', 'it', 'pt'));
+
+        // Ensure it's an array
+        if (!is_array($target_languages)) {
+            if (is_string($target_languages)) {
+                // Handle serialized string or comma-separated values
+                if (is_serialized($target_languages)) {
+                    $target_languages = maybe_unserialize($target_languages);
+                } else {
+                    // Fallback: split by comma if it's a comma-separated string
+                    $target_languages = array_map('trim', explode(',', $target_languages));
+                }
+            } else {
+                $target_languages = array('es', 'fr', 'de', 'it', 'pt'); // Fallback
+            }
+        }
+
+        wp_send_json_success($target_languages);
     }
 
     /**

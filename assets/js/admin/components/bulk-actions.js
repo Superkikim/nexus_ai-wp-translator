@@ -644,16 +644,64 @@
 
             var dialogId = 'nexus-ai-wp-bulk-set-language-dialog';
 
-            // Get available languages from core
-            var languageNames = NexusAIWPTranslatorCore.getLanguageNames();
-            var languageOptions = '<option value="">Select Language</option>';
+            console.debug('[Nexus Translator]: Showing bulk set language dialog for', selectedPosts.length, 'posts');
 
-            // Build language options dynamically
-            for (var code in languageNames) {
-                if (languageNames.hasOwnProperty(code)) {
-                    languageOptions += '<option value="' + code + '">' + languageNames[code] + ' (' + code + ')</option>';
+            // Get target languages from settings (only show selected languages)
+            this.getTargetLanguages(function(targetLanguages) {
+                var languageNames = NexusAIWPTranslatorCore.getLanguageNames();
+                var languageOptions = '<option value="">Select Language</option>';
+
+                // Build language options from target languages only
+                if (targetLanguages && targetLanguages.length > 0) {
+                    targetLanguages.forEach(function(code) {
+                        var name = languageNames[code] || code.toUpperCase();
+                        languageOptions += '<option value="' + code + '">' + name + ' (' + code + ')</option>';
+                    });
+                } else {
+                    // Fallback to common languages if no target languages configured
+                    var fallbackLanguages = ['es', 'fr', 'de', 'it', 'pt'];
+                    fallbackLanguages.forEach(function(code) {
+                        var name = languageNames[code] || code.toUpperCase();
+                        languageOptions += '<option value="' + code + '">' + name + ' (' + code + ')</option>';
+                    });
                 }
-            }
+
+                NexusAIWPTranslatorBulkActions.showSetLanguageDialogWithOptions(selectedPosts, dialogId, languageOptions);
+            });
+        },
+
+        /**
+         * Get target languages from settings
+         */
+        getTargetLanguages: function(callback) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('getTargetLanguages')) return;
+            var $ = jQuery;
+
+            // Try to get target languages from AJAX
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_get_target_languages',
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success && response.data) {
+                    callback(response.data);
+                } else {
+                    console.warn('[Nexus Translator]: Could not get target languages, using fallback');
+                    callback(['es', 'fr', 'de', 'it', 'pt']); // Fallback
+                }
+            })
+            .fail(function() {
+                console.warn('[Nexus Translator]: AJAX failed getting target languages, using fallback');
+                callback(['es', 'fr', 'de', 'it', 'pt']); // Fallback
+            });
+        },
+
+        /**
+         * Show set language dialog with options
+         */
+        showSetLanguageDialogWithOptions: function(selectedPosts, dialogId, languageOptions) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('showSetLanguageDialogWithOptions')) return;
+            var $ = jQuery;
 
             var dialogHtml = '<div id="' + dialogId + '" class="nexus-ai-wp-dialog-overlay">' +
                 '<div class="nexus-ai-wp-dialog">' +
@@ -692,6 +740,10 @@
                     alert('Please select a language.');
                     return;
                 }
+                console.debug('[Nexus Translator]: Setting language', language, 'for posts:', selectedPosts);
+                dialog.remove();
+                NexusAIWPTranslatorBulkActions.performBulkSetLanguage(selectedPosts, language);
+            });
                 dialog.remove();
                 NexusAIWPTranslatorBulkActions.performBulkSetLanguage(selectedPosts, language);
             });
@@ -704,6 +756,29 @@
             if (!NexusAIWPTranslatorCore.ensureJQuery('performBulkSetLanguage')) return;
             var $ = jQuery;
 
+            console.debug('[Nexus Translator]: Performing bulk set language:', {
+                posts: selectedPosts,
+                language: language,
+                ajax_url: nexus_ai_wp_translator_ajax.ajax_url,
+                nonce: nexus_ai_wp_translator_ajax.nonce ? 'present' : 'missing'
+            });
+
+            // Validate inputs
+            if (!selectedPosts || selectedPosts.length === 0) {
+                alert('No posts selected.');
+                return;
+            }
+
+            if (!language) {
+                alert('No language selected.');
+                return;
+            }
+
+            if (!nexus_ai_wp_translator_ajax || !nexus_ai_wp_translator_ajax.ajax_url) {
+                alert('AJAX configuration missing. Please refresh the page and try again.');
+                return;
+            }
+
             $.post(nexus_ai_wp_translator_ajax.ajax_url, {
                 action: 'nexus_ai_wp_bulk_set_language',
                 post_ids: selectedPosts,
@@ -711,16 +786,23 @@
                 nonce: nexus_ai_wp_translator_ajax.nonce
             })
             .done(function(response) {
+                console.debug('[Nexus Translator]: Bulk set language response:', response);
                 if (response.success) {
                     NexusAIWPTranslatorCore.showGlobalNotice('success', 'Language set successfully for ' + selectedPosts.length + ' posts!');
                     location.reload();
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Unknown error';
+                    console.error('[Nexus Translator]: Bulk set language failed:', errorMsg);
                     alert('Failed to set language: ' + errorMsg);
                 }
             })
-            .fail(function() {
-                alert('Network error occurred while setting language.');
+            .fail(function(xhr, status, error) {
+                console.error('[Nexus Translator]: AJAX request failed:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                alert('Network error occurred while setting language. Check console for details.');
             });
         },
 
