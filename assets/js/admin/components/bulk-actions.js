@@ -744,9 +744,6 @@
                 dialog.remove();
                 NexusAIWPTranslatorBulkActions.performBulkSetLanguage(selectedPosts, language);
             });
-                dialog.remove();
-                NexusAIWPTranslatorBulkActions.performBulkSetLanguage(selectedPosts, language);
-            });
         },
 
         /**
