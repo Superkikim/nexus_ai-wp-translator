@@ -7,15 +7,20 @@ A comprehensive WordPress plugin that automatically translates posts using Claud
 ### 🚀 Core Functionality
 - **Automatic Translation**: Translate posts upon publication using Claude AI
 - **Bidirectional Linking**: Maintain relationships between source and translated posts
-- **Language Detection**: Automatic detection based on browser locale and user preferences
+- **AI-Powered Language Detection**: Automatic detection of post language using Claude AI
+- **Comprehensive Language Support**: 80+ languages with ISO 639-1 standard codes
+- **Smart Language Management**: Source language configuration with validation
 - **Status Synchronization**: Sync post status changes across translations
 - **Infinite Loop Prevention**: Built-in throttling and safeguards to prevent costly API loops
 
 ### 🎛️ Admin Panel
 - **API Key Management**: Secure configuration with connection testing
-- **Language Configuration**: Set source and multiple target languages
+- **Advanced Language Configuration**: Modern grid interface for selecting from 80+ languages
+- **Source Language Setting**: Configure your website's primary language
+- **Bulk Language Operations**: Set or detect language for multiple posts at once
 - **Translation Dashboard**: Monitor queue status, success rates, and processing logs
 - **Post Relationship Manager**: Visual interface for managing translation links
+- **Language Validation**: Comprehensive validation throughout the system
 - **Advanced Settings**: Throttling, caching, retry mechanisms, and more
 
 ### 🎨 User Experience
@@ -63,10 +68,24 @@ A comprehensive WordPress plugin that automatically translates posts using Claud
 
 ### 2. Language Configuration
 
+#### Source Language
+1. Go to **Settings** → **Global Settings**
+2. Select your website's primary language from the dropdown
+3. This language will be used as the default source for translations
+
+#### Target Languages
 1. Navigate to **Settings** → **Languages** tab
-2. Set your **Source Language** (default content language)
-3. Select **Target Languages** for automatic translation
-4. Save settings
+2. Use the search box to find specific languages
+3. Check the "Show all languages" option to see all 80+ supported languages
+4. Select your desired target languages from the grid interface
+5. Save settings
+
+**Features:**
+- Modern grid interface with search functionality
+- Popular languages (English, Spanish, French, etc.) shown by default
+- Search by language name or ISO code (e.g., "French" or "fr")
+- Real-time selection counter
+- Comprehensive validation of language selections
 
 ### 3. Performance Settings
 
@@ -96,6 +115,38 @@ From any post edit screen:
 2. Select target languages
 3. Click **Translate Now**
 4. Monitor progress and view results
+
+### Language Management
+
+#### Bulk Language Operations
+
+Use the dashboard's bulk actions to manage languages for multiple posts:
+
+**Set Language:**
+1. Select posts in the dashboard
+2. Choose "Set Language" from the bulk actions dropdown
+3. Select the source language from the comprehensive language list
+4. Click "Set Language" to apply
+
+**Detect Language:**
+1. Select posts without language assignments
+2. Choose "Detect Language" from the bulk actions dropdown
+3. Confirm the AI-powered detection process
+4. Review results and detected languages
+
+#### AI-Powered Language Detection
+
+The plugin automatically detects content language when:
+- Translating posts without language set
+- Using the "Detect Language" bulk action
+- Processing content with unknown source language
+
+**Detection Features:**
+- Uses Claude AI for high accuracy
+- Analyzes post title and content
+- Validates against supported language list
+- Stores results for future use
+- Provides fallback to default source language
 
 ### Language Switching
 
