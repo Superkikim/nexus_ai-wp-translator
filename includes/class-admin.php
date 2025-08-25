@@ -486,7 +486,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '<tbody>';
 
         foreach ($posts as $post) {
-            $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: 'auto';
+            $post_language = get_post_meta($post->ID, '_nexus_ai_wp_translator_language', true) ?: '';
             $translations = $this->db->get_post_translations($post->ID);
             $translation_count = count($translations);
 
@@ -496,7 +496,13 @@ class Nexus_AI_WP_Translator_Admin {
             $output .= '<strong><a href="' . get_edit_post_link($post->ID) . '">' . esc_html($post->post_title) . '</a></strong>';
             $output .= '<br><small>ID: ' . $post->ID . ' | ' . get_the_date('Y-m-d H:i', $post->ID) . '</small>';
             $output .= '</td>';
-            $output .= '<td><code>' . esc_html($post_language) . '</code></td>';
+            $output .= '<td>';
+            if (!empty($post_language)) {
+                $output .= '<code>' . esc_html($post_language) . '</code>';
+            } else {
+                $output .= '<span class="nexus-ai-wp-no-language">' . __('Not set', 'nexus-ai-wp-translator') . '</span>';
+            }
+            $output .= '</td>';
             $output .= '<td>';
             if ($translation_count > 0) {
                 $completed = 0;

@@ -3341,3 +3341,10 @@
         max-width: none;
     }
 }
+
+/* Language display in posts list */
+.nexus-ai-wp-no-language {
+    color: #666;
+    font-style: italic;
+    font-size: 12px;
+}
