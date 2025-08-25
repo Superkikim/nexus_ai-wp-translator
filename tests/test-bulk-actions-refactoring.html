@@ -192,23 +192,29 @@
         function runTests() {
             const output = document.getElementById('test-output');
             output.innerHTML = '';
-            
-            const tests = [
-                testContainerInitialization,
-                testCheckboxFunctionality,
-                testSelectAllFunctionality,
-                testButtonStates,
-                testCrossTabIsolation,
-                testDynamicContentScenario
-            ];
-            
-            tests.forEach(test => {
-                try {
-                    test();
-                } catch (error) {
-                    addTestResult(`❌ ${test.name}: ${error.message}`, 'error');
-                }
-            });
+
+            // Run tests sequentially with delays to handle async operations
+            testContainerInitialization();
+
+            setTimeout(() => {
+                testCheckboxFunctionality();
+
+                setTimeout(() => {
+                    testSelectAllFunctionality();
+
+                    setTimeout(() => {
+                        testButtonStates();
+
+                        setTimeout(() => {
+                            testCrossTabIsolation();
+
+                            setTimeout(() => {
+                                testDynamicContentScenario();
+                            }, 200);
+                        }, 200);
+                    }, 200);
+                }, 200);
+            }, 200);
         }
 
         function addTestResult(message, type = 'success') {
@@ -248,40 +254,54 @@
         function testSelectAllFunctionality() {
             // Test select all in pages tab
             const pagesSelectAll = document.querySelector('#pages-tab .select-all-checkbox');
-            pagesSelectAll.checked = true;
-            pagesSelectAll.dispatchEvent(new Event('change'));
-            
             const pagesCheckboxes = document.querySelectorAll('#pages-tab .select-post-checkbox');
-            const checkedCount = Array.from(pagesCheckboxes).filter(cb => cb.checked).length;
-            
-            if (checkedCount === pagesCheckboxes.length) {
-                addTestResult('✅ Pages tab select all functionality works');
-            } else {
-                throw new Error('Pages tab select all did not check all boxes');
-            }
+
+            console.log('Testing select all - found', pagesCheckboxes.length, 'checkboxes');
+
+            pagesSelectAll.checked = true;
+            pagesSelectAll.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Wait a bit for event handlers to process
+            setTimeout(function() {
+                const checkedCount = Array.from(pagesCheckboxes).filter(cb => cb.checked).length;
+                console.log('After select all:', checkedCount, 'of', pagesCheckboxes.length, 'checked');
+
+                if (checkedCount === pagesCheckboxes.length) {
+                    addTestResult('✅ Pages tab select all functionality works');
+                } else {
+                    addTestResult('❌ Pages tab select all did not check all boxes (' + checkedCount + '/' + pagesCheckboxes.length + ')', 'error');
+                }
+            }, 100);
         }
 
         function testButtonStates() {
             // Test button state in events tab
             const eventsButton = document.querySelector('#events-tab .nexus-ai-wp-bulk-action-apply');
             const eventsCheckbox = document.querySelector('#events-tab .select-post-checkbox');
-            
+
+            console.log('Testing button states - button found:', !!eventsButton, 'disabled:', eventsButton ? eventsButton.disabled : 'N/A');
+
             // Should be disabled initially
-            if (eventsButton.disabled) {
+            if (eventsButton && eventsButton.disabled) {
                 addTestResult('✅ Events tab button initially disabled');
             } else {
-                throw new Error('Events tab button should be disabled initially');
+                addTestResult('❌ Events tab button should be disabled initially (found: ' + (eventsButton ? !eventsButton.disabled : 'no button') + ')', 'error');
+                return;
             }
-            
+
             // Should be enabled after selecting checkbox
             eventsCheckbox.checked = true;
-            eventsCheckbox.dispatchEvent(new Event('change'));
-            
-            if (!eventsButton.disabled) {
-                addTestResult('✅ Events tab button enabled after selection');
-            } else {
-                throw new Error('Events tab button should be enabled after selection');
-            }
+            eventsCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Wait for event handlers to process
+            setTimeout(function() {
+                console.log('After checkbox change - button disabled:', eventsButton.disabled);
+                if (!eventsButton.disabled) {
+                    addTestResult('✅ Events tab button enabled after selection');
+                } else {
+                    addTestResult('❌ Events tab button should be enabled after selection', 'error');
+                }
+            }, 100);
         }
 
         function testCrossTabIsolation() {

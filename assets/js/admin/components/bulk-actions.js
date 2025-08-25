@@ -85,11 +85,17 @@
         reinitForContainer: function(containerSelector) {
             console.debug('[Nexus Translator]: Force reinitializing bulk actions for:', containerSelector);
 
+            // Clean up first
+            this.cleanupContainerEvents(containerSelector);
+
             // Remove from initialized containers
             this.initializedContainers.delete(containerSelector);
 
-            // Force reinitialization
-            this.initForContainer(containerSelector, true);
+            // Wait a bit for cleanup to complete, then reinitialize
+            var self = this;
+            setTimeout(function() {
+                self.initForContainer(containerSelector, true);
+            }, 50);
         },
 
         /**
@@ -104,6 +110,9 @@
 
             // Remove namespaced event handlers
             container.off('.bulkactions');
+
+            // Also remove any global handlers that might interfere
+            $(document).off('.bulkactions-' + containerSelector.replace('#', ''));
 
             console.debug('[Nexus Translator]: Cleaned up events for container:', containerSelector);
         },
@@ -131,7 +140,12 @@
             container.on('change.bulkactions', '.select-all-checkbox', function() {
                 console.debug('[Nexus Translator]: Select all checkbox changed in:', containerSelector);
                 var isChecked = $(this).is(':checked');
-                container.find('.select-post-checkbox').prop('checked', isChecked);
+                var checkboxes = container.find('.select-post-checkbox');
+                console.debug('[Nexus Translator]: Setting', checkboxes.length, 'checkboxes to:', isChecked);
+
+                checkboxes.prop('checked', isChecked);
+
+                // Update counts and buttons immediately
                 NexusAIWPTranslatorBulkActions.updateBulkSelectionCount(containerSelector);
                 NexusAIWPTranslatorBulkActions.updateBulkActionButtons(containerSelector);
             });
@@ -295,12 +309,16 @@
             var bulkActionButtons = container.find('.nexus-ai-wp-bulk-action-apply');
             var bulkActionSelects = container.find('.nexus-ai-wp-bulk-action-select');
 
+            console.debug('[Nexus Translator]: Updating button states in', containerSelector, '- selected:', selectedCount, 'buttons found:', bulkActionButtons.length);
+
             if (selectedCount > 0) {
                 bulkActionButtons.prop('disabled', false);
                 bulkActionSelects.prop('disabled', false);
+                console.debug('[Nexus Translator]: Enabled buttons in:', containerSelector);
             } else {
                 bulkActionButtons.prop('disabled', true);
                 bulkActionSelects.prop('disabled', true);
+                console.debug('[Nexus Translator]: Disabled buttons in:', containerSelector);
             }
         },
 
