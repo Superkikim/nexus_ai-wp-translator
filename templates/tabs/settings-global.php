@@ -12,6 +12,25 @@ if (!defined('ABSPATH')) {
 
 <table class="form-table">
     <tr>
+        <th scope="row"><?php _e('Source Language', 'nexus-ai-wp-translator'); ?></th>
+        <td>
+            <?php
+            $source_language = get_option('nexus_ai_wp_translator_source_language', 'en');
+            $available_languages = $this->translation_manager->get_available_languages();
+            ?>
+            <select id="nexus_ai_wp_translator_source_language" name="nexus_ai_wp_translator_source_language">
+                <?php foreach ($available_languages as $code => $name): ?>
+                    <option value="<?php echo esc_attr($code); ?>" <?php selected($source_language, $code); ?>>
+                        <?php echo esc_html($name); ?> (<?php echo esc_html($code); ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="description">
+                <?php _e('Select the primary language of your website content. This is the language that will be translated FROM when creating translations.', 'nexus-ai-wp-translator'); ?>
+            </p>
+        </td>
+    </tr>
+    <tr>
         <th scope="row"><?php _e('Quality Assessment Method', 'nexus-ai-wp-translator'); ?></th>
         <td>
             <fieldset>

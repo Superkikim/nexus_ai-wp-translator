@@ -782,6 +782,10 @@ class Nexus_AI_WP_Translator_Admin {
         $fields = array(
             'nexus_ai_wp_translator_api_key' => array('api_key', 'sanitize_text_field', null),
             'nexus_ai_wp_translator_model' => array('model', 'sanitize_text_field', null),
+            'nexus_ai_wp_translator_source_language' => array('source_language', 'sanitize_text_field', function($v){
+                $available_languages = array_keys($this->translation_manager->get_available_languages());
+                return in_array($v, $available_languages);
+            }),
             'nexus_ai_wp_translator_target_languages' => array('target_languages', null, function($v){ return is_array($v); }),
             'nexus_ai_wp_translator_use_llm_quality_assessment' => array('use_llm_quality_assessment', function($v){ return (bool)$v; }, null),
             'nexus_ai_wp_translator_save_as_draft' => array('save_as_draft', function($v){ return (bool)$v; }, null),

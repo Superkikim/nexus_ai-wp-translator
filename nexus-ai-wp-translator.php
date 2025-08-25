@@ -307,6 +307,7 @@ class Nexus_AI_WP_Translator_Plugin {
             $default_options = array(
                 'api_key' => '',
                 'model' => '', // Fix: Add missing model option
+                'source_language' => 'en', // Default source language
                 'target_languages' => array('es', 'fr', 'de'),
                 'auto_translate' => false, // Fix: Add missing auto_translate option
                 'throttle_limit' => 100,
