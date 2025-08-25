@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Actions Refactoring Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .tab-content { display: none; border: 1px solid #ccc; padding: 20px; margin: 10px 0; }
+        .tab-content.active { display: block; }
+        .nav-tab { padding: 10px 15px; margin-right: 5px; background: #f1f1f1; border: 1px solid #ccc; cursor: pointer; }
+        .nav-tab.nav-tab-active { background: #fff; border-bottom: 1px solid #fff; }
+        .nexus-ai-wp-bulk-actions { margin: 10px 0; padding: 10px; background: #f9f9f9; }
+        .nexus-ai-wp-bulk-action-apply:disabled { opacity: 0.5; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .test-results { margin: 20px 0; padding: 15px; background: #e7f3ff; border: 1px solid #b3d9ff; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Bulk Actions Refactoring Test</h1>
+    
+    <div class="test-results">
+        <h3>Test Results:</h3>
+        <div id="test-output"></div>
+        <button onclick="runTests()">Run Tests</button>
+    </div>
+
+    <!-- Simulate the dashboard tab structure -->
+    <div class="nexus-ai-wp-content-tabs">
+        <nav class="nav-tab-wrapper">
+            <a href="#articles-tab" class="nav-tab nav-tab-active" onclick="switchTab(event, 'articles-tab')">Articles</a>
+            <a href="#pages-tab" class="nav-tab" onclick="switchTab(event, 'pages-tab')">Pages</a>
+            <a href="#events-tab" class="nav-tab" onclick="switchTab(event, 'events-tab')">Events</a>
+        </nav>
+
+        <!-- Articles Tab -->
+        <div id="articles-tab" class="tab-content active">
+            <h2>Articles to Translate</h2>
+            <div class="nexus-ai-wp-bulk-actions-container">
+                <div class="nexus-ai-wp-bulk-actions">
+                    <label for="nexus-ai-wp-bulk-action-post">Actions for selected items:</label>
+                    <select id="nexus-ai-wp-bulk-action-post" class="nexus-ai-wp-bulk-action-select" data-post-type="post">
+                        <option value="">Select Action</option>
+                        <option value="translate">Translate</option>
+                        <option value="set_language">Set Language</option>
+                        <option value="link">Link</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="button" class="button nexus-ai-wp-bulk-action-apply" data-post-type="post" disabled>Apply</button>
+                    <span class="nexus-ai-wp-bulk-selection-count">0 items selected</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all-post" class="select-all-checkbox"></th>
+                        <th>Title</th>
+                        <th>Language</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="1" data-language="en"></td>
+                        <td>Article 1</td>
+                        <td>en</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="2" data-language="en"></td>
+                        <td>Article 2</td>
+                        <td>en</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pages Tab -->
+        <div id="pages-tab" class="tab-content">
+            <h2>Pages to Translate</h2>
+            <div class="nexus-ai-wp-bulk-actions-container">
+                <div class="nexus-ai-wp-bulk-actions">
+                    <label for="nexus-ai-wp-bulk-action-page">Actions for selected items:</label>
+                    <select id="nexus-ai-wp-bulk-action-page" class="nexus-ai-wp-bulk-action-select" data-post-type="page">
+                        <option value="">Select Action</option>
+                        <option value="translate">Translate</option>
+                        <option value="set_language">Set Language</option>
+                        <option value="link">Link</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="button" class="button nexus-ai-wp-bulk-action-apply" data-post-type="page" disabled>Apply</button>
+                    <span class="nexus-ai-wp-bulk-selection-count">0 items selected</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all-page" class="select-all-checkbox"></th>
+                        <th>Title</th>
+                        <th>Language</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="101" data-language="en"></td>
+                        <td>Page 1</td>
+                        <td>en</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="102" data-language="en"></td>
+                        <td>Page 2</td>
+                        <td>en</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Events Tab -->
+        <div id="events-tab" class="tab-content">
+            <h2>Events to Translate</h2>
+            <div class="nexus-ai-wp-bulk-actions-container">
+                <div class="nexus-ai-wp-bulk-actions">
+                    <label for="nexus-ai-wp-bulk-action-event">Actions for selected items:</label>
+                    <select id="nexus-ai-wp-bulk-action-event" class="nexus-ai-wp-bulk-action-select" data-post-type="event">
+                        <option value="">Select Action</option>
+                        <option value="translate">Translate</option>
+                        <option value="set_language">Set Language</option>
+                        <option value="link">Link</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="button" class="button nexus-ai-wp-bulk-action-apply" data-post-type="event" disabled>Apply</button>
+                    <span class="nexus-ai-wp-bulk-selection-count">0 items selected</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all-event" class="select-all-checkbox"></th>
+                        <th>Title</th>
+                        <th>Language</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="201" data-language="en"></td>
+                        <td>Event 1</td>
+                        <td>en</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="select-post-checkbox" data-post-id="202" data-language="en"></td>
+                        <td>Event 2</td>
+                        <td>en</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Mock the core functionality -->
+    <script>
+        window.NexusAIWPTranslatorCore = {
+            ensureJQuery: function() { return true; },
+            escapeHtml: function(str) { return str; }
+        };
+    </script>
+
+    <!-- Include the refactored bulk actions -->
+    <script src="../assets/js/admin/components/bulk-actions.js"></script>
+
+    <script>
+        function switchTab(event, tabId) {
+            event.preventDefault();
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('nav-tab-active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('nav-tab-active');
+        }
+
+        function runTests() {
+            const output = document.getElementById('test-output');
+            output.innerHTML = '';
+            
+            const tests = [
+                testContainerInitialization,
+                testCheckboxFunctionality,
+                testSelectAllFunctionality,
+                testButtonStates,
+                testCrossTabIsolation
+            ];
+            
+            tests.forEach(test => {
+                try {
+                    test();
+                } catch (error) {
+                    addTestResult(`❌ ${test.name}: ${error.message}`, 'error');
+                }
+            });
+        }
+
+        function addTestResult(message, type = 'success') {
+            const output = document.getElementById('test-output');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            output.appendChild(div);
+        }
+
+        function testContainerInitialization() {
+            // Initialize bulk actions for each container
+            NexusAIWPTranslatorBulkActions.initForContainer('#articles-tab');
+            NexusAIWPTranslatorBulkActions.initForContainer('#pages-tab');
+            NexusAIWPTranslatorBulkActions.initForContainer('#events-tab');
+            
+            addTestResult('✅ Container initialization completed');
+        }
+
+        function testCheckboxFunctionality() {
+            // Test articles tab checkbox
+            const articlesCheckbox = document.querySelector('#articles-tab .select-post-checkbox');
+            articlesCheckbox.checked = true;
+            articlesCheckbox.dispatchEvent(new Event('change'));
+            
+            const articlesCount = document.querySelector('#articles-tab .nexus-ai-wp-bulk-selection-count');
+            if (articlesCount.textContent.includes('1 items selected')) {
+                addTestResult('✅ Articles tab checkbox functionality works');
+            } else {
+                throw new Error('Articles tab checkbox count not updated');
+            }
+        }
+
+        function testSelectAllFunctionality() {
+            // Test select all in pages tab
+            const pagesSelectAll = document.querySelector('#pages-tab .select-all-checkbox');
+            pagesSelectAll.checked = true;
+            pagesSelectAll.dispatchEvent(new Event('change'));
+            
+            const pagesCheckboxes = document.querySelectorAll('#pages-tab .select-post-checkbox');
+            const checkedCount = Array.from(pagesCheckboxes).filter(cb => cb.checked).length;
+            
+            if (checkedCount === pagesCheckboxes.length) {
+                addTestResult('✅ Pages tab select all functionality works');
+            } else {
+                throw new Error('Pages tab select all did not check all boxes');
+            }
+        }
+
+        function testButtonStates() {
+            // Test button state in events tab
+            const eventsButton = document.querySelector('#events-tab .nexus-ai-wp-bulk-action-apply');
+            const eventsCheckbox = document.querySelector('#events-tab .select-post-checkbox');
+            
+            // Should be disabled initially
+            if (eventsButton.disabled) {
+                addTestResult('✅ Events tab button initially disabled');
+            } else {
+                throw new Error('Events tab button should be disabled initially');
+            }
+            
+            // Should be enabled after selecting checkbox
+            eventsCheckbox.checked = true;
+            eventsCheckbox.dispatchEvent(new Event('change'));
+            
+            if (!eventsButton.disabled) {
+                addTestResult('✅ Events tab button enabled after selection');
+            } else {
+                throw new Error('Events tab button should be enabled after selection');
+            }
+        }
+
+        function testCrossTabIsolation() {
+            // Verify that actions in one tab don't affect others
+            const articlesCount = document.querySelector('#articles-tab .nexus-ai-wp-bulk-selection-count');
+            const pagesCount = document.querySelector('#pages-tab .nexus-ai-wp-bulk-selection-count');
+            const eventsCount = document.querySelector('#events-tab .nexus-ai-wp-bulk-selection-count');
+            
+            // Each tab should have different counts based on previous tests
+            if (articlesCount.textContent.includes('1 items') && 
+                pagesCount.textContent.includes('2 items') && 
+                eventsCount.textContent.includes('1 items')) {
+                addTestResult('✅ Cross-tab isolation working correctly');
+            } else {
+                throw new Error(`Cross-tab isolation failed: Articles(${articlesCount.textContent}), Pages(${pagesCount.textContent}), Events(${eventsCount.textContent})`);
+            }
+        }
+
+        // Initialize when page loads
+        jQuery(document).ready(function() {
+            addTestResult('Page loaded. Click "Run Tests" to verify bulk actions refactoring.');
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /**
  * Nexus AI WP Translator Bulk Actions
- * Bulk operations functionality
+ * Bulk operations functionality with container scoping
  */
 
 (function() {
@@ -8,7 +8,10 @@
 
     // Bulk actions object
     var NexusAIWPTranslatorBulkActions = {
-        
+
+        // Store initialized containers to prevent duplicate initialization
+        initializedContainers: new Set(),
+
         /**
          * Initialize bulk actions
          */
@@ -17,102 +20,224 @@
             var $ = jQuery;
 
             console.debug('[Nexus Translator]: Initializing bulk actions');
-            
+
             // Note: Bulk actions are handled via button click, not form submission
         },
 
         /**
-         * Initialize bulk actions interface
+         * Initialize bulk actions interface (legacy method for backward compatibility)
          */
         initInterface: function() {
-            if (!NexusAIWPTranslatorCore.ensureJQuery('initBulkActionsInterface')) return;
+            console.debug('[Nexus Translator]: Legacy initInterface called - initializing for all tab containers');
+
+            // Initialize for all known tab containers
+            var tabContainers = ['#articles-tab', '#pages-tab', '#events-tab'];
+
+            tabContainers.forEach(function(containerId) {
+                if (jQuery(containerId).length > 0) {
+                    NexusAIWPTranslatorBulkActions.initForContainer(containerId);
+                }
+            });
+        },
+
+        /**
+         * Initialize bulk actions for a specific container
+         * @param {string} containerSelector - CSS selector for the container (e.g., '#articles-tab')
+         */
+        initForContainer: function(containerSelector) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('initBulkActionsForContainer')) return;
             var $ = jQuery;
 
-            console.debug('[Nexus Translator]: Initializing bulk actions interface');
+            // Prevent duplicate initialization
+            if (this.initializedContainers.has(containerSelector)) {
+                console.debug('[Nexus Translator]: Container already initialized:', containerSelector);
+                return;
+            }
 
-            // Update selection count when checkboxes change
-            $(document).on('change', '.select-post-checkbox, .select-all-checkbox', function() {
-                NexusAIWPTranslatorBulkActions.updateBulkSelectionCount();
-                NexusAIWPTranslatorBulkActions.updateBulkActionButtons();
+            console.debug('[Nexus Translator]: Initializing bulk actions for container:', containerSelector);
+
+            var container = $(containerSelector);
+            if (container.length === 0) {
+                console.warn('[Nexus Translator]: Container not found:', containerSelector);
+                return;
+            }
+
+            // Clean up any existing event handlers for this container
+            this.cleanupContainerEvents(containerSelector);
+
+            // Initialize container-scoped event handlers
+            this.initContainerCheckboxHandlers(containerSelector);
+            this.initContainerBulkActionHandlers(containerSelector);
+
+            // Mark container as initialized
+            this.initializedContainers.add(containerSelector);
+
+            // Update initial state
+            this.updateBulkSelectionCount(containerSelector);
+            this.updateBulkActionButtons(containerSelector);
+        },
+
+        /**
+         * Clean up event handlers for a specific container
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        cleanupContainerEvents: function(containerSelector) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('cleanupContainerEvents')) return;
+            var $ = jQuery;
+
+            var container = $(containerSelector);
+
+            // Remove namespaced event handlers
+            container.off('.bulkactions');
+
+            console.debug('[Nexus Translator]: Cleaned up events for container:', containerSelector);
+        },
+
+        /**
+         * Initialize checkbox event handlers for a specific container
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        initContainerCheckboxHandlers: function(containerSelector) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('initContainerCheckboxHandlers')) return;
+            var $ = jQuery;
+
+            var container = $(containerSelector);
+
+            // Handle individual checkbox changes (scoped to container)
+            container.on('change.bulkactions', '.select-post-checkbox', function() {
+                NexusAIWPTranslatorBulkActions.updateBulkSelectionCount(containerSelector);
+                NexusAIWPTranslatorBulkActions.updateBulkActionButtons(containerSelector);
+                NexusAIWPTranslatorBulkActions.updateSelectAllCheckbox(containerSelector);
             });
 
-            // Handle select all checkbox
-            $(document).on('change', '.select-all-checkbox', function() {
+            // Handle select all checkbox (scoped to container)
+            container.on('change.bulkactions', '.select-all-checkbox', function() {
                 var isChecked = $(this).is(':checked');
-                $('.select-post-checkbox').prop('checked', isChecked);
-                NexusAIWPTranslatorBulkActions.updateBulkSelectionCount();
-                NexusAIWPTranslatorBulkActions.updateBulkActionButtons();
+                container.find('.select-post-checkbox').prop('checked', isChecked);
+                NexusAIWPTranslatorBulkActions.updateBulkSelectionCount(containerSelector);
+                NexusAIWPTranslatorBulkActions.updateBulkActionButtons(containerSelector);
             });
 
-            // Handle bulk action button click
-            $(document).on('click', '.nexus-ai-wp-bulk-action-apply', function() {
+            console.debug('[Nexus Translator]: Initialized checkbox handlers for:', containerSelector);
+        },
+
+        /**
+         * Initialize bulk action button handlers for a specific container
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        initContainerBulkActionHandlers: function(containerSelector) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('initContainerBulkActionHandlers')) return;
+            var $ = jQuery;
+
+            var container = $(containerSelector);
+
+            // Handle bulk action button click (scoped to container)
+            container.on('click.bulkactions', '.nexus-ai-wp-bulk-action-apply', function() {
                 var button = $(this);
                 var postType = button.data('post-type');
-                var action = $('#nexus-ai-wp-bulk-action-' + postType).val();
+                var actionSelect = container.find('.nexus-ai-wp-bulk-action-select');
+                var action = actionSelect.val();
                 var selectedPosts = [];
-                
-                $('.select-post-checkbox:checked').each(function() {
+
+                // Get selected posts from this container only
+                container.find('.select-post-checkbox:checked').each(function() {
                     selectedPosts.push($(this).data('post-id'));
                 });
-                
+
                 if (selectedPosts.length === 0) {
                     alert('Please select at least one post.');
                     return;
                 }
-                
+
                 if (!action) {
                     alert('Please select an action.');
                     return;
                 }
 
-                console.debug('[Nexus Translator]: Bulk action:', action, 'for posts:', selectedPosts);
+                console.debug('[Nexus Translator]: Bulk action:', action, 'for posts:', selectedPosts, 'in container:', containerSelector);
 
                 // Handle different actions
-                switch(action) {
-                    case 'translate':
-                        NexusAIWPTranslatorBulkActions.handleBulkTranslate(selectedPosts);
-                        break;
-                    case 'set_language':
-                        NexusAIWPTranslatorBulkActions.handleBulkSetLanguage(selectedPosts);
-                        break;
-                    case 'detect_language':
-                        NexusAIWPTranslatorBulkActions.handleBulkDetectLanguage(selectedPosts);
-                        break;
-                    case 'link':
-                        NexusAIWPTranslatorBulkActions.handleBulkLink(selectedPosts);
-                        break;
-                    case 'unlink':
-                        NexusAIWPTranslatorBulkActions.handleBulkUnlink(selectedPosts);
-                        break;
-                    case 'delete':
-                        NexusAIWPTranslatorBulkActions.handleBulkDelete(selectedPosts);
-                        break;
-                    case 'clear_cache':
-                        NexusAIWPTranslatorBulkActions.handleBulkClearCache(selectedPosts);
-                        break;
-                    default:
-                        alert('Please select an action.');
-                }
+                NexusAIWPTranslatorBulkActions.handleBulkAction(containerSelector, action, selectedPosts);
             });
+
+            console.debug('[Nexus Translator]: Initialized bulk action handlers for:', containerSelector);
         },
 
         /**
-         * Update bulk selection count
+         * Handle bulk action execution
+         * @param {string} containerSelector - CSS selector for the container
+         * @param {string} action - The action to perform
+         * @param {Array} selectedPosts - Array of selected post IDs
          */
-        updateBulkSelectionCount: function() {
+        handleBulkAction: function(containerSelector, action, selectedPosts) {
+            switch(action) {
+                case 'translate':
+                    this.handleBulkTranslate(selectedPosts);
+                    break;
+                case 'set_language':
+                    this.handleBulkSetLanguage(selectedPosts);
+                    break;
+                case 'detect_language':
+                    this.handleBulkDetectLanguage(selectedPosts);
+                    break;
+                case 'link':
+                    this.handleBulkLink(selectedPosts);
+                    break;
+                case 'unlink':
+                    this.handleBulkUnlink(selectedPosts);
+                    break;
+                case 'delete':
+                    this.handleBulkDelete(selectedPosts);
+                    break;
+                case 'clear_cache':
+                    this.handleBulkClearCache(selectedPosts);
+                    break;
+                default:
+                    alert('Please select an action.');
+            }
+        },
+
+        /**
+         * Update bulk selection count for a specific container
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        updateBulkSelectionCount: function(containerSelector) {
             if (!NexusAIWPTranslatorCore.ensureJQuery('updateBulkSelectionCount')) return;
             var $ = jQuery;
 
-            var selectedCount = $('.select-post-checkbox:checked').length;
-            var totalCount = $('.select-post-checkbox').length;
-            
-            console.debug('[Nexus Translator]: Selected posts:', selectedCount, 'of', totalCount);
-            
-            // Update selection count display
-            $('.nexus-ai-wp-bulk-selection-count').text(selectedCount + ' ' + 'items selected');
-            
-            // Update select all checkbox state
-            var selectAllCheckbox = $('.select-all-checkbox');
+            // Default to global scope for backward compatibility
+            if (!containerSelector) {
+                containerSelector = 'body';
+            }
+
+            var container = $(containerSelector);
+            var selectedCount = container.find('.select-post-checkbox:checked').length;
+            var totalCount = container.find('.select-post-checkbox').length;
+
+            console.debug('[Nexus Translator]: Selected posts in', containerSelector + ':', selectedCount, 'of', totalCount);
+
+            // Update selection count display within this container
+            container.find('.nexus-ai-wp-bulk-selection-count').text(selectedCount + ' ' + 'items selected');
+        },
+
+        /**
+         * Update select all checkbox state for a specific container
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        updateSelectAllCheckbox: function(containerSelector) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('updateSelectAllCheckbox')) return;
+            var $ = jQuery;
+
+            // Default to global scope for backward compatibility
+            if (!containerSelector) {
+                containerSelector = 'body';
+            }
+
+            var container = $(containerSelector);
+            var selectedCount = container.find('.select-post-checkbox:checked').length;
+            var totalCount = container.find('.select-post-checkbox').length;
+            var selectAllCheckbox = container.find('.select-all-checkbox');
+
             if (selectedCount === 0) {
                 selectAllCheckbox.prop('indeterminate', false).prop('checked', false);
             } else if (selectedCount === totalCount) {
@@ -123,15 +248,22 @@
         },
 
         /**
-         * Update bulk action buttons state
+         * Update bulk action buttons state for a specific container
+         * @param {string} containerSelector - CSS selector for the container
          */
-        updateBulkActionButtons: function() {
+        updateBulkActionButtons: function(containerSelector) {
             if (!NexusAIWPTranslatorCore.ensureJQuery('updateBulkActionButtons')) return;
             var $ = jQuery;
 
-            var selectedCount = $('.select-post-checkbox:checked').length;
-            var bulkActionButtons = $('.nexus-ai-wp-bulk-action-apply');
-            var bulkActionSelects = $('.nexus-ai-wp-bulk-action-select');
+            // Default to global scope for backward compatibility
+            if (!containerSelector) {
+                containerSelector = 'body';
+            }
+
+            var container = $(containerSelector);
+            var selectedCount = container.find('.select-post-checkbox:checked').length;
+            var bulkActionButtons = container.find('.nexus-ai-wp-bulk-action-apply');
+            var bulkActionSelects = container.find('.nexus-ai-wp-bulk-action-select');
 
             if (selectedCount > 0) {
                 bulkActionButtons.prop('disabled', false);

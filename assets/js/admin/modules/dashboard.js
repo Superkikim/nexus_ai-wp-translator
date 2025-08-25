@@ -198,6 +198,14 @@
                         $('#' + postType + 's-pagination').html(response.data.pagination);
                     }
 
+                    // Initialize bulk actions for the loaded content
+                    var containerId = '#' + postType + 's-tab';
+                    if (window.NexusAIWPTranslatorBulkActions && typeof NexusAIWPTranslatorBulkActions.initForContainer === 'function') {
+                        setTimeout(function() {
+                            NexusAIWPTranslatorBulkActions.initForContainer(containerId);
+                        }, 50);
+                    }
+
                     // Enhance quality displays in the new content
                     setTimeout(function() {
                         NexusAIWPTranslatorDashboard.enhanceQualityDisplays();
