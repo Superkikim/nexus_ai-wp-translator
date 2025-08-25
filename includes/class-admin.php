@@ -323,6 +323,15 @@ class Nexus_AI_WP_Translator_Admin {
                 NEXUS_AI_WP_TRANSLATOR_VERSION,
                 false
             );
+
+            // Language settings tab script
+            wp_enqueue_script(
+                'nexus-ai-wp-translator-settings-languages',
+                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/tabs/settings-languages.js',
+                array('jquery', 'nexus-ai-wp-translator-admin-core'),
+                NEXUS_AI_WP_TRANSLATOR_VERSION,
+                false
+            );
         }
 
         // Modules
@@ -365,6 +374,7 @@ class Nexus_AI_WP_Translator_Admin {
 
         if (strpos($hook, 'nexus-ai-wp-translator-settings') !== false) {
             $main_dependencies[] = 'nexus-ai-wp-translator-settings-page';
+            $main_dependencies[] = 'nexus-ai-wp-translator-settings-languages';
         }
 
         wp_enqueue_script(

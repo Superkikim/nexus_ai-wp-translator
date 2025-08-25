@@ -3196,3 +3196,148 @@
 .nexus-ai-wp-quality-disabled {
     opacity: 0.6;
 }
+
+/* Language Settings Grid Styles */
+.nexus-ai-wp-language-settings {
+    max-width: 100%;
+}
+
+.nexus-ai-wp-language-search {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nexus-ai-wp-language-search input {
+    flex: 1;
+    max-width: 400px;
+}
+
+.nexus-ai-wp-language-toggle {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border-left: 4px solid #0073aa;
+}
+
+.nexus-ai-wp-language-toggle .description {
+    color: #666;
+    font-style: italic;
+    margin-left: 5px;
+}
+
+.nexus-ai-wp-language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.nexus-ai-wp-language-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+}
+
+.nexus-ai-wp-language-item:hover {
+    border-color: #0073aa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nexus-ai-wp-language-item.extended {
+    display: none;
+}
+
+.nexus-ai-wp-language-item.show-all.extended {
+    display: block;
+}
+
+.nexus-ai-wp-language-item.hidden {
+    display: none !important;
+}
+
+.nexus-ai-wp-language-item label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin: 0;
+    font-weight: normal;
+}
+
+.nexus-ai-wp-language-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.nexus-ai-wp-language-item .language-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.nexus-ai-wp-language-item .language-code {
+    font-size: 11px;
+    color: #666;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.nexus-ai-wp-language-item input[type="checkbox"]:checked + .language-name {
+    color: #0073aa;
+    font-weight: 600;
+}
+
+.nexus-ai-wp-language-item input[type="checkbox"]:checked ~ .language-code {
+    background: #0073aa;
+    color: white;
+}
+
+.nexus-ai-wp-language-summary {
+    padding: 10px;
+    background: #e7f3ff;
+    border-radius: 4px;
+    border-left: 4px solid #0073aa;
+    font-weight: 500;
+}
+
+/* Search highlighting */
+.nexus-ai-wp-language-item.search-match {
+    border-color: #ffb900;
+    background: #fff8e1;
+}
+
+.nexus-ai-wp-language-item.search-match .language-name,
+.nexus-ai-wp-language-item.search-match .language-code {
+    background: #ffeb3b;
+    padding: 1px 3px;
+    border-radius: 2px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nexus-ai-wp-language-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+    }
+
+    .nexus-ai-wp-language-search {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nexus-ai-wp-language-search input {
+        max-width: none;
+    }
+}
