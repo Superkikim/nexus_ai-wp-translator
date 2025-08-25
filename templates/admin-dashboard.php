@@ -8,7 +8,21 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="wrap">
+<div class="wrap"
+     data-target-languages="<?php echo esc_attr(json_encode(get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de')))); ?>"
+     data-dashboard-strings="<?php echo esc_attr(json_encode(array(
+         'selectLanguages' => __('Select Languages to Translate', 'nexus-ai-wp-translator'),
+         'chooseLanguages' => __('Choose which languages you want to translate this post to:', 'nexus-ai-wp-translator'),
+         'throttleNote' => __('Note: Each language requires 2 API calls (title + content). Check your throttle limits in Settings.', 'nexus-ai-wp-translator'),
+         'cancel' => __('Cancel', 'nexus-ai-wp-translator'),
+         'startTranslation' => __('Start Translation', 'nexus-ai-wp-translator'),
+         'selectAtLeastOne' => __('Please select at least one language.', 'nexus-ai-wp-translator'),
+         'translating' => __('Translating...', 'nexus-ai-wp-translator'),
+         'translationCompleted' => __('Translation completed successfully!', 'nexus-ai-wp-translator'),
+         'translationFailed' => __('Translation failed:', 'nexus-ai-wp-translator'),
+         'unknownError' => __('Unknown error', 'nexus-ai-wp-translator'),
+         'networkError' => __('Network error occurred', 'nexus-ai-wp-translator')
+     ))); ?>">
     <h1><?php _e('Nexus AI WP Translator Dashboard', 'nexus-ai-wp-translator'); ?></h1>
     
     <!-- Content Management Tabs -->
@@ -179,215 +193,7 @@ if (!defined('ABSPATH')) {
 
 </div>
 
-<script>
-jQuery(document).ready(function($) {
-    // Tab switching for content tabs
-    $('.nexus-ai-wp-content-tabs .nav-tab').on('click', function(e) {
-        e.preventDefault();
-
-        var target = $(this).attr('href');
-
-        // Update nav tabs
-        $('.nexus-ai-wp-content-tabs .nav-tab').removeClass('nav-tab-active');
-        $(this).addClass('nav-tab-active');
-
-        // Update tab content
-        $('.nexus-ai-wp-content-tabs .tab-content').removeClass('active');
-        $(target).addClass('active');
-
-        // Save active tab
-        localStorage.setItem('nexus_ai_wp_translator_content_tab', target);
-
-        // Load tab-specific content using dashboard module
-        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadTabContent === 'function') {
-            NexusAIWPTranslatorDashboard.loadTabContent(target);
-        }
-    });
-
-    // Restore active tab or default to dashboard
-    var activeContentTab = localStorage.getItem('nexus_ai_wp_translator_content_tab');
-    if (activeContentTab && $(activeContentTab).length) {
-        $('.nexus-ai-wp-content-tabs .nav-tab[href="' + activeContentTab + '"]').click();
-    } else {
-        // Default to dashboard tab
-        $('.nexus-ai-wp-content-tabs .nav-tab[href="#dashboard-tab"]').click();
-    }
-
-    // Add logs refresh functionality
-    $(document).on('click', '#refresh-logs', function() {
-        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadLogsData === 'function') {
-            NexusAIWPTranslatorDashboard.loadLogsData();
-        }
-    });
-
-    // Add logs filter clear functionality
-    $(document).on('click', '#clear-logs-filters', function() {
-        $('#logs-status-filter').val('');
-        $('#logs-action-filter').val('');
-        $('#logs-search').val('');
-        if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadLogsData === 'function') {
-            NexusAIWPTranslatorDashboard.loadLogsData();
-        }
-    });
-    
-    // Translate individual post - show language selection popup
-    $(document).on('click', '.translate-post-btn', function() {
-        var button = $(this);
-        var postId = button.data('post-id');
-        var postTitle = button.data('post-title');
-
-        if (window.NexusAIWPTranslatorDashboardUI) {
-            NexusAIWPTranslatorDashboardUI.showLanguageSelectionPopup(postId, postTitle);
-        }
-    });
-    
-    $('#nexus-ai-wp-refresh-stats').on('click', function() {
-        var button = $(this);
-        button.prop('disabled', true).text('<?php _e('Refreshing...', 'nexus-ai-wp-translator'); ?>');
-        
-        $.post(ajaxurl, {
-            action: 'nexus_ai_wp_get_stats',
-            period: '7 days',
-            nonce: nexus_ai_wp_translator_ajax.nonce
-        }, function(response) {
-            if (response.success) {
-                location.reload();
-            } else {
-                alert('<?php _e('Error refreshing stats', 'nexus-ai-wp-translator'); ?>');
-            }
-        }).always(function() {
-            button.prop('disabled', false).text('<?php _e('Refresh Stats', 'nexus-ai-wp-translator'); ?>');
-        });
-    });
-
-    // Dashboard-specific translation UI functions (avoid clashing with module global)
-    var NexusAIWPTranslatorDashboardUI = {
-
-        showLanguageSelectionPopup: function(postId, postTitle) {
-            // Get available target languages
-            var targetLanguages = <?php echo json_encode(get_option('nexus_ai_wp_translator_target_languages', array('es', 'fr', 'de'))); ?>;
-            var languageNames = {
-                'en': 'English',
-                'es': 'Spanish',
-                'fr': 'French',
-                'de': 'German',
-                'it': 'Italian',
-                'pt': 'Portuguese',
-                'ru': 'Russian',
-                'ja': 'Japanese',
-                'ko': 'Korean',
-                'zh': 'Chinese',
-                'ar': 'Arabic',
-                'hi': 'Hindi',
-                'nl': 'Dutch',
-                'sv': 'Swedish',
-                'da': 'Danish',
-                'no': 'Norwegian',
-                'fi': 'Finnish',
-                'pl': 'Polish',
-                'cs': 'Czech',
-                'hu': 'Hungarian'
-            };
-
-            // Create popup HTML
-            var popupHtml = '<div id="nexus-ai-wp-translate-popup" class="nexus-ai-wp-popup-overlay">' +
-                '<div class="nexus-ai-wp-popup-content">' +
-                    '<div class="nexus-ai-wp-popup-header">' +
-                        '<h3><?php _e('Select Languages to Translate', 'nexus-ai-wp-translator'); ?></h3>' +
-                        '<button type="button" class="nexus-ai-wp-popup-close">&times;</button>' +
-                    '</div>' +
-                    '<div class="nexus-ai-wp-popup-body">' +
-                        '<p><strong>' + postTitle + '</strong></p>' +
-                        '<p><?php _e('Choose which languages you want to translate this post to:', 'nexus-ai-wp-translator'); ?></p>' +
-                        '<div class="nexus-ai-wp-language-selection">';
-
-            // Add language checkboxes
-            targetLanguages.forEach(function(langCode) {
-                var langName = languageNames[langCode] || langCode.toUpperCase();
-                popupHtml += '<label class="nexus-ai-wp-language-option">' +
-                    '<input type="checkbox" value="' + langCode + '" class="nexus-ai-wp-target-language"> ' +
-                    langName + ' (' + langCode + ')' +
-                '</label>';
-            });
-
-            popupHtml += '</div>' +
-                        '<div class="nexus-ai-wp-throttle-info">' +
-                            '<p><small><?php _e('Note: Each language requires 2 API calls (title + content). Check your throttle limits in Settings.', 'nexus-ai-wp-translator'); ?></small></p>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="nexus-ai-wp-popup-footer">' +
-                        '<button type="button" class="button" id="nexus-ai-wp-cancel-translate"><?php _e('Cancel', 'nexus-ai-wp-translator'); ?></button>' +
-                        '<button type="button" class="button button-primary" id="nexus-ai-wp-start-translate"><?php _e('Start Translation', 'nexus-ai-wp-translator'); ?></button>' +
-                    '</div>' +
-                '</div>' +
-            '</div>';
-
-            // Add popup to page
-            $('body').append(popupHtml);
-            $('#nexus-ai-wp-translate-popup').fadeIn(200);
-
-            // Handle popup events
-            $('#nexus-ai-wp-cancel-translate, .nexus-ai-wp-popup-close').on('click', function() {
-                NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
-            });
-
-            $('#nexus-ai-wp-start-translate').on('click', function() {
-                NexusAIWPTranslatorDashboardUI.startTranslation(postId, postTitle);
-            });
-
-            // Close on background click
-            $('#nexus-ai-wp-translate-popup').on('click', function(e) {
-                if (e.target === this) {
-                    NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
-                }
-            });
-        },
-
-        closeTranslatePopup: function() {
-            $('#nexus-ai-wp-translate-popup').fadeOut(200, function() {
-                $(this).remove();
-            });
-        },
-
-        startTranslation: function(postId, postTitle) {
-            var selectedLanguages = [];
-            $('.nexus-ai-wp-target-language:checked').each(function() {
-                selectedLanguages.push($(this).val());
-            });
-
-            if (selectedLanguages.length === 0) {
-                alert('<?php _e('Please select at least one language.', 'nexus-ai-wp-translator'); ?>');
-                return;
-            }
-
-            // Show progress
-            $('#nexus-ai-wp-start-translate').prop('disabled', true).text('<?php _e('Translating...', 'nexus-ai-wp-translator'); ?>');
-
-            // Start translation
-            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
-                action: 'nexus_ai_wp_translate_post',
-                post_id: postId,
-                target_languages: selectedLanguages,
-                nonce: nexus_ai_wp_translator_ajax.nonce
-            })
-            .done(function(response) {
-                if (response.success) {
-                    alert('<?php _e('Translation completed successfully!', 'nexus-ai-wp-translator'); ?>');
-                    location.reload();
-                } else {
-                    alert('<?php _e('Translation failed:', 'nexus-ai-wp-translator'); ?> ' + (response.message || '<?php _e('Unknown error', 'nexus-ai-wp-translator'); ?>'));
-                }
-            })
-            .fail(function() {
-                alert('<?php _e('Network error occurred', 'nexus-ai-wp-translator'); ?>');
-            })
-            .always(function() {
-                NexusAIWPTranslatorDashboardUI.closeTranslatePopup();
-            });
-        }
-    };
-});
-</script>
+<!-- JavaScript moved to assets/js/pages/dashboard.js and assets/js/components/dashboard-ui.js -->
 
 <style>
 .nexus-ai-wp-popup-overlay {

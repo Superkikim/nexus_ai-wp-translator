@@ -35,34 +35,4 @@ if (!defined('ABSPATH')) {
     <?php echo $this->render_posts_list('post'); ?>
 </div>
 
-<!-- Add a link button above the table -->
-<script>
-jQuery(document).ready(function($) {
-    // Initialize checkbox functionality
-    $('.select-all-checkbox').on('change', function() {
-        var postType = $(this).attr('id').replace('select-all-', '');
-        var isChecked = $(this).is(':checked');
-        
-        $('.select-post-checkbox[data-post-id]').each(function() {
-            if ($(this).closest('tr').find('td').length > 0) { // Only for visible rows
-                $(this).prop('checked', isChecked);
-            }
-        });
-    });
-    
-    // Individual checkbox selection
-    $('.select-post-checkbox').on('change', function() {
-        updateLinkButtonState();
-    });
-    
-    function updateLinkButtonState() {
-        // This function is kept for compatibility but no longer used
-        // The bulk actions interface handles all actions now
-    }
-    
-    function linkSelectedItems() {
-        // This function is implemented in assets/js/admin.js
-        console.debug('[Nexus Translator]:Link selected items - functionality implemented in admin.js');
-    }
-});
-</script>
+<!-- JavaScript moved to assets/js/tabs/articles-tab.js -->

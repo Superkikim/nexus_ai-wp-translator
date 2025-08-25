@@ -284,7 +284,46 @@ class Nexus_AI_WP_Translator_Admin {
             false
         );
 
+        // Dashboard UI Component
+        wp_enqueue_script(
+            'nexus-ai-wp-translator-dashboard-ui',
+            NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/components/dashboard-ui.js',
+            array('jquery', 'nexus-ai-wp-translator-admin-core'),
+            NEXUS_AI_WP_TRANSLATOR_VERSION,
+            false
+        );
+
         // Meta box script removed per user request
+
+        // Page-specific scripts
+        if (strpos($hook, 'nexus-ai-wp-translator-dashboard') !== false) {
+            wp_enqueue_script(
+                'nexus-ai-wp-translator-dashboard-page',
+                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/pages/dashboard.js',
+                array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-dashboard-ui'),
+                NEXUS_AI_WP_TRANSLATOR_VERSION,
+                false
+            );
+
+            // Tab-specific scripts for dashboard
+            wp_enqueue_script(
+                'nexus-ai-wp-translator-articles-tab',
+                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/tabs/articles-tab.js',
+                array('jquery', 'nexus-ai-wp-translator-admin-core'),
+                NEXUS_AI_WP_TRANSLATOR_VERSION,
+                false
+            );
+        }
+
+        if (strpos($hook, 'nexus-ai-wp-translator-settings') !== false) {
+            wp_enqueue_script(
+                'nexus-ai-wp-translator-settings-page',
+                NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/pages/settings.js',
+                array('jquery', 'nexus-ai-wp-translator-admin-core', 'nexus-ai-wp-translator-ajax-handler'),
+                NEXUS_AI_WP_TRANSLATOR_VERSION,
+                false
+            );
+        }
 
         // Modules
         wp_enqueue_script(
@@ -304,21 +343,34 @@ class Nexus_AI_WP_Translator_Admin {
         );
 
         // Main coordinator (loads last)
+        $main_dependencies = array(
+            'jquery',
+            'nexus-ai-wp-translator-admin-core',
+            'nexus-ai-wp-translator-ajax-handler',
+            'nexus-ai-wp-translator-settings-tabs',
+            'nexus-ai-wp-translator-progress-dialog',
+            'nexus-ai-wp-translator-translation-manager',
+            'nexus-ai-wp-translator-bulk-actions',
+            'nexus-ai-wp-translator-quality-assessor',
+            'nexus-ai-wp-translator-dashboard-ui',
+            'nexus-ai-wp-translator-dashboard',
+            'nexus-ai-wp-translator-queue-manager'
+        );
+
+        // Add page-specific dependencies
+        if (strpos($hook, 'nexus-ai-wp-translator-dashboard') !== false) {
+            $main_dependencies[] = 'nexus-ai-wp-translator-dashboard-page';
+            $main_dependencies[] = 'nexus-ai-wp-translator-articles-tab';
+        }
+
+        if (strpos($hook, 'nexus-ai-wp-translator-settings') !== false) {
+            $main_dependencies[] = 'nexus-ai-wp-translator-settings-page';
+        }
+
         wp_enqueue_script(
             'nexus-ai-wp-translator-admin-main',
             NEXUS_AI_WP_TRANSLATOR_PLUGIN_URL . 'assets/js/admin/admin-main.js',
-            array(
-                'jquery',
-                'nexus-ai-wp-translator-admin-core',
-                'nexus-ai-wp-translator-ajax-handler',
-                'nexus-ai-wp-translator-settings-tabs',
-                'nexus-ai-wp-translator-progress-dialog',
-                'nexus-ai-wp-translator-translation-manager',
-                'nexus-ai-wp-translator-bulk-actions',
-                'nexus-ai-wp-translator-quality-assessor',
-                'nexus-ai-wp-translator-dashboard',
-                'nexus-ai-wp-translator-queue-manager'
-            ),
+            $main_dependencies,
             NEXUS_AI_WP_TRANSLATOR_VERSION,
             false
         );
