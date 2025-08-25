@@ -199,7 +199,7 @@
                     }
 
                     // CRITICAL: Reinitialize bulk actions for the dynamically loaded content
-                    var containerId = '#' + postType + 's-tab';
+                    var containerId = '#' + (postType === 'post' ? 'articles' : postType + 's') + '-tab';
                     if (window.NexusAIWPTranslatorBulkActions && typeof NexusAIWPTranslatorBulkActions.reinitForContainer === 'function') {
                         // Use the new reinit method for dynamic content
                         setTimeout(function() {

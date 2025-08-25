@@ -1267,7 +1267,8 @@ class Nexus_AI_WP_Translator_Admin {
         }
 
         // Validate language code
-        if (!$this->translation_manager->is_valid_language($language)) {
+        $translation_manager = $this->get_translation_manager();
+        if (!$translation_manager->is_valid_language($language)) {
             wp_send_json_error(sprintf(__('Language code "%s" is not supported', 'nexus-ai-wp-translator'), $language));
         }
 
