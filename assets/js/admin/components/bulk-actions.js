@@ -18,57 +18,7 @@
 
             console.debug('[Nexus Translator]: Initializing bulk actions');
             
-            // Handle bulk action form submission
-            $(document).on('submit', '#nexus-ai-wp-bulk-actions-form', function(e) {
-                e.preventDefault();
-                
-                var form = $(this);
-                var action = form.find('select[name="bulk_action"]').val();
-                var selectedPosts = [];
-                
-                form.find('input[name="post_ids[]"]:checked').each(function() {
-                    selectedPosts.push($(this).val());
-                });
-                
-                if (selectedPosts.length === 0) {
-                    alert('Please select at least one post.');
-                    return;
-                }
-                
-                if (!action) {
-                    alert('Please select an action.');
-                    return;
-                }
-                
-                console.debug('[Nexus Translator]: Bulk action:', action, 'for posts:', selectedPosts);
-                
-                // Handle different actions
-                switch(action) {
-                    case 'translate':
-                        NexusAIWPTranslatorBulkActions.handleBulkTranslate(selectedPosts);
-                        break;
-                    case 'set_language':
-                        NexusAIWPTranslatorBulkActions.handleBulkSetLanguage(selectedPosts);
-                        break;
-                    case 'detect_language':
-                        NexusAIWPTranslatorBulkActions.handleBulkDetectLanguage(selectedPosts);
-                        break;
-                    case 'link':
-                        NexusAIWPTranslatorBulkActions.handleBulkLink(selectedPosts);
-                        break;
-                    case 'unlink':
-                        NexusAIWPTranslatorBulkActions.handleBulkUnlink(selectedPosts);
-                        break;
-                    case 'delete':
-                        NexusAIWPTranslatorBulkActions.handleBulkDelete(selectedPosts);
-                        break;
-                    case 'clear_cache':
-                        NexusAIWPTranslatorBulkActions.handleBulkClearCache(selectedPosts);
-                        break;
-                    default:
-                        alert('Please select an action.');
-                }
-            });
+            // Note: Bulk actions are handled via button click, not form submission
         },
 
         /**
@@ -95,12 +45,14 @@
             });
 
             // Handle bulk action button click
-            $(document).on('click', '#nexus-ai-wp-bulk-action-apply', function() {
-                var action = $('#nexus-ai-wp-bulk-action-select').val();
+            $(document).on('click', '.nexus-ai-wp-bulk-action-apply', function() {
+                var button = $(this);
+                var postType = button.data('post-type');
+                var action = $('#nexus-ai-wp-bulk-action-' + postType).val();
                 var selectedPosts = [];
                 
                 $('.select-post-checkbox:checked').each(function() {
-                    selectedPosts.push($(this).val());
+                    selectedPosts.push($(this).data('post-id'));
                 });
                 
                 if (selectedPosts.length === 0) {
@@ -157,8 +109,7 @@
             console.debug('[Nexus Translator]: Selected posts:', selectedCount, 'of', totalCount);
             
             // Update selection count display
-            $('#nexus-ai-wp-selection-count').text(selectedCount);
-            $('#nexus-ai-wp-total-count').text(totalCount);
+            $('.nexus-ai-wp-bulk-selection-count').text(selectedCount + ' ' + 'items selected');
             
             // Update select all checkbox state
             var selectAllCheckbox = $('.select-all-checkbox');
@@ -179,15 +130,15 @@
             var $ = jQuery;
 
             var selectedCount = $('.select-post-checkbox:checked').length;
-            var bulkActionButton = $('#nexus-ai-wp-bulk-action-apply');
-            var bulkActionSelect = $('#nexus-ai-wp-bulk-action-select');
-            
+            var bulkActionButtons = $('.nexus-ai-wp-bulk-action-apply');
+            var bulkActionSelects = $('.nexus-ai-wp-bulk-action-select');
+
             if (selectedCount > 0) {
-                bulkActionButton.prop('disabled', false);
-                bulkActionSelect.prop('disabled', false);
+                bulkActionButtons.prop('disabled', false);
+                bulkActionSelects.prop('disabled', false);
             } else {
-                bulkActionButton.prop('disabled', true);
-                bulkActionSelect.prop('disabled', true);
+                bulkActionButtons.prop('disabled', true);
+                bulkActionSelects.prop('disabled', true);
             }
         },
 
