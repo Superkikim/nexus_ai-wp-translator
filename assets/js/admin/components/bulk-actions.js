@@ -50,6 +50,9 @@
                     case 'set_language':
                         NexusAIWPTranslatorBulkActions.handleBulkSetLanguage(selectedPosts);
                         break;
+                    case 'detect_language':
+                        NexusAIWPTranslatorBulkActions.handleBulkDetectLanguage(selectedPosts);
+                        break;
                     case 'link':
                         NexusAIWPTranslatorBulkActions.handleBulkLink(selectedPosts);
                         break;
@@ -119,6 +122,9 @@
                         break;
                     case 'set_language':
                         NexusAIWPTranslatorBulkActions.handleBulkSetLanguage(selectedPosts);
+                        break;
+                    case 'detect_language':
+                        NexusAIWPTranslatorBulkActions.handleBulkDetectLanguage(selectedPosts);
                         break;
                     case 'link':
                         NexusAIWPTranslatorBulkActions.handleBulkLink(selectedPosts);
@@ -537,6 +543,49 @@
             })
             .fail(function() {
                 alert('Network error occurred while setting language.');
+            });
+        },
+
+        /**
+         * Handle bulk detect language action
+         */
+        handleBulkDetectLanguage: function(selectedPosts) {
+            console.debug('[Nexus Translator]: Handling bulk detect language');
+
+            if (!confirm('Detect language for ' + selectedPosts.length + ' selected posts? This will use the AI to automatically detect the language of each post.')) {
+                return;
+            }
+
+            this.performBulkDetectLanguage(selectedPosts);
+        },
+
+        /**
+         * Perform bulk detect language
+         */
+        performBulkDetectLanguage: function(selectedPosts) {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('performBulkDetectLanguage')) return;
+            var $ = jQuery;
+
+            $.post(nexus_ai_wp_translator_ajax.ajax_url, {
+                action: 'nexus_ai_wp_bulk_detect_language',
+                post_ids: selectedPosts,
+                nonce: nexus_ai_wp_translator_ajax.nonce
+            })
+            .done(function(response) {
+                if (response.success) {
+                    var message = 'Language detection completed for ' + selectedPosts.length + ' posts!';
+                    if (response.data && response.data.detected_count) {
+                        message = 'Successfully detected language for ' + response.data.detected_count + ' out of ' + selectedPosts.length + ' posts.';
+                    }
+                    NexusAIWPTranslatorCore.showGlobalNotice('success', message);
+                    location.reload();
+                } else {
+                    var errorMsg = response.data && response.data.message ? response.data.message : 'Unknown error';
+                    alert('Failed to detect language: ' + errorMsg);
+                }
+            })
+            .fail(function() {
+                alert('Network error occurred while detecting language.');
             });
         },
 

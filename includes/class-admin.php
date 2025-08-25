@@ -64,6 +64,7 @@ class Nexus_AI_WP_Translator_Admin {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'init_settings'));
         add_action('wp_ajax_nexus_ai_wp_bulk_set_language', array($this, 'ajax_bulk_set_language'));
+        add_action('wp_ajax_nexus_ai_wp_bulk_detect_language', array($this, 'ajax_bulk_detect_language'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
 
         // Meta box and post list modifications removed per user request
@@ -460,6 +461,7 @@ class Nexus_AI_WP_Translator_Admin {
         $output .= '<option value="">' . __('Select Action', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="translate">' . __('Translate', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="set_language">' . __('Set Language', 'nexus-ai-wp-translator') . '</option>';
+        $output .= '<option value="detect_language">' . __('Detect Language', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="link">' . __('Link', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="unlink">' . __('Unlink', 'nexus-ai-wp-translator') . '</option>';
         $output .= '<option value="delete">' . __('Delete', 'nexus-ai-wp-translator') . '</option>';
@@ -1283,6 +1285,96 @@ class Nexus_AI_WP_Translator_Admin {
         } else {
             wp_send_json_error(array(
                 'message' => __('No posts were updated.', 'nexus-ai-wp-translator'),
+                'errors' => $errors
+            ));
+        }
+    }
+
+    /**
+     * AJAX: Bulk detect language
+     */
+    public function ajax_bulk_detect_language() {
+        check_ajax_referer('nexus_ai_wp_translator_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Permission denied', 'nexus-ai-wp-translator'));
+        }
+
+        $post_ids = array_map('intval', $_POST['post_ids']);
+
+        if (empty($post_ids)) {
+            wp_send_json_error(__('No post IDs provided', 'nexus-ai-wp-translator'));
+        }
+
+        $detected_count = 0;
+        $errors = array();
+
+        foreach ($post_ids as $post_id) {
+            // Verify user can edit this post
+            if (!current_user_can('edit_post', $post_id)) {
+                $errors[] = sprintf(__('Permission denied for post ID %d', 'nexus-ai-wp-translator'), $post_id);
+                continue;
+            }
+
+            // Get post content for detection
+            $post = get_post($post_id);
+            if (!$post) {
+                $errors[] = sprintf(__('Post ID %d not found', 'nexus-ai-wp-translator'), $post_id);
+                continue;
+            }
+
+            // Skip if language is already set
+            $existing_language = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
+            if (!empty($existing_language)) {
+                continue; // Skip posts that already have a language set
+            }
+
+            // Detect language
+            $detection_result = $this->api_handler->detect_language($post->post_content . ' ' . $post->post_title);
+
+            if ($detection_result['success']) {
+                // Set the detected language
+                $result = update_post_meta($post_id, '_nexus_ai_wp_translator_language', $detection_result['language']);
+
+                if ($result !== false) {
+                    $detected_count++;
+
+                    // Log the language detection
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        $post_title = get_the_title($post_id);
+                        error_log("Nexus AI WP Translator: Detected language '{$detection_result['language']}' for post '{$post_title}' (ID: {$post_id})");
+                    }
+                } else {
+                    $errors[] = sprintf(__('Failed to update post ID %d', 'nexus-ai-wp-translator'), $post_id);
+                }
+            } else {
+                $errors[] = sprintf(__('Failed to detect language for post ID %d: %s', 'nexus-ai-wp-translator'), $post_id, $detection_result['message']);
+            }
+        }
+
+        if ($detected_count > 0) {
+            $message = sprintf(
+                _n(
+                    'Language detected successfully for %d post.',
+                    'Language detected successfully for %d posts.',
+                    $detected_count,
+                    'nexus-ai-wp-translator'
+                ),
+                $detected_count
+            );
+
+            if (!empty($errors)) {
+                $message .= ' ' . sprintf(__('However, %d errors occurred.', 'nexus-ai-wp-translator'), count($errors));
+            }
+
+            wp_send_json_success(array(
+                'message' => $message,
+                'detected_count' => $detected_count,
+                'errors' => $errors
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => __('No languages were detected. Posts may already have languages set or detection failed.', 'nexus-ai-wp-translator'),
                 'errors' => $errors
             ));
         }

@@ -254,6 +254,99 @@ class Nexus_AI_WP_Translator_API_Handler {
     }
     
     /**
+     * Detect the language of content using Claude AI
+     */
+    public function detect_language($content) {
+        $api_key = get_option('nexus_ai_wp_translator_api_key');
+        if (empty($api_key)) {
+            return array(
+                'success' => false,
+                'message' => __('API key not configured', 'nexus-ai-wp-translator')
+            );
+        }
+
+        // Prepare content for detection (limit to first 1000 characters for efficiency)
+        $detection_content = wp_strip_all_tags($content);
+        $detection_content = substr($detection_content, 0, 1000);
+
+        if (empty(trim($detection_content))) {
+            return array(
+                'success' => false,
+                'message' => __('No content to analyze', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $model = get_option('nexus_ai_wp_translator_model', 'claude-3-5-sonnet-20241022');
+
+        $headers = array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $api_key,
+            'anthropic-version' => '2023-06-01'
+        );
+
+        $body = array(
+            'model' => $model,
+            'max_tokens' => 50,
+            'messages' => array(
+                array(
+                    'role' => 'user',
+                    'content' => sprintf(
+                        'Detect the language of this text and respond with ONLY the ISO 639-1 language code (2 letters, lowercase). If uncertain, respond with your best guess. Text: "%s"',
+                        addslashes($detection_content)
+                    )
+                )
+            )
+        );
+
+        $response = wp_remote_post($this->api_endpoint, array(
+            'headers' => $headers,
+            'body' => wp_json_encode($body),
+            'timeout' => 30
+        ));
+
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+
+        if ($response_code !== 200) {
+            return array(
+                'success' => false,
+                'message' => sprintf(__('API error: %d', 'nexus-ai-wp-translator'), $response_code)
+            );
+        }
+
+        $data = json_decode($response_body, true);
+        if (!$data || !isset($data['content'][0]['text'])) {
+            return array(
+                'success' => false,
+                'message' => __('Invalid API response', 'nexus-ai-wp-translator')
+            );
+        }
+
+        $detected_language = trim(strtolower($data['content'][0]['text']));
+
+        // Validate that it's a 2-letter code
+        if (!preg_match('/^[a-z]{2}$/', $detected_language)) {
+            return array(
+                'success' => false,
+                'message' => __('Invalid language code detected', 'nexus-ai-wp-translator')
+            );
+        }
+
+        return array(
+            'success' => true,
+            'language' => $detected_language,
+            'confidence' => 'high' // Claude is generally very accurate
+        );
+    }
+
+    /**
      * Translate content using Claude AI with streaming support
      */
     public function translate_content($content, $source_lang, $target_lang, $context_or_model = null, $use_streaming = false) {
@@ -1226,7 +1319,7 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
 
-        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: 'auto';
+        $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true) ?: get_option('nexus_ai_wp_translator_source_language', 'en');
         $retry_attempts = get_option('nexus_ai_wp_translator_retry_attempts', 3);
 
         // Use new block-by-block translation method
