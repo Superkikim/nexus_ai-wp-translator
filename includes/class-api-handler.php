@@ -339,6 +339,18 @@ class Nexus_AI_WP_Translator_API_Handler {
             );
         }
 
+        // Validate that the detected language is in our supported list
+        // Get translation manager instance to validate
+        global $nexus_ai_wp_translator;
+        if ($nexus_ai_wp_translator && $nexus_ai_wp_translator->translation_manager) {
+            if (!$nexus_ai_wp_translator->translation_manager->is_valid_language($detected_language)) {
+                return array(
+                    'success' => false,
+                    'message' => sprintf(__('Detected language "%s" is not supported', 'nexus-ai-wp-translator'), $detected_language)
+                );
+            }
+        }
+
         return array(
             'success' => true,
             'language' => $detected_language,

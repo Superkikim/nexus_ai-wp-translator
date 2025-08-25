@@ -110,6 +110,16 @@ class Nexus_AI_WP_Translator_Manager {
             );
         }
 
+        // Validate that all target languages are supported
+        if (!$this->validate_language_codes($target_languages)) {
+            return array(
+                'success' => false,
+                'message' => __('One or more target languages are not supported. Please check your language settings.', 'nexus-ai-wp-translator'),
+                'success_count' => 0,
+                'error_count' => 1
+            );
+        }
+
         // Get source language, with automatic detection if not set
         $source_lang = get_post_meta($post_id, '_nexus_ai_wp_translator_language', true);
 
@@ -134,6 +144,17 @@ class Nexus_AI_WP_Translator_Manager {
                 }
             }
         }
+
+        // Validate source language
+        if (!$this->is_valid_language($source_lang)) {
+            return array(
+                'success' => false,
+                'message' => sprintf(__('Source language "%s" is not supported. Please set a valid language for this post.', 'nexus-ai-wp-translator'), $source_lang),
+                'success_count' => 0,
+                'error_count' => 1
+            );
+        }
+
         $total_api_calls = 0;
         $success_count = 0;
         $errors = array();
@@ -597,6 +618,12 @@ class Nexus_AI_WP_Translator_Manager {
                 return;
             }
 
+            // Validate target languages if provided
+            if ($target_languages && !$this->validate_language_codes($target_languages)) {
+                wp_send_json_error(__('One or more target languages are not supported', 'nexus-ai-wp-translator'));
+                return;
+            }
+
             $result = $this->translate_post($post_id, $target_languages, $progress_id);
             
             wp_send_json($result);
@@ -919,6 +946,35 @@ class Nexus_AI_WP_Translator_Manager {
         error_log("Nexus AI WP Translator: *** ajax_handle_post_action() ENDED ***");
     }
     
+    /**
+     * Validate language code
+     */
+    public function is_valid_language($language_code) {
+        if (empty($language_code) || !is_string($language_code)) {
+            return false;
+        }
+
+        $available_languages = $this->get_available_languages();
+        return array_key_exists($language_code, $available_languages);
+    }
+
+    /**
+     * Validate language codes array
+     */
+    public function validate_language_codes($language_codes) {
+        if (!is_array($language_codes)) {
+            return false;
+        }
+
+        foreach ($language_codes as $code) {
+            if (!$this->is_valid_language($code)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Get available languages - comprehensive ISO 639-1 list
      */

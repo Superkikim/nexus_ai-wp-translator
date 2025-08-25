@@ -785,10 +785,11 @@ class Nexus_AI_WP_Translator_Admin {
             'nexus_ai_wp_translator_api_key' => array('api_key', 'sanitize_text_field', null),
             'nexus_ai_wp_translator_model' => array('model', 'sanitize_text_field', null),
             'nexus_ai_wp_translator_source_language' => array('source_language', 'sanitize_text_field', function($v){
-                $available_languages = array_keys($this->translation_manager->get_available_languages());
-                return in_array($v, $available_languages);
+                return $this->translation_manager->is_valid_language($v);
             }),
-            'nexus_ai_wp_translator_target_languages' => array('target_languages', null, function($v){ return is_array($v); }),
+            'nexus_ai_wp_translator_target_languages' => array('target_languages', null, function($v){
+                return is_array($v) && $this->translation_manager->validate_language_codes($v);
+            }),
             'nexus_ai_wp_translator_use_llm_quality_assessment' => array('use_llm_quality_assessment', function($v){ return (bool)$v; }, null),
             'nexus_ai_wp_translator_save_as_draft' => array('save_as_draft', function($v){ return (bool)$v; }, null),
             'nexus_ai_wp_translator_throttle_limit' => array('throttle_limit', 'intval', function($v){ return $v >= 1; }),
@@ -1234,6 +1235,11 @@ class Nexus_AI_WP_Translator_Admin {
 
         if (empty($post_ids) || empty($language)) {
             wp_send_json_error(__('Invalid parameters', 'nexus-ai-wp-translator'));
+        }
+
+        // Validate language code
+        if (!$this->translation_manager->is_valid_language($language)) {
+            wp_send_json_error(sprintf(__('Language code "%s" is not supported', 'nexus-ai-wp-translator'), $language));
         }
 
         $updated_count = 0;
