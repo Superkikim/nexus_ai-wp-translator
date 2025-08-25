@@ -28,16 +28,26 @@
          * Initialize bulk actions interface (legacy method for backward compatibility)
          */
         initInterface: function() {
-            console.debug('[Nexus Translator]: Legacy initInterface called - initializing for all tab containers');
+            console.debug('[Nexus Translator]: Legacy initInterface called - will initialize after DOM is ready');
 
-            // Initialize for all known tab containers
-            var tabContainers = ['#articles-tab', '#pages-tab', '#events-tab'];
+            // Wait for DOM to be fully ready, then initialize
+            var self = this;
+            setTimeout(function() {
+                var tabContainers = ['#articles-tab', '#pages-tab', '#events-tab'];
 
-            tabContainers.forEach(function(containerId) {
-                if (jQuery(containerId).length > 0) {
-                    NexusAIWPTranslatorBulkActions.initForContainer(containerId);
-                }
-            });
+                tabContainers.forEach(function(containerId) {
+                    if (jQuery(containerId).length > 0) {
+                        // Check if container has content before initializing
+                        var hasContent = jQuery(containerId).find('.select-post-checkbox').length > 0;
+                        if (hasContent) {
+                            console.debug('[Nexus Translator]: Legacy init found content in', containerId);
+                            self.initForContainer(containerId);
+                        } else {
+                            console.debug('[Nexus Translator]: Legacy init - no content in', containerId, 'yet');
+                        }
+                    }
+                });
+            }, 200);
         },
 
         /**
@@ -320,6 +330,43 @@
                 bulkActionSelects.prop('disabled', true);
                 console.debug('[Nexus Translator]: Disabled buttons in:', containerSelector);
             }
+        },
+
+        /**
+         * Debug method to check current state of bulk actions
+         */
+        debugCurrentState: function() {
+            if (!NexusAIWPTranslatorCore.ensureJQuery('debugCurrentState')) return;
+            var $ = jQuery;
+
+            console.group('[Nexus Translator]: Bulk Actions Debug State');
+
+            var tabContainers = ['#articles-tab', '#pages-tab', '#events-tab'];
+
+            tabContainers.forEach(function(containerId) {
+                var container = $(containerId);
+                if (container.length > 0) {
+                    var checkboxes = container.find('.select-post-checkbox');
+                    var selectAll = container.find('.select-all-checkbox');
+                    var buttons = container.find('.nexus-ai-wp-bulk-action-apply');
+                    var selects = container.find('.nexus-ai-wp-bulk-action-select');
+                    var counters = container.find('.nexus-ai-wp-bulk-selection-count');
+
+                    console.log(containerId + ':', {
+                        'initialized': this.initializedContainers.has(containerId),
+                        'checkboxes': checkboxes.length,
+                        'selectAll': selectAll.length,
+                        'buttons': buttons.length,
+                        'selects': selects.length,
+                        'counters': counters.length,
+                        'visible': container.is(':visible')
+                    });
+                } else {
+                    console.log(containerId + ': NOT FOUND');
+                }
+            }.bind(this));
+
+            console.groupEnd();
         },
 
         /**
@@ -801,5 +848,12 @@
     // Make bulk actions globally available
     window.NexusAIWPTranslatorBulkActions = NexusAIWPTranslatorBulkActions;
     console.debug('[Nexus Translator]: NexusAIWPTranslatorBulkActions made globally available');
+
+    // Add debug helper to window for console access
+    window.debugBulkActions = function() {
+        if (window.NexusAIWPTranslatorBulkActions) {
+            window.NexusAIWPTranslatorBulkActions.debugCurrentState();
+        }
+    };
 
 })();

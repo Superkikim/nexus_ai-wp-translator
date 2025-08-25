@@ -46,8 +46,10 @@
                     NexusAIWPTranslatorDashboard.loadTabContent(target);
                 }
 
-                // Ensure bulk actions are initialized for the active tab
-                NexusAIWPTranslatorDashboardPage.ensureBulkActionsForTab(target);
+                // Ensure bulk actions are initialized for the active tab after content loads
+                setTimeout(function() {
+                    NexusAIWPTranslatorDashboardPage.ensureBulkActionsForTab(target);
+                }, 300);
             });
         },
 
@@ -66,6 +68,7 @@
 
         /**
          * Initialize bulk actions for all content tabs
+         * This is called after the page loads to ensure static content has bulk actions
          */
         initBulkActionsForAllTabs: function() {
             if (!window.NexusAIWPTranslatorBulkActions) {
@@ -73,20 +76,27 @@
                 return;
             }
 
-            console.debug('[Nexus Translator]: Initializing bulk actions for all tabs');
+            console.debug('[Nexus Translator]: Dashboard page initializing bulk actions for static content');
 
             var contentTabs = ['#articles-tab', '#pages-tab', '#events-tab'];
 
-            contentTabs.forEach(function(tabId) {
-                // Use a timeout to ensure DOM is ready
-                setTimeout(function() {
+            // Wait for admin-main.js to finish its initialization first
+            setTimeout(function() {
+                contentTabs.forEach(function(tabId) {
                     if (jQuery(tabId).length > 0) {
-                        if (typeof NexusAIWPTranslatorBulkActions.initForContainer === 'function') {
-                            NexusAIWPTranslatorBulkActions.initForContainer(tabId);
+                        // Check if this tab has content (static content from PHP)
+                        var hasContent = jQuery(tabId).find('.select-post-checkbox').length > 0;
+                        if (hasContent) {
+                            console.debug('[Nexus Translator]: Found static content in', tabId, '- ensuring bulk actions');
+                            if (typeof NexusAIWPTranslatorBulkActions.reinitForContainer === 'function') {
+                                NexusAIWPTranslatorBulkActions.reinitForContainer(tabId);
+                            }
+                        } else {
+                            console.debug('[Nexus Translator]: No static content in', tabId, '- will initialize after AJAX load');
                         }
                     }
-                }, 300);
-            });
+                });
+            }, 500); // Wait for admin-main.js initialization to complete
         },
 
         /**
