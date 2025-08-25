@@ -17,6 +17,7 @@
             this.initLogsHandlers();
             this.initTranslationHandlers();
             this.initStatsRefresh();
+            this.initBulkActionsForAllTabs();
             this.restoreActiveTab();
         },
 
@@ -44,6 +45,9 @@
                 if (window.NexusAIWPTranslatorDashboard && typeof NexusAIWPTranslatorDashboard.loadTabContent === 'function') {
                     NexusAIWPTranslatorDashboard.loadTabContent(target);
                 }
+
+                // Ensure bulk actions are initialized for the active tab
+                NexusAIWPTranslatorDashboardPage.ensureBulkActionsForTab(target);
             });
         },
 
@@ -57,6 +61,53 @@
             } else {
                 // Default to dashboard tab
                 $('.nexus-ai-wp-content-tabs .nav-tab[href="#dashboard-tab"]').click();
+            }
+        },
+
+        /**
+         * Initialize bulk actions for all content tabs
+         */
+        initBulkActionsForAllTabs: function() {
+            if (!window.NexusAIWPTranslatorBulkActions) {
+                console.warn('[Nexus Translator]: Bulk actions not available');
+                return;
+            }
+
+            console.debug('[Nexus Translator]: Initializing bulk actions for all tabs');
+
+            var contentTabs = ['#articles-tab', '#pages-tab', '#events-tab'];
+
+            contentTabs.forEach(function(tabId) {
+                // Use a timeout to ensure DOM is ready
+                setTimeout(function() {
+                    if (jQuery(tabId).length > 0) {
+                        if (typeof NexusAIWPTranslatorBulkActions.initForContainer === 'function') {
+                            NexusAIWPTranslatorBulkActions.initForContainer(tabId);
+                        }
+                    }
+                }, 300);
+            });
+        },
+
+        /**
+         * Ensure bulk actions are properly initialized for a tab
+         * @param {string} tabId - The tab ID (e.g., '#articles-tab')
+         */
+        ensureBulkActionsForTab: function(tabId) {
+            // Only initialize bulk actions for content tabs that have posts lists
+            var contentTabs = ['#articles-tab', '#pages-tab', '#events-tab'];
+
+            if (contentTabs.includes(tabId) && window.NexusAIWPTranslatorBulkActions) {
+                console.debug('[Nexus Translator]: Ensuring bulk actions for tab:', tabId);
+
+                // Use a timeout to ensure the tab content is fully loaded
+                setTimeout(function() {
+                    if (typeof NexusAIWPTranslatorBulkActions.reinitForContainer === 'function') {
+                        NexusAIWPTranslatorBulkActions.reinitForContainer(tabId);
+                    } else if (typeof NexusAIWPTranslatorBulkActions.initForContainer === 'function') {
+                        NexusAIWPTranslatorBulkActions.initForContainer(tabId);
+                    }
+                }, 200);
             }
         },
 

@@ -43,18 +43,19 @@
         /**
          * Initialize bulk actions for a specific container
          * @param {string} containerSelector - CSS selector for the container (e.g., '#articles-tab')
+         * @param {boolean} forceReinit - Force reinitialization even if already initialized
          */
-        initForContainer: function(containerSelector) {
+        initForContainer: function(containerSelector, forceReinit) {
             if (!NexusAIWPTranslatorCore.ensureJQuery('initBulkActionsForContainer')) return;
             var $ = jQuery;
 
-            // Prevent duplicate initialization
-            if (this.initializedContainers.has(containerSelector)) {
+            // Check if already initialized (unless forcing reinit)
+            if (!forceReinit && this.initializedContainers.has(containerSelector)) {
                 console.debug('[Nexus Translator]: Container already initialized:', containerSelector);
                 return;
             }
 
-            console.debug('[Nexus Translator]: Initializing bulk actions for container:', containerSelector);
+            console.debug('[Nexus Translator]: Initializing bulk actions for container:', containerSelector, forceReinit ? '(forced reinit)' : '');
 
             var container = $(containerSelector);
             if (container.length === 0) {
@@ -75,6 +76,20 @@
             // Update initial state
             this.updateBulkSelectionCount(containerSelector);
             this.updateBulkActionButtons(containerSelector);
+        },
+
+        /**
+         * Force reinitialization of bulk actions for a container (for dynamic content)
+         * @param {string} containerSelector - CSS selector for the container
+         */
+        reinitForContainer: function(containerSelector) {
+            console.debug('[Nexus Translator]: Force reinitializing bulk actions for:', containerSelector);
+
+            // Remove from initialized containers
+            this.initializedContainers.delete(containerSelector);
+
+            // Force reinitialization
+            this.initForContainer(containerSelector, true);
         },
 
         /**
@@ -102,9 +117,11 @@
             var $ = jQuery;
 
             var container = $(containerSelector);
+            console.debug('[Nexus Translator]: Setting up checkbox handlers for:', containerSelector);
 
             // Handle individual checkbox changes (scoped to container)
             container.on('change.bulkactions', '.select-post-checkbox', function() {
+                console.debug('[Nexus Translator]: Individual checkbox changed in:', containerSelector);
                 NexusAIWPTranslatorBulkActions.updateBulkSelectionCount(containerSelector);
                 NexusAIWPTranslatorBulkActions.updateBulkActionButtons(containerSelector);
                 NexusAIWPTranslatorBulkActions.updateSelectAllCheckbox(containerSelector);
@@ -112,11 +129,17 @@
 
             // Handle select all checkbox (scoped to container)
             container.on('change.bulkactions', '.select-all-checkbox', function() {
+                console.debug('[Nexus Translator]: Select all checkbox changed in:', containerSelector);
                 var isChecked = $(this).is(':checked');
                 container.find('.select-post-checkbox').prop('checked', isChecked);
                 NexusAIWPTranslatorBulkActions.updateBulkSelectionCount(containerSelector);
                 NexusAIWPTranslatorBulkActions.updateBulkActionButtons(containerSelector);
             });
+
+            // Verify handlers are attached
+            var checkboxes = container.find('.select-post-checkbox');
+            var selectAll = container.find('.select-all-checkbox');
+            console.debug('[Nexus Translator]: Found', checkboxes.length, 'checkboxes and', selectAll.length, 'select-all checkboxes in:', containerSelector);
 
             console.debug('[Nexus Translator]: Initialized checkbox handlers for:', containerSelector);
         },
@@ -213,11 +236,18 @@
             var container = $(containerSelector);
             var selectedCount = container.find('.select-post-checkbox:checked').length;
             var totalCount = container.find('.select-post-checkbox').length;
+            var countElement = container.find('.nexus-ai-wp-bulk-selection-count');
 
             console.debug('[Nexus Translator]: Selected posts in', containerSelector + ':', selectedCount, 'of', totalCount);
+            console.debug('[Nexus Translator]: Count element found:', countElement.length, 'elements');
 
             // Update selection count display within this container
-            container.find('.nexus-ai-wp-bulk-selection-count').text(selectedCount + ' ' + 'items selected');
+            if (countElement.length > 0) {
+                countElement.text(selectedCount + ' ' + 'items selected');
+                console.debug('[Nexus Translator]: Updated count display to:', selectedCount + ' items selected');
+            } else {
+                console.warn('[Nexus Translator]: No count element found in container:', containerSelector);
+            }
         },
 
         /**

@@ -198,7 +198,8 @@
                 testCheckboxFunctionality,
                 testSelectAllFunctionality,
                 testButtonStates,
-                testCrossTabIsolation
+                testCrossTabIsolation,
+                testDynamicContentScenario
             ];
             
             tests.forEach(test => {
@@ -219,12 +220,15 @@
         }
 
         function testContainerInitialization() {
-            // Initialize bulk actions for each container
+            // Test both initialization methods
             NexusAIWPTranslatorBulkActions.initForContainer('#articles-tab');
             NexusAIWPTranslatorBulkActions.initForContainer('#pages-tab');
             NexusAIWPTranslatorBulkActions.initForContainer('#events-tab');
-            
-            addTestResult('✅ Container initialization completed');
+
+            // Test reinitialization (simulating dynamic content)
+            NexusAIWPTranslatorBulkActions.reinitForContainer('#articles-tab');
+
+            addTestResult('✅ Container initialization and reinitialization completed');
         }
 
         function testCheckboxFunctionality() {
@@ -293,6 +297,30 @@
                 addTestResult('✅ Cross-tab isolation working correctly');
             } else {
                 throw new Error(`Cross-tab isolation failed: Articles(${articlesCount.textContent}), Pages(${pagesCount.textContent}), Events(${eventsCount.textContent})`);
+            }
+        }
+
+        function testDynamicContentScenario() {
+            // Simulate dynamic content loading (like AJAX)
+            const articlesTab = document.getElementById('articles-tab');
+            const originalContent = articlesTab.innerHTML;
+
+            // Simulate content replacement (like AJAX response)
+            articlesTab.innerHTML = originalContent;
+
+            // Reinitialize bulk actions
+            NexusAIWPTranslatorBulkActions.reinitForContainer('#articles-tab');
+
+            // Test that functionality still works after content replacement
+            const checkbox = document.querySelector('#articles-tab .select-post-checkbox');
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
+
+            const count = document.querySelector('#articles-tab .nexus-ai-wp-bulk-selection-count');
+            if (count.textContent.includes('1 items selected')) {
+                addTestResult('✅ Dynamic content scenario works correctly');
+            } else {
+                throw new Error('Dynamic content scenario failed - bulk actions not working after content replacement');
             }
         }
 

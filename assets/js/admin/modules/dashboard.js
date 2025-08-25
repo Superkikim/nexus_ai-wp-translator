@@ -198,18 +198,19 @@
                         $('#' + postType + 's-pagination').html(response.data.pagination);
                     }
 
-                    // Initialize bulk actions for the loaded content
+                    // CRITICAL: Reinitialize bulk actions for the dynamically loaded content
                     var containerId = '#' + postType + 's-tab';
-                    if (window.NexusAIWPTranslatorBulkActions && typeof NexusAIWPTranslatorBulkActions.initForContainer === 'function') {
+                    if (window.NexusAIWPTranslatorBulkActions && typeof NexusAIWPTranslatorBulkActions.reinitForContainer === 'function') {
+                        // Use the new reinit method for dynamic content
                         setTimeout(function() {
-                            NexusAIWPTranslatorBulkActions.initForContainer(containerId);
-                        }, 50);
+                            NexusAIWPTranslatorBulkActions.reinitForContainer(containerId);
+                        }, 100);
                     }
 
                     // Enhance quality displays in the new content
                     setTimeout(function() {
                         NexusAIWPTranslatorDashboard.enhanceQualityDisplays();
-                    }, 100);
+                    }, 150);
                 } else {
                     var errorMsg = response.data && response.data.message ? response.data.message : 'Failed to load posts';
                     listContainer.html('<div class="notice notice-error"><p>' + errorMsg + '</p></div>');
