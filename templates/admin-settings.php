@@ -24,216 +24,22 @@ if (!defined('ABSPATH')) {
             
             <!-- Global Settings Tab -->
             <div id="global-settings" class="tab-content active">
-                <h2><?php _e('Global Translation Settings', 'nexus-ai-wp-translator'); ?></h2>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><?php _e('Quality Assessment Method', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox"
-                                           id="nexus_ai_wp_translator_use_llm_quality_assessment"
-                                           name="nexus_ai_wp_translator_use_llm_quality_assessment"
-                                           value="1"
-                                           <?php checked(get_option('nexus_ai_wp_translator_use_llm_quality_assessment', true)); ?> />
-                                    <?php _e('Use LLM Quality Assessment (Recommended)', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('During translation, an assesment of the quality of the translation is performed, allowing you to decide if review is required before publishing.<br><br>Beware this adds ~8% to API costs but eliminates false positives and provides better quality metrics.', 'nexus-ai-wp-translator'); ?>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row"><?php _e('Save as draft', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox"
-                                           id="nexus_ai_wp_translator_save_as_draft"
-                                           name="nexus_ai_wp_translator_save_as_draft"
-                                           value="1"
-                                           <?php checked(get_option('nexus_ai_wp_translator_save_as_draft', false)); ?> />
-                                    <?php _e('Save translations as drafts instead of publishing immediately', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('When enabled, translated posts will be saved as drafts for review before publishing. When disabled, translations will be published immediately with the same status as the source post.', 'nexus-ai-wp-translator'); ?>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
+                <?php include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/tabs/settings-global.php'; ?>
             </div>
-            
+
             <!-- API Settings Tab -->
             <div id="api-settings" class="tab-content">
-                <h2><?php _e('Nexus AI API Configuration', 'nexus-ai-wp-translator'); ?></h2>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="nexus_ai_wp_translator_api_key"><?php _e('API Key', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <input type="password" 
-                                   id="nexus_ai_wp_translator_api_key" 
-                                   name="nexus_ai_wp_translator_api_key" 
-                                   value="<?php echo esc_attr($api_key); ?>" 
-                                   class="large-text" 
-                                   autocomplete="off" />
-                            <button type="button" id="nexus-ai-wp-test-api" class="button">
-                                <?php _e('Test Connection', 'nexus-ai-wp-translator'); ?>
-                            </button>
-                            <button type="button" id="nexus-ai-wp-toggle-api-key" class="button">
-                                <?php _e('Show', 'nexus-ai-wp-translator'); ?>
-                            </button>
-                            <p class="description">
-                                <?php _e('Enter your Claude AI API key. You can get one from the Anthropic Console.', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                            <div id="api-test-result"></div>
-                        </td>
-                    </tr>
-                    
-                    <tr id="model-selection-row" style="display: none;">
-                        <th scope="row">
-                            <label for="nexus_ai_wp_translator_model"><?php _e('AI Model', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <select id="nexus_ai_wp_translator_model" name="nexus_ai_wp_translator_model">
-                                <?php if (empty($selected_model)): ?>
-                                    <option value=""><?php _e('Please test API connection to load models', 'nexus-ai-wp-translator'); ?></option>
-                                <?php else: ?>
-                                    <option value="<?php echo esc_attr($selected_model); ?>" selected>
-                                        <?php echo esc_html($selected_model); ?>
-                                    </option>
-                                <?php endif; ?>
-                            </select>
-                            <button type="button" id="nexus-ai-wp-refresh-models" class="button" style="margin-left: 10px;">
-                                <?php _e('Refresh Models', 'nexus-ai-wp-translator'); ?>
-                            </button>
-                            <p class="description">
-                                <?php _e('Select the Claude AI model to use for translations.', 'nexus-ai-wp-translator'); ?>
-                                <br><strong><?php _e('Recommendation: Claude Sonnet 4 provides the best translation quality.', 'nexus-ai-wp-translator'); ?></strong>
-                            </p>
-                        </td>
-                    </tr>
-                </table>
+                <?php include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/tabs/settings-api.php'; ?>
             </div>
-            
+
             <!-- Language Settings Tab -->
             <div id="language-settings" class="tab-content">
-                <h2><?php _e('Available Translation Languages', 'nexus-ai-wp-translator'); ?></h2>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label><?php _e('Available Languages', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <p class="description">
-                                <?php _e('Select languages to enable for translation. Posts can be translated into any of the selected languages.', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                            <fieldset>
-                                <?php foreach ($languages as $code => $name): ?>
-                                    <label>
-                                        <input type="checkbox" 
-                                               name="nexus_ai_wp_translator_target_languages[]" 
-                                               value="<?php echo esc_attr($code); ?>" 
-                                               <?php checked(in_array($code, $target_languages)); ?> />
-                                        <?php echo esc_html($name); ?>
-                                    </label><br>
-                                <?php endforeach; ?>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
+                <?php include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/tabs/settings-languages.php'; ?>
             </div>
-            
+
             <!-- Performance Settings Tab -->
             <div id="performance-settings" class="tab-content">
-                <h2><?php _e('Performance & Rate Limiting', 'nexus-ai-wp-translator'); ?></h2>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="nexus_ai_wp_translator_throttle_limit"><?php _e('API Call Limit', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <input type="number" 
-                                   id="nexus_ai_wp_translator_throttle_limit" 
-                                   name="nexus_ai_wp_translator_throttle_limit" 
-                                   value="<?php echo esc_attr($throttle_limit); ?>" 
-                                   min="1" 
-                                   max="1000" 
-                                   class="small-text" />
-                            <p class="description">
-                                <?php _e('Maximum number of API calls allowed per time period.', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <th scope="row">
-                            <label for="nexus_ai_wp_translator_throttle_period"><?php _e('Time Period (seconds)', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <input type="number" 
-                                   id="nexus_ai_wp_translator_throttle_period" 
-                                   name="nexus_ai_wp_translator_throttle_period" 
-                                   value="<?php echo esc_attr($throttle_period); ?>" 
-                                   min="60" 
-                                   max="86400" 
-                                   class="small-text" />
-                            <p class="description">
-                                <?php _e('Time period for the rate limit (minimum 60 seconds).', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <th scope="row">
-                            <label for="nexus_ai_wp_translator_retry_attempts"><?php _e('Retry Attempts', 'nexus-ai-wp-translator'); ?></label>
-                        </th>
-                        <td>
-                            <input type="number" 
-                                   id="nexus_ai_wp_translator_retry_attempts" 
-                                   name="nexus_ai_wp_translator_retry_attempts" 
-                                   value="<?php echo esc_attr($retry_attempts); ?>" 
-                                   min="1" 
-                                   max="10" 
-                                   class="small-text" />
-                            <p class="description">
-                                <?php _e('Number of times to retry failed API calls.', 'nexus-ai-wp-translator'); ?>
-                            </p>
-                        </td>
-                    </tr>
-                    
-                    <tr>
-                        <th scope="row"><?php _e('Cache Translations', 'nexus-ai-wp-translator'); ?></th>
-                        <td>
-                            <fieldset>
-                                <label>
-                                    <input type="checkbox" 
-                                           id="nexus_ai_wp_translator_cache_translations" 
-                                           name="nexus_ai_wp_translator_cache_translations" 
-                                           value="1" 
-                                           <?php checked($cache_translations); ?> />
-                                    <?php _e('Cache translations to improve performance', 'nexus-ai-wp-translator'); ?>
-                                </label>
-                                <p class="description">
-                                    <?php _e('When enabled, translations are cached to reduce API calls for repeated content.', 'nexus-ai-wp-translator'); ?>
-                                    <br>
-                                    <button type="button" id="nexus-ai-wp-clear-cache" class="button button-secondary" style="margin-top: 10px;">
-                                        <?php _e('Clear Translation Cache', 'nexus-ai-wp-translator'); ?>
-                                    </button>
-                                    <span id="nexus-ai-wp-clear-cache-result" style="margin-left: 10px;"></span>
-                                </p>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
+                <?php include NEXUS_AI_WP_TRANSLATOR_PLUGIN_DIR . 'templates/tabs/settings-performance.php'; ?>
             </div>
         </div>
         
