@@ -784,9 +784,7 @@ class Nexus_AI_WP_Translator_Admin {
         $fields = array(
             'nexus_ai_wp_translator_api_key' => array('api_key', 'sanitize_text_field', null),
             'nexus_ai_wp_translator_model' => array('model', 'sanitize_text_field', null),
-            'nexus_ai_wp_translator_source_language' => array('source_language', 'sanitize_text_field', function($v){
-                return $this->translation_manager->is_valid_language($v);
-            }),
+
             'nexus_ai_wp_translator_target_languages' => array('target_languages', null, function($v){
                 return is_array($v) && $this->translation_manager->validate_language_codes($v);
             }),

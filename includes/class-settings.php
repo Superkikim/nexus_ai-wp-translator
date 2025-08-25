@@ -22,7 +22,6 @@ class Nexus_AI_WP_Translator_Settings {
     private function __construct() {
         $this->default_settings = array(
             'api_key' => '',
-            'source_language' => 'en',
             'target_languages' => array('es', 'fr', 'de'),
             'auto_translate' => true,
             'throttle_limit' => 10,
@@ -103,15 +102,9 @@ class Nexus_AI_WP_Translator_Settings {
             case 'api_key':
                 return is_string($value) && strlen($value) > 10;
                 
-            case 'source_language':
             case 'target_languages':
                 $valid_languages = array('en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'nl', 'sv', 'da', 'no', 'fi', 'pl', 'cs', 'hu');
-                
-                if ($key === 'source_language') {
-                    return in_array($value, $valid_languages);
-                } else {
-                    return is_array($value) && !empty(array_intersect($value, $valid_languages));
-                }
+                return is_array($value) && !empty(array_intersect($value, $valid_languages));
                 
             case 'throttle_limit':
             case 'retry_attempts':

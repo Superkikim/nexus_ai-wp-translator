@@ -136,12 +136,13 @@ class Nexus_AI_WP_Translator_Manager {
                     error_log("Nexus AI WP Translator: Auto-detected language '{$source_lang}' for post {$post_id}");
                 }
             } else {
-                // Fall back to default source language
-                $source_lang = get_option('nexus_ai_wp_translator_source_language', 'en');
-
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("Nexus AI WP Translator: Language detection failed for post {$post_id}, using default: {$source_lang}");
-                }
+                // Language detection failed and no language is set
+                return array(
+                    'success' => false,
+                    'message' => __('Unable to detect language for this post. Please set the language manually before translating.', 'nexus-ai-wp-translator'),
+                    'success_count' => 0,
+                    'error_count' => 1
+                );
             }
         }
 

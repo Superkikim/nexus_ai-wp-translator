@@ -18,24 +18,11 @@
 
         /**
          * Initialize checkbox functionality for articles
+         * Note: Checkbox event handling is now managed by bulk-actions.js
          */
         initCheckboxFunctionality: function() {
-            // Initialize select all checkbox functionality
-            $('.select-all-checkbox').on('change', function() {
-                var postType = $(this).attr('id').replace('select-all-', '');
-                var isChecked = $(this).is(':checked');
-                
-                $('.select-post-checkbox[data-post-id]').each(function() {
-                    if ($(this).closest('tr').find('td').length > 0) { // Only for visible rows
-                        $(this).prop('checked', isChecked);
-                    }
-                });
-            });
-            
-            // Individual checkbox selection
-            $('.select-post-checkbox').on('change', function() {
-                this.updateLinkButtonState();
-            }.bind(this));
+            // Checkbox functionality is handled by bulk-actions.js
+            // This prevents event handler conflicts
         },
 
         /**
