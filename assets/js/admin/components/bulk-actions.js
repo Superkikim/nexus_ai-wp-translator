@@ -460,6 +460,17 @@
 
             var dialogId = 'nexus-ai-wp-bulk-set-language-dialog';
 
+            // Get available languages from core
+            var languageNames = NexusAIWPTranslatorCore.getLanguageNames();
+            var languageOptions = '<option value="">Select Language</option>';
+
+            // Build language options dynamically
+            for (var code in languageNames) {
+                if (languageNames.hasOwnProperty(code)) {
+                    languageOptions += '<option value="' + code + '">' + languageNames[code] + ' (' + code + ')</option>';
+                }
+            }
+
             var dialogHtml = '<div id="' + dialogId + '" class="nexus-ai-wp-dialog-overlay">' +
                 '<div class="nexus-ai-wp-dialog">' +
                 '<div class="nexus-ai-wp-dialog-header">' +
@@ -471,14 +482,10 @@
                 '<div class="nexus-ai-wp-form-group">' +
                 '<label for="bulk-set-language">Language:</label>' +
                 '<select id="bulk-set-language">' +
-                '<option value="">Select Language</option>' +
-                '<option value="en">English</option>' +
-                '<option value="es">Spanish</option>' +
-                '<option value="fr">French</option>' +
-                '<option value="de">German</option>' +
-                '<option value="it">Italian</option>' +
+                languageOptions +
                 '</select>' +
                 '</div>' +
+                '<p class="description">This will set the source language for the selected posts. The language indicates what language the post content is written in.</p>' +
                 '</div>' +
                 '<div class="nexus-ai-wp-dialog-footer">' +
                 '<button id="bulk-set-language-confirm" class="button button-primary">Set Language</button>' +
